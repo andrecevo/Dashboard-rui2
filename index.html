@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard de Faturamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: moldura escura estilo dashboard Excel — coluna esquerda (segmentações + gráficos), coluna direita (KPIs + mapa) */
+:root{
+  --bg:#121110; --frame:#1b1a19; --panel:#242220; --panel-2:#2c2926; --line:#3a3530;
+  --accent:#f07a2a; --accent-hi:#ffa25a; --accent-lo:#a9481a; --accent-soft:rgba(240,122,42,.16);
+  --text:#f4efea; --muted:#a69d95; --dim:#6b645e;
+  --map-base:#5f8a4e; --map-hi:#8fbf72; --map-sel:#ef8a6f;
+  --ok:#6fbf73; --bad:#e8604c;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Segoe UI",Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--text);font-family:var(--body)}
+body{padding-inline:16px;padding-block:16px}
+.frame{max-width:1500px;margin:0 auto;background:var(--frame);border:1px solid var(--line);border-radius:14px;padding:18px 20px 22px;display:flex;flex-direction:column;gap:16px}
+
+/* Header */
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-family:var(--body);font-weight:600;font-size:clamp(26px,3.4vw,44px);margin:0;letter-spacing:-.01em;line-height:1.05;text-wrap:balance}
+.meta{color:var(--muted);font-size:13px;margin-top:4px}
+.meta b{color:var(--text);font-weight:600}
+.head-txt{flex:1 1 320px;min-width:0}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{font:600 14px var(--body);border:1px solid var(--accent);background:var(--accent);color:#1a0d04;border-radius:8px;padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{background:var(--accent-hi)}
+.btn.ghost{background:transparent;color:var(--accent-hi)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn:focus-visible,.chip:focus-visible,.slicer button:focus-visible,path.uf:focus-visible{outline:2px solid var(--accent-hi);outline-offset:2px}
+.logo{width:120px;height:56px;border:1.5px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--accent);font:700 14px/1.1 var(--display);text-transform:uppercase;letter-spacing:.06em;text-align:center}
+.rule{height:2px;background:linear-gradient(90deg,var(--accent),var(--accent-lo) 70%,transparent)}
+
+/* Grid */
+.main{display:grid;grid-template-columns:172px minmax(0,1fr);gap:18px;align-items:start}
+.side{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column;gap:10px;padding-right:2px}
+.side-h{font:700 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent-hi);padding:2px 2px 0}
+.slicers{display:flex;flex-direction:column;gap:6px}
+details.slicer{padding:0}
+details.slicer>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;padding:8px 10px;font:600 12.5px var(--body);color:var(--text);border-radius:8px}
+details.slicer>summary::-webkit-details-marker{display:none}
+details.slicer>summary::after{content:"";width:6px;height:6px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-left:4px;transition:transform .15s;flex:none}
+details.slicer[open]>summary::after{transform:rotate(-135deg)}
+details.slicer>summary:hover{background:var(--panel-2)}
+details.slicer>summary:focus-visible{outline:2px solid var(--accent-hi);outline-offset:1px}
+.slicer .sn{flex:1;min-width:0;line-height:1.2}
+.slicer .cnt{font:600 10.5px var(--body);color:var(--muted);white-space:nowrap}
+.slicer .cnt.on{background:var(--accent);color:#1a0d04;border-radius:10px;padding:1px 7px}
+details.slicer>.opts{padding:2px 10px 8px}
+.slicer .opts button{font-size:11.5px;padding:3px 7px}
+.slicer .clr{display:block;margin:0 10px 9px;background:none;border:0;padding:0;color:var(--muted);font:500 11.5px var(--body);cursor:pointer}
+.slicer .clr:hover{color:var(--accent-hi)}
+.content{display:flex;flex-direction:column;gap:14px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;grid-template-areas:"sit sit perf perf ano ano" "mes mes mes mes map map" "meio meio ac ac map map" "ger ger uf uf uf uf"}
+.a-sit{grid-area:sit}.a-perf{grid-area:perf}.a-ano{grid-area:ano}.a-mes{grid-area:mes}.a-meio{grid-area:meio}.a-map{grid-area:map;align-self:start}.a-ac{grid-area:ac}.a-ger{grid-area:ger}.a-uf{grid-area:uf}
+.slicer{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px 10px;min-width:0}
+.slicer h3{margin:0 0 6px;font:600 13px var(--body);display:flex;justify-content:space-between;align-items:center;color:var(--text)}
+.slicer h3 button{background:none;border:0;color:var(--muted);cursor:pointer;font:500 12px var(--body);padding:0}
+.slicer h3 button:hover{color:var(--accent-hi)}
+.slicer .opts{display:flex;flex-wrap:wrap;gap:5px}
+.slicer .opts button{font:500 12px var(--body);background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:4px 8px;cursor:pointer}
+.slicer .opts button:hover{border-color:var(--accent)}
+.slicer .opts button.on{background:var(--accent);border-color:var(--accent);color:#1a0d04;font-weight:600}
+.slicer .opts button.na{opacity:.35}
+
+.a-ger .cv,.a-uf .cv{height:300px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:30px 12px 10px;position:relative;margin-top:12px;min-width:0}
+.panel>.ttl{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,var(--accent-hi),var(--accent));color:#1a0d04;font:700 14px var(--body);padding:5px 16px;border-radius:5px;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.panel .hint{position:absolute;top:8px;right:12px;font-size:11px;color:var(--dim)}
+.cv{position:relative;height:250px}
+.a-mes .cv{height:290px}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.kpi{border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column}
+.kpi .k{background:linear-gradient(180deg,var(--accent-hi),var(--accent));color:#1a0d04;font:700 13.5px/1.2 var(--body);text-align:center;padding:9px 8px;min-height:44px;display:flex;align-items:center;justify-content:center}
+.kpi .v{font:700 clamp(18px,1.7vw,24px) var(--body);text-align:center;padding:10px 6px 2px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi .s{font-size:12px;color:var(--muted);text-align:center;padding:0 6px 10px;min-height:16px}
+.kpi .s .bad{color:var(--bad);font-weight:600}.kpi .s .ok{color:var(--ok);font-weight:600}
+
+.mapwrap{position:relative}
+.mapwrap svg{width:100%;height:auto;max-height:440px;display:block}
+path.uf{stroke:var(--frame);stroke-width:1;cursor:pointer;transition:fill .2s}
+path.uf:hover{stroke:var(--text);stroke-width:1.4}
+.legend{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend .bar{flex:1;min-width:90px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--map-base),var(--map-hi))}
+.legend .sel{display:inline-flex;gap:5px;align-items:center}.legend .sel i{width:10px;height:10px;border-radius:2px;background:var(--map-sel)}
+.sel-total{margin-top:8px;border-top:1px solid var(--line);padding-top:8px;display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+.sel-total b{color:var(--text);font-variant-numeric:tabular-nums}
+.rank-h{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font:700 13px var(--body);color:var(--text)}
+.rank-h span:last-child{color:var(--muted);font-weight:500;font-size:12px}
+.rank{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+.rank li{display:grid;grid-template-columns:22px 34px minmax(0,1fr) 112px;align-items:center;gap:8px;font-size:13px;cursor:pointer;border-radius:5px;padding:2px 4px}
+.rank li:hover{background:var(--panel-2)}
+.rank li.on{background:var(--accent-soft)}
+.rank .n{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#1a0d04;font:700 12px/22px var(--body);text-align:center}
+.rank li:nth-child(n+4) .n{background:var(--panel-2);color:var(--accent-hi);border:1px solid var(--accent-lo);line-height:20px}
+.rank .u{font-weight:700}
+.rank .b{height:8px;border-radius:4px;background:var(--panel-2);overflow:hidden;min-width:0}
+.rank .b i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-lo),var(--accent-hi));border-radius:4px}
+.rank .v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rank .v small{display:block;color:var(--muted);font-size:11px}
+.rank-empty{color:var(--muted);font-size:12px;padding:4px 0}
+.perf-note{font-size:11px;color:var(--muted);text-align:center;margin-top:4px}
+.tip{position:fixed;pointer-events:none;background:#0d0c0b;border:1px solid var(--accent);color:var(--text);padding:6px 9px;border-radius:6px;font-size:12px;z-index:20;white-space:nowrap}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:28px;font-size:12px;color:var(--muted)}
+.chip{background:var(--accent-soft);border:1px solid var(--accent-lo);color:var(--accent-hi);border-radius:20px;padding:4px 10px;font:600 12px var(--body);cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+
+.empty{border:2px dashed var(--accent-lo);border-radius:12px;padding:48px 20px;text-align:center;color:var(--muted)}
+.empty h2{color:var(--text);font-family:var(--display);font-size:26px;margin:0 0 8px}
+.empty code{color:var(--accent-hi)}
+.err{background:rgba(232,96,76,.12);border:1px solid var(--bad);color:var(--text);border-radius:8px;padding:10px 14px;font-size:13px}
+.drop{position:fixed;inset:0;background:rgba(18,17,16,.88);display:flex;align-items:center;justify-content:center;z-index:30;border:3px dashed var(--accent);font:700 28px var(--display);color:var(--accent-hi)}
+.loading{color:var(--muted);font-size:14px;padding:30px;text-align:center}
+footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+@media (max-width:1280px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"sit sit perf perf" "ano ano meio meio" "mes mes mes mes" "map map ac ac" "ger ger ger ger" "uf uf uf uf"}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:980px){.main{grid-template-columns:1fr}.side{position:static;max-height:none;overflow:visible}.slicers{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
+@media (max-width:700px){.grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"sit" "perf" "ano" "mes" "meio" "map" "ac" "ger" "uf"}.kpis{grid-template-columns:1fr 1fr}.frame{padding:14px 12px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="frame">
+  <header>
+    <div class="head-txt">
+      <h1>Dashboard de Faturamento</h1>
+      <div class="meta" id="meta">Carregando dados…</div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnUp" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+        Carregar planilha
+      </button>
+      <input type="file" id="file" accept=".csv,.txt,.xlsx,.xls" hidden>
+    </div>
+  </header>
+  <div class="rule"></div>
+  <div id="msg"></div>
+  <div id="app"><div class="loading">Carregando dados…</div></div>
+  <footer><span>Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.</span><span id="foot"></span></footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+<div class="drop" id="drop" hidden>Solte o arquivo para atualizar o dashboard</div>
+
+<template id="tpl">
+  <div class="main">
+    <aside class="side" aria-label="Filtros">
+      <div class="side-h">Filtros</div>
+      <div class="slicers">
+        <details class="slicer" data-key="cliente"><summary><span class="sn">Cliente</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="cliente">Limpar seleção</button></details>
+        <details class="slicer" data-key="ano"><summary><span class="sn">Ano de vencimento</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="ano">Limpar seleção</button></details>
+        <details class="slicer" data-key="regiao"><summary><span class="sn">Região</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="regiao">Limpar seleção</button></details>
+        <details class="slicer" data-key="situacao"><summary><span class="sn">Situação da cobrança</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="situacao">Limpar seleção</button></details>
+        <details class="slicer" data-key="tipo"><summary><span class="sn">Tipo de cobrança</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="tipo">Limpar seleção</button></details>
+      </div>
+    </aside>
+    <div class="content">
+      <div class="chips" id="chips"></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid">
+        <div class="panel a-sit"><div class="ttl">Status da Cobrança</div><div class="cv"><canvas id="cSit"></canvas></div></div>
+        <div class="panel a-perf"><div class="ttl">Inadimplência Consolidada</div><div class="cv"><canvas id="cPerf"></canvas></div><div class="perf-note">% pago sobre o total faturado, por cliente</div></div>
+        <div class="panel a-ano"><div class="ttl">Prazo de recebimento por faixa</div><div class="cv"><canvas id="cAno"></canvas></div><div class="perf-note" id="przNote">Dias entre notificação e pagamento</div></div>
+        <div class="panel a-mes"><div class="ttl">Inadimplência mensal</div><div class="cv"><canvas id="cMes"></canvas></div><div class="perf-note">% vencido sobre o total do mês de vencimento, em quantidade e valor</div></div>
+        <div class="panel a-map"><div class="ttl">Top 5 - Pagamentos</div>
+        <div class="mapwrap"><svg id="map" viewBox="0 0 613 639" role="img" aria-label="Mapa do Brasil com faturamento por UF"></svg></div>
+        <div class="legend"><span>menor</span><span class="bar"></span><span>maior</span><span class="sel"><i></i>selecionado</span></div>
+        <div class="rank-h"><span id="rankTot"></span></div>
+        <ol class="rank" id="rank"></ol>
+        <div class="sel-total"><span id="selLbl">Clique em um estado para filtrar</span><b id="selVal"></b></div>
+      </div>
+        <div class="panel a-meio"><div class="ttl">Forma de pagamento (pagas)</div><div class="cv"><canvas id="cMeio"></canvas></div></div>
+        <div class="panel a-ac"><div class="ttl">Acesso à plataforma × situação</div><div class="cv" id="acBox"><canvas id="cAc"></canvas></div><div class="perf-note">% de cobranças com e sem acesso em cada situação</div></div>
+        <div class="panel a-ger"><div class="ttl">Faturamento por ano gerador</div><div class="cv"><canvas id="cGer"></canvas></div></div>
+        <div class="panel a-uf"><div class="ttl">Faturamento por UF principal</div><div class="cv"><canvas id="cUf"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script>
+const MAP = {"l": [{"id": "AC", "n": "Acre", "p": "m 30.7,238 -2.1,-0 0.5,-1.8 -0.2,-0.8 -0.2,-0.5 -1.2,-0.7 -0.1,-0.5 0.3,-1.1 -0.8,-1.9 -1.1,-0.6 -5.6,-1.2 -7.3,-0.2 0.3,-0.6 2.5,-2.3 0.9,-1.2 0.3,-1.2 -0.2,-1.2 -0.7,-0.9 -0.8,-0.4 -1.7,-3 -0.8,-0.4 -0.9,-0.2 -1.1,-1.1 -0.9,-2.4 -2,-1.5 -1,-3.6 -0.9,-1.6 -1.9,-1.1 -0.1,-1.2 0.8,0.1 0.4,-0.5 0.1,-0.7 -0.2,-0.4 -2.1,-0.9 -0.4,-0.7 -2.2,-1.9 0,-0.4 0.6,-0.1 0.5,-1.3 -0,-1.3 3,-0.4 0.5,-0.4 -0.2,-1.4 -1.2,-1.6 0,0 17.9,7.5 23.7,5.7 12.1,3.1 26.4,14.2 28.5,12.1 0,0 3,1.3 0,0 -0.3,0.5 -1.6,0.7 -2.1,1.6 -2.9,2.8 -1.6,0.9 -0.7,-0.2 -1.5,0.2 -0.1,0.6 -1.9,1.3 -2.1,1 -1.4,1.8 -0.4,1.2 -0.6,0.3 -1.2,-0.8 -0.8,-0.1 -2.4,0.1 -0.7,0.3 -0.6,0.5 -0.4,0.9 -2.4,3.5 -3.8,1.2 -0.8,0.7 -1.9,0.5 -1,0 0.1,-2.1 -1.4,0.2 -3.5,-0.8 -5.2,-0.5 -5.1,0.4 -0.7,-0.6 -2.3,-0.2 -3.6,1.8 -2.7,0.6 -1.7,-0.7 -1.4,-1.4 -1.6,1.2 0,-17.6 0.1,-1.1 0.5,-0.7 0.1,-2.4 -0.3,-0.9 1,-1.2 0.5,-1.1 -1.2,0.2 -3,2.6 -1.6,1 -2.1,2.4 -1.9,0.7 -0.7,1.1 -1.8,1 z"}, {"id": "AL", "n": "Alagoas", "p": "m 562.2,230.6 -0.2,-0.7 -1.4,-0.8 -0.5,0.1 -1,-0.3 -0.5,-1.4 0,0 1.3,-1.1 0.6,-1.1 2.2,-0.8 2.4,-3.3 0.1,-0.7 0.8,-0.6 1,1.2 1.7,0.3 1.1,-0.1 2.5,2 1.9,2.1 1.8,1.1 1.9,0.5 2.5,-0.7 3.1,0.3 1.2,-0.1 1.9,-1.1 1.2,0.1 1.8,-1.1 2.2,-2.3 0.1,-0.5 1.6,-1.2 2,-0.2 2.2,0.8 2.6,-1.3 1.5,-0.2 1.9,0.8 2.9,0.3 0.3,0.2 0,0 -2.8,5 -4.5,5.1 -3.6,3.6 -3,4.6 -3.3,2.9 -1,2 -1.3,1.8 0,0 -0.6,-1.3 -3.6,-2.2 -0.5,-0 -1.7,-0.8 -1.8,-1.4 -1.3,-2.5 -5.4,-3.1 -3.7,-0.9 z"}, {"id": "AP", "n": "Amapá", "p": "m 345.2,100 -0.9,-0.1 -0.8,0.3 -1.3,0.1 -2.8,-0.7 -1.4,-1 -0.4,-1.5 -1.9,-1.4 -0.1,-1.3 0.2,-0.7 -0.3,-1.6 -0.3,-0.5 -0.9,-0.2 -0.4,-0.9 0.1,-2.4 -2.9,-3.3 -0.8,0.4 -0.8,-0.2 -1.5,-3.5 0.1,-1.6 -0.6,-1.8 -0.6,-0.6 -0.7,-1.5 -0.2,-2.1 0.4,-3.1 -0.2,-0.3 -2.6,-0.7 -2,-2.3 -0.8,-2.8 0.2,-0.7 0.7,-0.2 -0.5,-1.2 -0.7,0 -2.8,-2.7 -0.9,0.1 -0.4,0.4 -1.3,0.1 -0.8,-0.3 -0.8,-1 -1.1,-0.8 -1.2,-0.1 -0.5,-1.3 -0.7,-0.8 -1.9,-1.1 -1.3,-0.5 -3.4,-0.4 -1.1,0.3 -1.2,-0 -0.3,-0.5 -0.2,-1.4 0.2,-4.5 0.6,-1.3 -0.4,-2.3 -0.6,-0.6 0,0 0.3,-0.2 1,0.3 -0,0.8 -0.3,0.2 0.3,1 1.5,-0.1 0.8,0.2 0.3,0.9 0.8,0.7 2.2,0.8 3.3,0.8 2.8,-1.8 0.3,-0.8 1.7,-1.2 0.8,-0.3 0.7,0.9 2.7,0.9 1.1,-0.1 1.7,-1 0.1,-0.4 0.3,0 1.5,1.3 -0.2,0.9 2.4,-0.2 0.5,0.5 0.9,0.2 0.6,-0 0.9,-0.5 1.7,-1.5 1.8,-1.1 1.8,-2.3 0.4,-1 -0.2,-0.5 3.1,-6.5 0.1,-1.8 1.1,-1.3 0.7,-0.2 3.6,-5.8 0.2,-1.1 0.8,-1.2 1.8,-1.6 0.6,-1.7 2.1,-1.1 0.5,-0.9 1,-0.6 0.6,1.5 0.9,1.4 -1.7,-4.8 -0.1,-1.3 0.2,-0.3 3.4,2.4 1.1,1.2 0.9,1.2 0.5,1.2 0,1.6 0.4,0.3 0.3,-0.5 0.4,-0.1 0.2,0.4 0.2,7.9 0.7,3.9 2.7,6 2.7,8.9 3.3,5 1,0.3 3.3,-0.1 2.8,0.9 1.3,0.8 0.8,2.6 -0.2,3.3 -1.3,1 -1.7,0.4 -0.4,0.3 1.8,-0.1 1,-0.4 0.3,0.2 0.1,0.6 -0.2,0.7 -5,4.1 -1.2,2.1 -2.1,1.4 -1.9,3.7 -2.9,3.5 -0.7,0.5 -0.9,-0.1 -1.4,0.5 -2.1,3 0,0 -1.3,0.1 -0.8,0.9 0,0 -1.5,1.7 -1,2.2 -1.1,1.9 -0.8,0.7 -3,3.5 -0.4,2.4 0.2,1.8 -1.9,1.8 -1,0.1 z m 23.4,-47 -0.5,-0.3 -1.1,-1.9 0.1,-0.9 0.2,-0.4 1.7,-0.5 0.4,0.4 0.8,2.3 -1,1.1 -0.7,0.2 z m 2.5,17.6 -0.4,-0.2 -0.1,-0.7 1.1,-1.1 0.9,-0.1 1.2,0.2 0.5,-0.1 0.4,-0.6 0.1,0.6 -1,1.4 -1,0.5 -1.8,0.2 z m 3.4,-2.9 -0.8,-0.2 0,-0.6 0.7,-1 1.2,-0.1 0.2,0.3 -0.1,0.5 -1.3,1.1 z m -7.2,-18.4 -0.8,-0.5 0.3,-0.8 0.9,-0.2 0.9,0.3 0,0.7 -1.2,0.5 z"}, {"id": "AM", "n": "Amazonas", "p": "m 166.1,47.6 0.7,0.8 0.8,0.3 0.6,0 1.1,-0.4 0.6,0.1 0.1,1 1.2,1.2 1,0.4 0.9,-0.2 1.4,0.1 1.9,0.9 0.5,0.7 -0.9,3.3 -0.7,1.5 2.7,3.7 1.7,4.8 0.2,2.3 0.9,1.1 0.1,0.5 -1.6,1.5 0.4,1.6 0.7,1.6 -0.8,3 -0.6,1 0.3,5 0.9,2.2 1.2,0.8 0.6,0.9 1.1,4.3 -0.1,0.6 -1.1,1.3 -1.8,-0.3 -0.1,1.1 5,4.4 0.5,0 2,1.3 1.5,1.6 1,2 0.5,0.1 1.3,-0.4 2.4,1 -0.4,-2.1 0.8,-2.3 0.2,-1.7 -0.4,-1.8 0.8,-3 1,-1.3 1.3,-0.7 2.1,-0.7 0.6,-0.9 1.6,-0.1 2.8,0.9 1.9,2 0.9,2.5 1.8,0.2 1.2,-0.5 1.4,-1.4 2,-0.6 0.4,-0.4 0,-0.5 -1.1,-1.4 -0.2,-0.7 0.1,-0.7 1.1,-2.6 0.1,-1.1 1.7,-3 2.3,-3.3 -0,-0.7 18.5,0.1 0,0 0.4,4.9 -0.4,1.4 0.2,2.3 0.2,0.7 1.7,0.8 0.2,0.4 -0.3,0.7 -0.1,2.1 1.8,2 0.4,0.2 0.7,-0.2 1.8,1.2 0.6,1.8 0,0.9 0.3,0.5 4.6,3.8 4.6,2.5 0.6,0.9 1.4,1.1 1.9,0.7 2.4,1.3 2.3,0.7 1.4,0.1 1.3,0.8 0.1,0.6 1.3,1.3 2.7,1.4 1.1,2.2 1.9,0.8 0.8,-0.6 1.4,-0.3 0.2,0.5 -0.1,0.8 1.8,1.7 -29.9,64.2 -0.8,1.3 -1.4,1.1 -0.6,1 -0,1.1 0.8,2.3 0.4,0.6 1.1,0.6 1.6,1.6 0.6,1.3 0.1,2 0.6,0.6 0,0 -1.2,1.2 -0.2,0.6 -0.1,0.8 0.3,0.8 -0.3,1 -1.2,1.8 -0.9,0.6 -0.4,0.8 0.1,0.8 0.7,1.4 0.5,1.9 -1.4,4.2 -1.2,5.2 -1.2,0.7 -47.9,0.3 0,0 0,-0.7 -0.4,-0.4 -1.4,-0.3 -1.9,1.1 -0.5,1.7 -0.7,0.2 -3.2,-1.5 -0.7,-2.9 -0.6,-0.2 -1,0.1 -0.5,-0.2 -1.2,-3.3 -2.5,-1 -1.3,-1.3 -0.8,-1.9 -0.5,-0.5 -2.1,-1.1 -10.8,0.1 -1.4,2.6 -1.7,0.5 0.1,1.2 -0.3,0.2 -2.5,0.5 -1.2,1.6 -0.1,0.7 0.9,0.7 0.2,0.5 -0.4,1 -0.8,1.1 -2.1,1.2 -0.1,1.8 0.2,1.5 -3.9,-0.5 -2.1,0.4 -1.2,1.1 -1.8,-0.1 -0.8,-0.6 -0.5,-0 -1.8,1.3 -0.5,0.8 0.3,1.8 -2.5,3.2 -0.7,0.1 -0.7,-0.5 -0.6,-2.3 -0.4,-0.1 -1.8,1 -1.3,1.2 -1.4,0.4 -0.8,-0.1 -1.1,0.5 -0.4,0.5 -0.1,0.7 -1.2,0.8 -0.4,0 -2.3,-2.3 -0.7,-0.4 -2.9,0.3 -4,-0.3 0.2,1.3 -0.1,0.6 -1.6,1.8 -1.9,0.6 -3.3,2.6 0,0 -28.5,-12.1 -26.4,-14.2 -12.1,-3.1 -23.7,-5.7 -17.9,-7.5 0,0 -0.1,-0.7 0.7,-2.9 1.2,-1.4 4.9,-3.5 2.3,-0.2 0.5,-0.3 1,-1.6 0.1,-1 -1.7,-4.5 0.4,-1.2 1.2,-2.2 1.3,-1.3 0.9,-1.2 0.4,-1 0.3,-1.7 -0.3,-1.3 0.7,-2 0.3,-2.3 0.7,-0.8 3.7,-1.6 2.2,-1.2 1.1,-1 0.4,-1.4 0.8,-0.4 1.4,-0.1 1.6,-0.9 3.5,-2.7 2.4,-0.4 1.5,0.3 4.2,-1.2 1.5,-0.8 1.8,-0.4 3.3,0.4 1.3,-1.6 0.6,-1.4 1.1,-0.6 2.1,0.2 0.6,0.5 1.3,-0.2 1.1,-0.7 1.7,0.1 0.3,0.5 -0,1.2 1.6,1.3 2.8,0.1 0.6,-0.4 0.5,-0.8 -0.1,-0.4 1.2,-4.9 6.7,-37.2 1.2,-2.9 -1,-5 0.1,-0.3 -1.3,-1.1 -1.5,-2.8 -0,-0.5 0.7,-1.4 -0.5,-1.8 -0.4,-0.4 -1.7,-0.6 -3,-2.4 -1.9,-2.3 0.2,-11.5 3.9,-0.3 1.8,-1.2 3.5,-0.9 2.7,1.8 1.2,0.1 1.3,-0.4 -0.5,-1.7 0.3,-1.7 -1.4,-2.1 -0.6,-0.5 -1.1,-0.6 -1.5,0.5 -2.8,-0.6 -3.6,0.1 -0.1,-9.9 1,0 1.3,-0.6 2.3,-0.6 2.8,0.9 19,0.1 -0.5,-0.7 -0.8,-0.1 -0.4,-1.2 0.9,-1.9 1.4,0.4 0.6,1.5 0.9,1.3 0.7,0.3 0.8,0 1.6,-0.6 1.9,-2.1 0.3,-0.8 1.3,-1.2 2.5,-1.4 1.3,0.5 1.2,2.6 1.6,2 0.7,1.3 0.7,1.8 0.2,1.6 -0.5,3.6 0.2,1.8 3.2,-0.8 8.3,7.1 0.8,0.3 2.5,0.2 2.3,-1 1.7,-1.7 2.1,-1.2 2.2,-0.1 0.6,0.3 0.8,1.1 -0,1 -1.1,1.7 0.4,1 0.6,0.3 1.3,-0.7 0.6,-0.9 0.2,-1.3 1,-1.2 0.5,-0.2 1,0.2 0.6,-0.2 0.4,-0.7 0.5,-2.3 0.5,-0.4 1.5,-0.4 2.9,-1.8 1,0.6 0.9,-0.3 1.6,-1 1,-1.6 2.1,-1.2 2,0.6 2.4,-1.6 0.6,-0.8 0.4,-2.7 -0,-1.3 0.8,-0.9 1,-0.4 1.7,-0 1.3,-0.4 2.1,-1.6 1,-0.4 2.3,-0.3 z"}, {"id": "BA", "n": "Bahia", "p": "m 527.8,365.6 -0.4,-0.8 0.7,-1.4 -0,-0.5 -0.5,-1 -4.1,-3 -0.1,-0.5 0.2,-1.5 -0.6,-1.2 -0.7,0.2 -0.2,0.5 -0.3,0.2 -0.2,-0.2 0.5,-4.4 0.8,-3.3 0.8,-0.9 2.5,0.2 1,-0.7 0,-0.4 -0.6,-1 0.2,-2.6 5,-4.2 1.5,-3.1 -0.4,-1.2 -0.8,-1 -0.9,-0.1 -0.7,-0.4 -2.8,-2.5 -2.1,0 -2.2,-0.6 -2.3,-1.1 -2.7,-0.6 -2,-0.1 -1.3,1 -1.5,0.5 -2.6,-0.5 -0.6,0.2 -0.4,-4 -6.5,-6.2 -0.4,-0.2 -4.4,1.2 -1.5,-1.2 -0.5,0.2 -0.9,-0.2 -2.5,-1.2 -2.2,-1.6 -1,0.2 -4.3,-3.6 -1.1,-0.5 -2.7,-0.8 -1.8,0.2 -1.9,0.9 -0.8,1.1 -0.6,0.2 -5.3,-1.5 -0.6,-0.5 -0.3,-1.5 0.1,-0.9 1.3,-2.7 -0.9,-0.5 -2.3,-0.5 -2.2,-0 -1.2,-0.5 -1.8,-0.1 -3.8,1.6 -4.3,3 -0.6,1.1 -3.4,1.9 -2,0.4 -0.9,1.2 -1.8,1.6 -1.4,0.5 -1,-0.1 -1.9,2.6 -1,0.8 -2.1,-0.4 -0.7,0.1 -0.7,1 -1.3,0.9 -0.4,-0.2 1.4,-3.4 -0.5,-2.4 0,0 1.5,-2 0.2,-0.8 -0.2,-1.3 -0.7,-1.7 0.1,-0.7 0.7,-1.4 -0.1,-0.5 -3.2,-2.6 -1.7,-3.5 -0.6,-3.5 0.1,-1.6 1.2,-3.8 1.6,-1 0.2,-0.4 0.1,-0.9 -1.6,-0.8 -0.1,-0.3 0.5,-2.5 1.4,-1.1 -0,-0.4 -2.7,-2.5 0,0 -0,-0.9 1.4,-2.4 -0,-1.1 -0.2,-0.4 -1.5,-0.5 -0.9,-0.7 -0.3,-1.3 0.1,-2.9 0.2,-0.8 1.9,-1.7 1.1,-0.4 1,-0.7 -0.3,-0.6 -0.6,-0.5 -0.9,-0.3 -1,0.2 -0.3,-0.3 -0.1,-0.5 0.4,-1 2,-0.8 0.6,-0.5 -0,-0.8 -1.9,-1 -3.6,-0.7 -1.9,-2 -0.2,-0.9 0.5,-1.2 1,-0.7 1.5,-3.5 0.9,-0.6 1,-0.3 0.3,-0.4 -1.3,-1.8 0.2,-0.4 3.2,-2.6 3.8,-2 0.6,-0.5 0.2,-1 0.7,-0.7 0,0 2.3,-0 1.4,1.3 0.7,1 0.5,2.2 1.8,2.5 4.2,1.9 1.8,-0.5 2.1,0.2 0.3,-0.2 0.8,-1.4 1.1,-0.4 0.7,-0.9 1.2,-0.9 2.2,-0.8 1.3,0.2 1.5,0.5 1.4,-0.4 3,-2.4 3,-5 0.7,-0.9 0.2,-0.9 0.3,-2.6 -0.1,-1.2 -2.2,-4.4 0.1,-0.9 3.2,-1.6 1.9,-0 1.5,0.5 0.4,0.9 0.3,0.2 2.1,-0.4 1.4,-0.5 1.3,0.4 1.7,1 -0.1,0.7 0.2,0.3 0.8,0.3 3,-0.1 1.5,-0.6 1.7,-0.1 0.8,-1.2 1.5,-1.3 2.7,-0.3 0.8,-0.4 0.8,-1 2.2,0 0.6,0.6 0.3,0.1 1.9,-1.8 -0.1,-2.4 2,-0.4 0.8,0.2 1.1,-0.7 1.5,-2.3 0.5,-1.1 0,0 0.9,0.4 1.2,-0.3 2.2,0.3 2.8,1.4 0.4,0.5 -0.1,2.7 0.7,1.9 2.2,0.9 0.3,2 -0.9,1.7 1.8,0.6 1,-0.2 0.8,-0.9 2.9,-0.9 0.8,-3.6 0.5,-0.9 0.8,-0.2 0.8,0.5 0.6,0.1 2.4,-1 1.1,-1.2 0.2,-0.6 -0.2,-1.4 0.3,-0.2 2.2,-0.5 0.8,-2 1.6,-0.4 2.5,-1.5 0.6,-0.1 1.5,0.6 0.8,1.4 1.4,0.8 2.4,0.8 3,0.4 1.6,1.1 0.5,1.6 0.4,0.3 0.4,-0.1 0.3,-1.8 0.4,-0.4 1,-0 0.5,0.3 0,0.6 -0.6,0.9 0.5,0.8 0.5,0.4 2.1,0.9 0,0.9 1.2,3 0,0 0.5,1.4 1,0.3 0.5,-0.1 1.4,0.8 0.2,0.7 0,0 -0.7,1.2 0.2,2.1 1.3,2.5 2,1.9 0.8,1.1 -0.1,3.1 -0.7,1.6 -0.1,0.9 0.8,2.8 -0.3,0.6 -0.7,0.6 -2.5,1 -1.1,-0.8 -1.7,-0 -0.3,0.3 -0.6,1.6 0,0.8 0.9,1.6 1.1,0.7 0.5,1.5 1.4,1.5 0.1,0.4 -0.1,1.4 -0.3,0.4 0.1,0.4 0.6,0.5 1.9,0.9 0.5,0.7 0.5,0.3 1.6,0.6 2.9,-0.9 0,0 0.6,-0 0.4,0.4 -4.1,8.8 -3.8,5.2 -1,2.3 -5,5.7 -2.5,1.3 -0.9,-0 0.3,-1.4 0.4,-0.1 0.1,-1.1 -0.5,-1.9 -1.9,-0.2 -0.4,-1.3 -0.7,-0.8 -0.4,0.6 -0.5,2.3 -0.5,0.9 -0.6,0.4 -0.6,-0.3 -0.5,-1.7 0.1,-0.3 0.3,-0.1 -0,-0.4 -0.9,1.3 0.9,1.7 0.5,0.2 0.4,-0.1 1.1,0.3 -0.5,1.8 -1.2,1.1 -0.2,1.8 -1.2,1 -0.3,0.7 -0.2,0.8 0.2,0.8 -1.4,-0.4 -0.2,0.4 -0.4,2.5 0.4,-0.7 0.8,0.2 0.2,0.5 -0.2,0.4 0.1,0.6 0.3,0.3 0.3,1 -1,2.5 0.6,3.4 -0.6,0.5 -0.6,-0.2 -0.1,1.1 0.6,0.5 1.2,-1.7 -0.5,-2.2 0.8,-0.6 0.2,0.5 -0.1,1.8 -1,2.6 -0.7,5.4 -0.5,1.8 0.2,2.5 0.8,2.9 0.2,4.5 0.9,6.4 1,3.4 -2.2,6.7 -1.4,6.7 -0.5,1 -0.2,2.9 -1.1,3.7 -0.1,2.3 0.4,4.4 0.9,1.7 -2.2,3 -1.8,0.7 -0.9,0.6 -2.7,3.9 -0.6,2 0,0 -8.1,-5.1 -0.3,-0.5 z m 22.3,-78 -0.2,-1.2 0.7,-0.4 1.1,-1 0.2,-0.6 -0.4,-0.7 0.8,0.1 0.8,1.1 -0.1,0.5 -2.9,2.3 z m -2.5,6.8 -0.6,-0 0,-0.7 0.3,-0.4 -0.8,-0.2 -0.4,-0.4 0.1,-1.1 1.9,-0.1 0.2,0.2 0.1,1.1 -0.7,1.6 z"}, {"id": "CE", "n": "Ceará", "p": "m 574.1,157.1 -4.9,1.6 -2.6,2 -3.3,6.7 -0.8,1.1 -0.9,0.6 -0.7,1.7 0.1,0.7 -1.4,2.4 -1.5,1.5 -0.6,1.1 -1,0.3 -0.8,-0.5 -0.5,0.1 -0.8,0.9 -1.4,2.2 -0.3,2 0.6,0.2 0.7,-0.4 0,0 -0.1,0.5 -0.8,1.1 -1,3 0.5,1.3 -0.7,1.3 -1.1,0.6 -0.2,0.4 -0.1,0.9 0.2,0.4 0.6,0.3 0.3,0.7 -0,1.7 1.2,0.9 0.7,0.1 0.3,1.2 -1.6,3.5 -1.2,1.1 0.2,0.2 0,0 -1.6,0.5 -1.1,0.8 -1.5,2.3 -1.6,0.1 -0.6,-1.6 -0.8,-0.6 -1.4,-0.5 -1,-1.1 -0.5,-1 -1.8,-0.8 -2.9,-1.9 -3.1,-0.4 -1.3,0.1 -2.1,0.8 -1.6,0.2 -0.9,-0.2 -4.9,-0.2 0,0 0.1,-1.3 -0.7,-0.7 -0.1,-1 1.1,-3.1 1.5,-2.2 0,-0.7 -0.8,-1.2 -2.6,-0.5 -1.3,-0.7 -1,-2.7 -1.1,-5.2 -0.8,-2.6 0.2,-0.5 -0.9,-8.2 -0.1,-0.4 -0.9,-0.7 0.8,-0.6 0.6,-1.6 -0.6,-3 -1,-2 0.5,-1.6 -0.8,-3.9 0.7,-1.4 0,-0.8 -1.4,-1.6 -0.4,-1.7 -3.1,-6.4 -1.8,-4.7 -0.3,-1.3 0.2,-1.5 1.6,-2 1.1,-1.9 0.1,-0.8 0,0 0.2,-0.1 -0,-0.6 -0.4,-0.7 0.7,-0.8 6.7,-0.2 2.9,-0.4 2.1,-0.7 7.4,0.8 2.1,1.1 1.9,1.5 4.1,2.2 1.5,0.5 4.8,3 1.2,0.2 2.2,2.3 3,2.1 2.6,0.7 2.4,2.9 1.2,0.6 3,3.8 4.2,3.1 1.5,2 1,1 1.5,0.8 1.1,0 2.4,0.9 0.8,0.7 z"}, {"id": "DF", "n": "Distrito Federal", "p": "m 417,334.1 -14.7,-0 -0.5,-3.3 0.9,-1.8 0.4,-3.7 11.9,0 1.8,2 0.1,2.2 -0.6,1.2 -0.2,2.4 z"}, {"id": "ES", "n": "Espírito Santo", "p": "m 501.9,411.6 -0.3,-0.1 0.4,-2.3 0.6,-1.3 -0.6,-3.1 0.2,-0.4 1.7,-2.1 5.2,0 0.6,-0.3 1,-3.2 1.1,-1.3 0.9,-2.3 0.2,-1.7 0.3,-0.4 1.2,-0.9 1.7,-2.1 0.5,-3 -0.3,-2.4 -1.3,-2.8 -1.1,-1.3 -0.5,-0.1 -0.5,0.3 -0.8,-0.3 -0.5,-0.7 0.4,-0.6 1.5,-0.1 0.8,0.3 1,0 0.9,-0.2 0.3,-0.4 -0.2,-1.7 -1.3,-0.3 -0.2,-0.4 0.3,-1.5 0,-1.9 -0.5,-0.7 -1.3,-0.7 -0.3,-0.7 1.2,-1.9 2.2,-1.3 0.3,-0 1.1,0.7 1.1,0.1 0,-0.8 -1.7,-2.3 1.3,0.1 2.2,-0.3 0.8,-0.6 1.1,-0.3 1.6,-0.1 2.5,0.8 0.9,0.6 0,0 0,0 0,0 0.3,0.5 8.1,5.1 0,0 -0.9,3.4 -0.3,2.9 0.1,3.6 0.7,6.2 -0.3,2.5 -1.5,3.2 -2.8,1.4 -0.6,0.6 -1.7,3.3 -1,3.8 -0.8,1.5 -0.8,-0.7 -0.9,-0.1 -0.3,1.3 1.4,0.5 -1.9,4.2 -3.5,3.8 -0.2,-0.3 -1.9,0.7 -0.8,1.2 -0.1,1.4 -0.4,1.2 -1.6,2 -0.3,1.1 0,0 -1.6,-1.1 -3,0.4 -4.3,-1 -2.5,-1.1 -0.7,-4.7 z"}, {"id": "GO", "n": "Goiás", "p": "m 417,334.1 -0.9,-1 0.2,-2.4 0.6,-1.2 -0.1,-2.2 -1.8,-2 -11.9,-0 -0.4,3.7 -0.9,1.8 0.5,3.3 14.7,0 0,0 0,0 0,0 -0.5,1.5 0.3,1.6 -0.7,1.6 -1,1.2 -0.4,1.5 0.8,1.2 0.8,0.3 1.4,1 1.6,4.6 0,0.6 -2.3,2.7 -3.2,3 -0.4,2.1 1.1,1.1 0.9,-0.5 1.6,0.6 0.5,0.6 0.2,1 -0.2,0.7 -0.7,0.9 -0.5,1.9 1.2,3.5 -3.1,2.1 -1.2,0.2 -0.9,0.9 -0.5,1.1 -4.9,2.7 -0.7,-0.8 -4.3,-1.9 -0.6,0.5 -0.6,0.1 -1.8,0 -1.5,-0.3 -3.9,0.2 -2,-0.9 -4.1,2.6 -2.9,2.9 -0.3,0 -1.3,-1.4 -1.5,-0.3 -3.2,1.6 -3.7,-0.6 -2.5,1 -2.2,0.5 -1.4,2.1 -1.2,2.5 0.1,1 -0.8,1.3 -0.8,0.3 -0.8,-0.2 -0.5,0.1 -0.9,0.7 -1.6,2.1 -0.6,1.9 0.6,0.6 -0,0.3 -0.4,0.2 -0.9,-0.5 0,0 -0.2,-0.5 -2.7,-2.2 -3.1,-0.6 -1.6,-1.6 -1.9,-0.4 -1.5,-0 -3.4,-1.3 -0.7,-0.8 -3.1,-1.6 -0.7,-0.6 -1.4,-0.7 -1.1,-0.2 -2.7,-1.7 -2.8,0.2 -3.8,-0.7 -0.1,-0.3 0.3,-0.8 0.6,-1.2 1.3,-1.8 -0.1,-0.4 -2.2,-0.9 -1.1,0.7 -0.7,-0.2 -0.3,-0.4 -0.2,-1.1 0.3,-2.6 -0.2,-1.8 0,0 -0.9,-2.2 -0.2,-3.4 -1.4,-2.2 -0.2,-0.7 0.4,-3.4 2.5,-3.9 0.4,-2.9 0.7,-0.8 2,-0.8 1.9,-1.8 1.2,-2 0.3,-1.9 0.5,-1 1.3,-1 0.8,-1.4 0.1,-1.5 1.8,-1 1.4,-2.6 2.6,-0.1 2.7,-0.9 0.3,-0.3 2,-4.2 0.7,-1 0.6,-4.1 0.4,-0.7 1.9,-1.9 1.6,-1 1.1,-0.3 1.2,0.7 1.2,-0.7 1.4,-1.4 0.8,-2.9 1.2,-2.9 -0,-0.8 -0.5,-1.1 0.6,-2.7 1.6,-3.1 -0.1,-5.2 1.2,-0.8 1,-2.6 2,-3.2 0.4,-1.1 -0.2,-2.7 0.3,-0.9 1,-0.9 0.3,-1.1 -0.1,-0.6 0,0 0.3,-0.5 0.2,-1.9 0.7,-1.2 1.8,-2.1 0.6,-0.3 -0,1.7 -1.2,1.9 -0.5,2.3 2.4,0.4 2.2,1 3.9,0.4 3.1,1.7 4.1,1.4 0.6,-0.2 1.6,-5.9 1.5,-2.4 1.2,-1 1.1,1.3 1,1.9 1.1,3.7 0.6,3.1 1.1,0.1 0.8,-0.8 0.3,-1 0.6,-0.5 2.8,0.3 4.5,-0.5 0.2,0.7 -0.6,1.6 3.1,1.5 3.4,0.7 0.7,-0.1 0.5,-3.3 0.6,0 1.5,2.6 0.5,0.2 1.8,-0.9 2.5,-2.1 4.5,-1 1.6,0 2.6,-1.1 1.7,-1.3 5.4,-1.4 0,0 2.7,2.5 0,0.4 -1.4,1.1 -0.5,2.5 0.1,0.3 1.6,0.8 -0.1,0.9 -0.2,0.4 -1.6,1 -1.2,3.8 -0.1,1.6 0.6,3.5 1.7,3.5 3.2,2.6 0.1,0.5 -0.7,1.4 -0.1,0.7 0.7,1.7 0.2,1.3 -0.2,0.8 -1.5,2 0,0 -1,1 -3.2,-0.3 -0.9,-1.8 -2.4,-1.5 -1.2,1.5 0.6,3.8 -0.6,0.5 -0.4,0.1 -2.8,-1.1 -1.2,0.2 -0.4,0.3 -0.7,3.2 0.7,0.1 0.5,1.2 -0.6,0.9 -0.7,0.7 0,1.9 0.4,0.6 0.5,0.2 0.7,4.3 -0.5,0.5 -3.4,0.9 -2.3,1.5 z"}, {"id": "MA", "n": "Maranhão", "p": "m 458.8,129.2 -0,0.3 -2,2.1 -0.4,0.2 -0,1.4 2,-1.7 0.7,-1.2 2.1,-1.6 0.9,-1.1 1,-6.3 1.1,-0.7 1.1,-0.1 1.7,-0.9 0.7,-0.1 0.5,0.1 0.1,1.6 -0.2,0.5 -1.4,1.9 -3.2,1.8 -0,0.7 0.7,0.1 0.5,-0.8 1.1,-0.3 0.2,0.8 -0.6,0.5 0.2,0.3 4.2,-5 0.9,0.3 2.6,-0.9 4,0.4 -0.5,-2.4 0.6,-0.2 2.4,0.1 1.8,0.4 2.6,1.1 1,0.1 2.1,1.4 1.4,0 1.3,1.3 1.9,1.3 2.5,0.6 1.2,-0.2 0.6,0.8 0.3,0.1 1.6,-0.1 2.5,0.7 0.3,-0.9 -0.7,-0.5 1.7,-0.4 0.6,0.1 -0.1,0.4 0,0 -0.5,1.4 0.2,0.7 0.6,0.5 -0.4,1.5 -1.8,2.3 -4.1,4 -3.3,0.5 -0.8,-0.2 -2.9,3.4 0,1.8 -0.9,1.8 -1.9,1.9 -0.8,2 -0.6,0.2 -0.8,1.1 0.4,1.9 1.2,0.8 0.4,1.3 -0.3,1.5 -1.1,2.9 1.6,2.8 0.6,3 -0.1,2.4 -0.2,0.6 -4.1,4.4 -0.2,2.5 0.1,2.1 0.5,2.3 1.8,2 1.6,0.9 0.2,0.5 0.1,0.8 -0.4,2.2 -0.3,0.4 -0.1,1.2 -0.5,1.5 -1.2,1.3 -2.3,0.3 -0.7,-0.3 -0.8,0 -2.4,0.9 -1.5,0.1 -2.5,-1.8 -1,-0.2 -1.5,0.2 -1,0.6 -1.1,0.3 -0.2,-0.3 -0.8,0.2 -0.5,0.2 -1.9,1.9 0,0.5 -0.6,0.9 -2,2 -2.3,0.9 -2.9,2.6 -1.3,0.5 -1.1,0 -1.7,1.5 -1.1,0.4 -2.6,0.3 -2.7,0.8 -2.1,1.9 -1,3 -0.4,3 -0.6,2.3 -1.4,2.7 -0.3,0.2 -0.3,0.8 -0.1,1.5 -1.2,2.5 -1.7,1.4 -0.7,2 0.7,1.9 0.5,3.2 1.7,3.1 -0,0.5 -0.8,1.4 -0.1,6.4 -1.1,2.5 -0.3,1.1 -0.1,1.9 0,0 -1.3,-0.7 -0.6,-0.8 -0.8,-0.5 -1,-0.3 -1.8,0.2 -0.7,-0.2 -1.4,-2 -1,-2.9 -2.1,-1.6 -0.1,-1.6 1.6,-1.8 -0.1,-0.5 -3.9,-1.9 -0.6,-1.1 -0.1,-1.7 -0.8,-1.6 -0.9,-0.7 -2.1,-0.3 -0.2,-0.4 0.3,-0.7 2.6,-2.5 -0.4,-1.3 0.7,-2.7 0.7,-1.4 0.6,-0.6 1.3,-0.5 3.4,-0.3 -0.4,-1.4 0.6,-3.2 -0.1,-1.8 -1.8,-1.2 -4.3,0.9 -2.1,1.3 -2.3,-3 -0.9,-0.8 -3,-4.2 -0.9,0.1 -0.8,-1.4 0.6,-1.2 -0.1,-0.9 -0.2,-0.3 -1.4,-0.2 -0.4,0.3 -1.9,-1.3 0.2,-0.7 1.8,-0.7 1.8,-2 0.2,-1.6 -0.3,-1 0.3,-2.4 1.8,-6.2 0,-0.4 -0.7,-1.1 -0.2,-1.1 0.2,-3.7 -0.6,-1.5 -0.5,-3.5 -0.8,-1 -3.4,-1.4 -1.2,-0 -0.3,-0.3 -0.1,-1 -0.6,-0.7 -1.7,-0.3 -1,0.5 -1.4,-0.1 -2.8,-1.5 -0.9,-0.1 -2,0.5 -2.6,1.9 -0.5,0.6 0,0 -0.5,-0.1 14.7,-11.8 2.4,0.2 1.2,-0.9 1.6,-2.2 0.4,-1.1 1.6,-1.2 0.6,-2.9 1.1,-0.5 2.4,-2.3 0.5,-1.2 0.3,-1.9 1.6,-4.7 2,-1.5 1.5,-1.8 0.8,-1.4 0.5,-1.3 -0.2,-1.8 0.8,-0.8 -1,-1.6 3.7,-3.1 -0.1,-1.6 0.5,-2.4 1.7,-1.6 0.4,-0.7 0.9,-3 0.1,-1.6 -0.4,-0.5 -1,0.2 -0.3,-0.5 0.1,-0.6 1.1,-0.1 0.6,-0.7 0.7,-4.4 -0.2,-1.4 0.5,-1 0.8,-0.5 0,0 0.6,0 0.2,-0.2 -0.1,-0.5 0.3,-0.7 0.6,-0.5 1.3,1 0.5,1.8 1.2,0.1 0.8,-1.4 0.6,2.9 1,0 0.3,-0.5 0.1,-0.9 0.8,-0 1.7,0.5 0.5,0.7 -1.4,1.7 0.7,0.7 0,0.6 1.2,-2 0.5,-1.5 0.5,0 0.4,1 0,0.6 -0.9,0.9 -0.3,1 0.1,2.7 0.3,0.3 0.5,0.1 0.6,-0.1 1,-0.9 -0.5,-1 0.1,-0.6 1.3,-1.4 1.1,-0.2 2.1,0.6 1.5,-1.1 0.1,0.9 -0.4,0.2 -1.1,1.5 0.6,0.6 0.1,-0.4 1.2,-0.6 0.6,0.8 -0.1,1.2 1.6,1.8 0.9,-0.4 1.6,0.7 0.8,2.4 -0.1,0.9 -2.2,2.7 -0.4,0.9 0.1,0.7 0.6,-1 1.8,-1.7 0.8,-0 0.9,0.8 0.5,1.9 -0.3,1.2 -1,0.2 -1,0.9 -1.2,1.5 0.1,0.8 -1.2,2.4 -0.6,3.5 0.2,0.3 0.9,0.2 z m 0.5,0.5 -0.1,-0.8 0.5,-1.5 -0.4,-1.1 0.1,-0.7 0.9,-1.2 0.6,-0.2 0.1,2.4 -0.2,1.3 -0.8,0.6 -0.7,1.2 z m -6.3,-25.8 -0.4,-0.5 -0.1,-0.6 0.8,-1.1 0.8,-0 0.7,0.4 0.1,0.3 -0.2,0.4 -1.7,1.1 z m 3.5,4.2 -0.3,-0.3 0.1,-0.5 1.1,-0.9 0.5,0.1 0.5,0.8 -0.1,0.6 -0.4,-0.2 -1.3,0.4 z m -14.2,-4.8 -0.2,-0.1 0.9,-3.6 0.3,0.1 0,0.2 -0.4,3.1 -0.7,0.2 z"}, {"id": "MT", "n": "Mato Grosso", "p": "m 207.2,296.3 1.5,-1.4 4.1,-2.6 0.5,-2.5 1.4,-3.8 0.9,-1.1 1.6,-0.5 0.4,-0.4 0.6,-0.8 0.5,-2.2 1.7,-2 0.6,-2.2 0.1,-1.7 -0.6,-1.5 0,-2 -1.5,-3.3 -0.9,0 -0.6,-0.5 -0.4,-3.2 0.1,-1.3 1.4,-1.1 1.4,-1.8 0.2,-0.8 -1.4,-3.6 -1.1,-0.4 -1.1,-0.1 -3.5,0.1 -1.2,-1.1 0.2,-0.6 -17.2,-0.1 0.9,-9 -1.5,-2.8 -0.3,-1.8 0,-0.8 1,-3.5 -0.4,-1.9 0.9,-1.7 -0.8,-2.3 -0.1,-1.4 -0.3,-0.6 -0.8,-0.5 -0.1,-0.3 1.3,-5 0.8,-1.4 -0.6,-1.2 -1.4,-1 0,0 47.9,-0.3 1.2,-0.7 1.2,-5.2 1.4,-4.2 -0.5,-1.9 -0.7,-1.4 -0.1,-0.8 0.4,-0.8 0.9,-0.6 1.2,-1.8 0.3,-1 -0.3,-0.8 0.1,-0.8 0.2,-0.6 1.2,-1.2 0,0 1.2,1.1 2.5,4.1 0.4,1.8 1.4,4 1.3,1.9 0.8,1.6 -0.2,2.4 0.5,2.4 0.7,2.2 1.5,1.1 3,2.8 3.4,1.7 0.2,0.9 -0,1.1 0.2,0.5 0.9,0.4 0.8,-0.2 1.6,0.5 0.5,0.7 0.2,1.1 0.3,0.3 1.4,-0.5 3.7,1.5 34,2.4 63,3.5 0,0 -0.7,1 -0.6,1.9 -1.1,1.2 -0.4,3.1 -0.4,0.8 -0.4,0.3 -1.9,5.3 -0.5,3 -0,3 -1.9,6 0.1,0.9 1.4,1.3 -0.2,0.9 -0.8,0.9 -0.1,0.5 1.1,2.2 -0.5,3.3 0,1.6 0.5,0.6 0.4,3 -0.7,2.8 1,3.3 1,0.5 0.8,0 0,0 0.1,0.6 -0.3,1.1 -1,0.9 -0.3,0.9 0.2,2.7 -0.4,1.1 -2,3.2 -1,2.6 -1.2,0.8 0.1,5.2 -1.6,3.1 -0.6,2.7 0.5,1.1 0,0.8 -1.2,2.9 -0.8,2.9 -1.4,1.4 -1.2,0.7 -1.2,-0.7 -1.1,0.3 -1.6,1 -1.9,1.9 -0.4,0.7 -0.6,4.1 -0.7,1 -2,4.2 -0.3,0.3 -2.7,0.9 -2.6,0.1 -1.4,2.6 -1.8,1 -0.1,1.5 -0.8,1.4 -1.3,1 -0.5,1 -0.3,1.9 -1.2,2 -1.9,1.8 -2,0.8 -0.7,0.8 -0.4,2.9 -2.5,3.9 -0.4,3.4 0.2,0.7 1.4,2.2 0.2,3.4 0.9,2.2 0,0 -1.6,0.3 -1.2,-0.6 -0.9,-0.1 -2.7,0.1 -0.6,0.6 -4.6,-0.3 -1.7,-1.3 -1.3,-0.1 -0.1,-0.5 0.2,-0.5 1.7,-2.8 1.8,-0.7 1.2,-6.6 -1.3,0.1 -5.6,6 -1,-0.1 -2.1,0.9 -1,-0 -0.2,-0.2 -0.3,-1.4 -1.6,-1 -2.4,-0.1 -1.4,0.6 -0.5,0.8 -1.3,0.8 -4.5,0.6 -1.2,-0.6 -1.3,-1.1 -3,-1.2 -0.8,-1 -0.3,-0.9 -0.7,-0.3 -2.6,-0.5 -2.8,-1.2 -0.8,-1.1 -1.3,-0.2 -2,0.5 -1.4,1.2 -1.7,0.5 -0.8,-0.3 -1.6,0.2 -2.6,-0 -1.4,1.4 -0.1,1.2 -2,3 -2,2 -5.6,2 -2.1,-1.5 -1,-1.1 -0.7,-0.2 0,0 -0.7,-0.7 -0.3,-0.8 0.5,-0.7 -2.4,-2.1 -1.3,0.6 -0.5,-0.1 -1.2,-0.7 -0.5,-0.7 -2,-1.4 -1.9,-0.8 -0.3,-0.3 -0.3,-1.1 -0.2,-2.9 -0.6,-1.8 -0.2,-3.7 0.9,-1.6 1.1,-1.1 0.3,-1.8 -0.1,-1.9 -1,0.1 -0.4,0.6 -0.4,0.2 -26.9,-1.1 -1.1,-12.7 -5.4,-6.1 4.9,-0.1 -0.3,-7.5 -2.6,-5.3 -0.5,-2 0.3,-1.1 0.6,-0.6 0.7,-1.3 -1.4,-2.9 -3.1,-1 z"}, {"id": "MS", "n": "Mato Grosso do Sul", "p": "m 359.2,400.1 -0.4,2.5 -0.3,0.4 -1.5,0.8 -1.3,0 -0.5,0.2 -1.2,1 -2,2.7 -0.7,0.7 -1,0.3 -0.6,1.7 -0.2,2.9 -2.6,3.6 -1,0.5 -0.2,0.4 0.3,1.9 -0.1,0.9 -1.2,2.3 -2,2.3 0.3,0.8 -0.3,1.2 -1.4,1 -0.4,1.2 -1.7,1.7 -1.3,2.4 -1.9,1.9 -7.6,4.5 -1.3,1.1 -0.7,1.5 -0.8,1.1 0,0 -5.4,2.3 -1.1,0.8 -0.9,2.3 0,1.1 -1.4,3.6 -0.7,0.7 -1.7,1 -1.1,0.3 -0.3,0.3 -1.6,7.9 -0.4,0.8 -2.4,1.6 0,0 -2.5,-2.3 -3.4,-1.9 -4,2 -0.7,0.8 -1.7,0.5 -2.6,0.4 -2.4,-0.5 -1,-0.7 -0.5,-4.3 -0.3,-0.7 -0.9,-0.9 -0.2,-2.5 0.5,-1.3 -0.6,-0.8 -0.1,-0.4 0,-2.9 -0.9,-2 -0.6,-2.7 -0.1,-0.7 0.6,-1.4 0,-1.6 -1.6,-1.1 -0.4,-0.8 -0.2,-2.2 -1.6,-1.8 -2.2,-0.3 -1.5,0.3 -1.8,-0.3 -2.5,-2 -0.6,-1.5 -1.5,0.3 -2.2,2.7 -1,-0.6 -1.7,0.8 -1.1,0.2 -1.7,-0.7 -2.6,-0.5 -3.5,0.2 -3.7,-0.7 -0.5,-0.9 -2,-0.1 -0.9,0.5 -2.5,-0.9 0.9,-7.3 -0.4,-2.4 0.6,-1.4 1,-1.5 0.6,-6 -0.7,-2.3 -0.1,-1.7 -0.8,-1 -0.4,-0.1 -0.5,0.7 -0.6,-3.3 -0.8,-1.9 -1.2,-2 -0.3,-1.8 4,-2.3 0.8,-0.9 -4.2,-3.9 5.4,-11.4 1.1,-0.1 -0.3,-2.1 -0.7,-0.1 3.2,-10.3 0.7,-1.2 -3.1,-5.8 0,-1.9 0,0 0.7,0.2 1,1.1 2.1,1.5 5.6,-2 2,-2 2,-3 0.1,-1.2 1.4,-1.4 2.6,0 1.6,-0.2 0.8,0.3 1.7,-0.5 1.4,-1.2 2,-0.5 1.3,0.2 0.8,1.1 2.8,1.2 2.6,0.5 0.7,0.3 0.3,0.9 0.8,1 3,1.2 1.3,1.1 1.2,0.6 4.5,-0.6 1.3,-0.8 0.5,-0.8 1.4,-0.6 2.4,0.1 1.6,1 0.3,1.4 0.2,0.2 1,0 2.1,-0.9 1,0.1 5.6,-6 1.3,-0.1 -1.2,6.6 -1.8,0.7 -1.7,2.8 -0.2,0.5 0.1,0.5 1.3,0.1 1.7,1.3 4.6,0.3 0.6,-0.6 2.7,-0.1 0.9,0.1 1.2,0.6 1.6,-0.3 0,0 0.2,1.8 -0.3,2.6 0.2,1.1 0.3,0.4 0.7,0.2 1.1,-0.7 2.2,0.9 0.1,0.4 -1.3,1.8 -0.6,1.2 -0.3,0.8 0.1,0.3 3.8,0.7 2.8,-0.2 2.7,1.7 1.1,0.2 1.4,0.7 0.7,0.6 3.1,1.6 0.7,0.8 3.4,1.3 1.5,0 1.9,0.4 1.6,1.6 3.1,0.6 2.7,2.2 0.2,0.5 0,0 -0.6,0.2 -1,4.2 0.6,3.2 z"}, {"id": "MG", "n": "Minas Gerais", "p": "m 527.8,365.6 -0.9,-0.6 -2.5,-0.8 -1.6,0.1 -1.1,0.3 -0.8,0.6 -2.2,0.3 -1.3,-0.1 1.7,2.3 -0,0.8 -1.1,-0.1 -1.1,-0.7 -0.3,0 -2.2,1.3 -1.2,1.9 0.3,0.7 1.3,0.7 0.5,0.7 -0,1.9 -0.3,1.5 0.2,0.4 1.3,0.3 0.2,1.7 -0.3,0.4 -0.9,0.2 -1,-0 -0.8,-0.3 -1.5,0.1 -0.4,0.6 0.5,0.7 0.8,0.3 0.5,-0.3 0.5,0.1 1.1,1.3 1.3,2.8 0.3,2.4 -0.5,3 -1.7,2.1 -1.2,0.9 -0.3,0.4 -0.2,1.7 -0.9,2.3 -1.1,1.3 -1,3.2 -0.6,0.3 -5.2,-0 -1.7,2.1 -0.2,0.4 0.6,3.1 -0.6,1.3 -0.4,2.3 0.3,0.1 0,0 -2.5,2.4 -1.2,0.3 -0.6,0.5 0.7,0.7 -2.4,6 -1.9,3.7 -0.1,0.8 1.4,0.1 0.3,0.6 -0.2,0.5 -2.5,1 -9.5,4.5 -1.4,0.2 0,-0.5 -0.5,-0.2 -2.5,-0.3 -0.6,0.1 -1.6,0.9 -1.2,0.2 -3.2,0.1 -0.4,-0.3 -0.5,0.1 -4.1,1.8 -1.1,0.8 -1.7,0.8 -0.5,-0.3 -2.6,0.2 -2.9,1.3 -2.4,0.7 -0.7,0.5 0,0 -1.2,0.7 -2.2,0.2 -1.9,1 -1.2,1.2 -1.8,0.7 -2.4,0.2 -2.3,-0.1 -0,-0.5 0.3,-0.5 -0.1,-0.3 -1.2,0.3 -0.2,2.3 0.2,0.2 -0.1,0.8 -0.8,1 -1.3,0.3 -0.6,-0.4 -3.6,1 -0.2,-0.5 -2,0.2 -1.1,-0.2 -2,-3.3 1.2,-0.7 -0.5,-1.7 -1.8,-0.8 -1.8,-1.2 -0.7,-1.6 0.5,-1.6 0.2,-3.5 -0.3,-2.9 1.9,-2.7 0.7,-2.2 0.1,-1.3 -0.2,-0.4 -3.7,-1.3 -1,0.1 -0.3,0.4 -0.8,0.3 -1.6,0.1 0,-0.8 -0.8,-2 -1.3,-1.8 -0.4,-2.2 -0.3,-0.6 -0.8,-0.7 0.2,-1.9 1.5,-2 0.1,-0.6 -0.4,-1.6 -1.9,-1.2 -0.6,-0.6 0.3,-2.4 0.6,-1 -0.2,-1 -3.3,-3.4 -1.3,0.3 -0.8,0.6 -1.6,-0.8 -2.4,0.1 -0.3,0.6 0.2,0.5 -0.4,1 -2.8,0.7 -1.1,-0.4 -1.5,-1.4 -1,1.2 -8.2,0.7 -0.5,0.5 -0.5,1.2 0.3,2.5 -0.4,0.4 -1.2,-0.5 -0,-2.8 -0.2,-1 -0.4,-0.4 -0.6,-0.1 -0.3,0.2 -0.4,1.1 -0.7,0.9 -0.5,0.3 -0.6,-0 -1.2,-2.1 -0.3,-1.4 0.1,-0.9 -1.7,-0.8 -2.2,-1.4 -2,0.6 -1.6,-0.2 -1.7,0.3 -4.3,-1 -2.5,-0.1 -1.7,-1.6 -0.8,-0.1 -1.5,0.6 -1.4,1.7 -1.9,0.4 -2.1,1.1 -1.2,1.1 0,0 0.3,-2.6 -0.6,-3.2 1,-4.2 0.6,-0.2 0,0 0.9,0.5 0.4,-0.2 0,-0.3 -0.6,-0.6 0.6,-1.9 1.6,-2.1 0.9,-0.7 0.5,-0.1 0.8,0.2 0.8,-0.3 0.8,-1.3 -0.1,-1 1.2,-2.5 1.4,-2.1 2.2,-0.5 2.5,-1 3.7,0.6 3.2,-1.6 1.5,0.3 1.3,1.4 0.3,0 2.9,-2.9 4.1,-2.6 2,0.9 3.9,-0.2 1.5,0.3 1.8,-0 0.6,-0.1 0.6,-0.5 4.3,1.9 0.7,0.8 4.9,-2.7 0.5,-1.1 0.9,-0.9 1.2,-0.2 3.1,-2.1 -1.2,-3.5 0.5,-1.9 0.7,-0.9 0.2,-0.7 -0.2,-1 -0.5,-0.6 -1.6,-0.6 -0.9,0.5 -1.1,-1.1 0.4,-2.1 3.2,-3 2.3,-2.7 0,-0.6 -1.6,-4.6 -1.4,-1 -0.8,-0.3 -0.8,-1.2 0.4,-1.5 1,-1.2 0.7,-1.6 -0.3,-1.6 0.5,-1.5 1.3,-0.1 2.3,-1.5 3.4,-0.9 0.5,-0.5 -0.7,-4.3 -0.5,-0.2 -0.4,-0.6 -0,-1.9 0.7,-0.7 0.6,-0.9 -0.5,-1.2 -0.7,-0.1 0.7,-3.2 0.4,-0.3 1.2,-0.2 2.8,1.1 0.4,-0.1 0.6,-0.5 -0.6,-3.8 1.2,-1.5 2.4,1.5 0.9,1.8 3.2,0.3 1,-1 0,0 0.5,2.4 -1.4,3.4 0.4,0.2 1.3,-0.9 0.7,-1 0.7,-0.1 2.1,0.4 1,-0.8 1.9,-2.6 1,0.1 1.4,-0.5 1.8,-1.6 0.9,-1.2 2,-0.4 3.4,-1.9 0.6,-1.1 4.3,-3 3.8,-1.6 1.8,0.1 1.2,0.5 2.2,0 2.3,0.5 0.8,0.5 -1.3,2.7 -0.1,0.9 0.3,1.5 0.6,0.5 5.3,1.5 0.6,-0.2 0.8,-1.1 1.9,-0.9 1.8,-0.3 2.7,0.8 1.1,0.5 4.3,3.6 1,-0.2 2.2,1.6 2.5,1.2 0.9,0.2 0.5,-0.2 1.5,1.2 4.4,-1.2 0.4,0.2 6.5,6.2 0.4,4 0.6,-0.2 2.6,0.5 1.5,-0.5 1.3,-1 2,0.1 2.7,0.6 2.3,1.1 2.2,0.6 2.1,-0 2.8,2.5 0.7,0.4 0.9,0.1 0.8,1 0.4,1.2 -1.5,3.1 -5,4.2 -0.1,2.6 0.6,1 0,0.4 -1,0.7 -2.5,-0.2 -0.8,0.9 -0.8,3.3 -0.5,4.4 0.2,0.2 0.3,-0.2 0.2,-0.5 0.6,-0.2 0.6,1.2 -0.2,1.5 0.1,0.5 4.1,3.1 0.5,1 0,0.5 -0.7,1.4 z"}, {"id": "PA", "n": "Pará", "p": "m 371.3,235.5 -63,-3.5 -34,-2.4 -3.7,-1.5 -1.4,0.5 -0.3,-0.3 -0.2,-1.1 -0.6,-0.7 -1.6,-0.5 -0.8,0.2 -0.9,-0.4 -0.2,-0.5 0,-1.1 -0.2,-0.9 -3.4,-1.7 -3,-2.8 -1.5,-1.1 -0.7,-2.2 -0.5,-2.4 0.2,-2.4 -0.8,-1.6 -1.3,-1.9 -1.4,-4 -0.4,-1.8 -2.5,-4.1 -1.2,-1.1 0,0 -0.6,-0.6 -0.1,-2 -0.6,-1.3 -1.6,-1.6 -1.1,-0.6 -0.4,-0.6 -0.8,-2.3 0,-1.1 0.6,-1 1.4,-1.1 0.8,-1.3 29.9,-64.2 -1.8,-1.7 0.1,-0.8 -0.2,-0.5 -1.4,0.3 -0.8,0.6 -1.9,-0.8 -1.1,-2.2 -2.7,-1.4 -1.3,-1.3 -0.1,-0.6 -1.3,-0.8 -1.4,-0.1 -2.2,-0.7 -2.4,-1.3 -1.9,-0.7 -1.4,-1.1 -0.6,-0.9 -4.6,-2.5 -4.6,-3.8 -0.3,-0.4 -0,-0.9 -0.6,-1.8 -1.8,-1.2 -0.7,0.2 -0.4,-0.2 -1.8,-2 0.1,-2.1 0.3,-0.7 -0.2,-0.4 -1.7,-0.8 -0.2,-0.7 -0.2,-2.3 0.4,-1.4 -0.4,-4.9 0,0 -1.6,-17 0,0 0.8,0.3 0.4,0.6 -0,0.5 0.5,0.4 0.9,0.3 1.4,-0.7 0.5,-0.8 2.7,0.2 0.8,-1.1 -0.5,-1.8 1.8,-0.4 1.4,-1.6 2.6,1 1.9,0 0.5,-1.5 3.3,-1.6 2,0.4 1.2,-0.1 0.5,-0.2 1.2,-1.5 0.4,-1.4 1.5,-1.1 0.9,-0.1 0.7,0.5 2.1,-1.1 0.4,0.1 0.4,1 0.7,0.5 2,0.5 1.6,0.2 0.6,-0.6 1.7,-0.4 0.8,0.3 0.8,-0 0.9,-0.3 2.2,0.3 4.7,1.4 1,-0.1 1,-0.9 -0,-2.3 -2.1,-2.5 -1.2,-0.6 0.5,-1.7 1.3,-1.4 0.3,-1.1 0.3,-0.2 0.7,0.2 0.8,0.8 2.4,1.1 11.6,-2.3 1.6,1.7 1,0.1 0.4,-0.3 0,0 0.6,0.6 0.4,2.3 -0.6,1.3 -0.2,4.5 0.2,1.4 0.3,0.5 1.2,0 1.1,-0.3 3.4,0.4 1.3,0.5 1.9,1.1 0.7,0.8 0.5,1.3 1.2,0.1 1.1,0.8 0.8,1 0.8,0.3 1.3,-0.1 0.4,-0.4 0.9,-0.1 2.8,2.7 0.7,-0 0.5,1.2 -0.7,0.2 -0.2,0.7 0.8,2.8 2,2.3 2.6,0.7 0.2,0.3 -0.4,3.1 0.2,2.1 0.7,1.5 0.6,0.6 0.6,1.8 -0.1,1.6 1.5,3.5 0.8,0.2 0.8,-0.4 2.9,3.3 -0.1,2.4 0.4,0.9 0.9,0.2 0.3,0.5 0.3,1.6 -0.2,0.7 0.1,1.3 1.9,1.4 0.4,1.5 1.4,1 2.8,0.7 1.3,-0.1 0.8,-0.3 0.9,0.1 0,0 -0.5,0.7 0.3,1.6 -0.2,0.5 -1.3,1.1 -1.4,0.2 -0.5,-0.2 -0.8,-0.8 -0.7,-0.1 -3.4,1.6 -0.4,0.5 -1.6,0.7 -0.6,-0 -1.6,0.6 0,0.6 6.5,-1.1 0.9,0.7 0.1,0.5 0,0.7 -0.6,0.5 0.3,0.4 0.6,-0.2 0.9,-1 1,-0 0.5,-0.3 0.6,0.1 1.1,-0.4 1.1,-0.6 3.3,-2.3 1.5,-0.3 1.8,-0.8 3.2,-1.8 0.5,-1 0.7,-0.5 2.1,-1 0.7,-0.7 -0.2,-0.7 0.2,-0.4 1.1,-0.3 1.1,0.1 0.4,0.2 0.4,3.8 -0.5,2.6 0.3,1.6 0.8,1.6 1.3,1.4 0.3,1.6 -0.1,0.5 -1.8,1.8 -0.5,0.1 -0.9,-0.5 -1.8,-0.5 -1.3,-0.3 -0.9,0.1 -2.1,-1 -0.3,-1.1 -0.9,-0.5 -2.3,3.8 -0.6,2.4 0.7,3 0.5,0.6 0.9,0.6 -1,-1.1 -0.4,-2.7 0.1,-0.5 2.6,-4.2 2.3,1.2 0.1,0.5 2.5,2.5 -0.2,2 -0.7,0.6 0.4,2.3 0.5,1.1 1.1,0.8 0.7,0.1 0.5,0.5 -0.3,-0.6 -0.8,-0.2 -1.2,-1 -0.2,-0.7 0.3,-4.2 0.8,-1.2 1.4,0.7 0.8,1.2 -0.1,0.8 1.2,0.9 0.2,-0.3 -1,-1.3 -0.9,-2.1 0,-0.4 2.3,-2.3 1.6,0.1 1.9,0.6 0.3,0.6 -0.6,0.6 0.3,0.3 0.5,0 1,-0.2 1.3,-0.9 4.1,-1 0.8,0.2 1.7,1.1 3.2,-0.4 1.1,-0.4 1,-1 1,-0.6 1.7,-0.5 0.8,0.1 0.1,0.8 -2,4 -0.2,1.5 -0.5,1.1 -0.8,1 -0,0.9 0.6,1.4 -0.3,2.5 0.9,-1.2 0,-1.4 1.5,-3 1.1,-3.2 1.1,-1.6 0.3,-0.3 0.8,-0.1 0.6,-0.3 1.8,-0.2 0.9,-1.4 1.5,-1.7 1.4,-2.3 0.5,-0.5 0.8,0.5 0.6,-0.5 1.6,2.3 1.2,0.6 -0.1,-0.7 -0.3,-0.8 0.6,-1 3.5,-0.5 -1,-0.3 -3.5,0.5 -0.3,-0.2 0.3,-2.4 0.5,-0.3 0.7,0.4 1,0.1 1.1,-3.1 -0.7,-1.4 0,-0.7 1.2,-1.8 2.8,-2.5 0.4,-0.1 1.1,1.1 2.9,-2.1 0.5,-0.1 0.4,0.5 0.1,0.6 -0.3,0.7 1.1,-0.2 0.8,-0.6 0.4,-0.8 0.6,-0.2 0.3,0.1 0.7,1.4 1.3,1.2 0.2,-0.6 -0.1,-0.4 -1,-0.5 -0.1,-0.3 -0.1,-1.2 0.2,-0.4 0.4,-0.2 2.3,0.3 1.2,0.7 0.6,1 1.6,0.7 1.6,-0.8 0.5,2.1 -0.5,0.3 -0,0.6 0.9,-0.5 1.2,-2.4 0.4,0.2 -0.2,1.3 0.4,0.4 2.5,-0.3 0.5,0.7 0.5,1.7 -0.6,0.9 0.8,-0.5 0.3,0.4 1.9,0.1 3.5,-1.2 -0.3,1.6 -0.8,1.8 1.5,-0.5 0.6,-0.6 0.6,1.6 0,0 -0.8,0.5 -0.5,1 0.2,1.4 -0.7,4.4 -0.6,0.7 -1.1,0.1 -0.1,0.6 0.3,0.5 1,-0.2 0.4,0.5 -0.1,1.6 -0.9,3 -0.4,0.7 -1.7,1.6 -0.5,2.4 0.1,1.6 -3.7,3.1 1,1.6 -0.8,0.8 0.2,1.8 -0.5,1.3 -0.8,1.4 -1.5,1.8 -2,1.5 -1.6,4.7 -0.3,1.9 -0.5,1.2 -2.4,2.3 -1.1,0.5 -0.6,2.9 -1.6,1.2 -0.4,1.1 -1.6,2.2 -1.2,0.9 -2.4,-0.2 -14.7,11.8 0.5,0.1 0,0 2.3,0.8 1.9,-0.2 1.3,0.1 1,1.7 0.4,0.3 0.9,0.1 1.3,1.2 -0,0.6 -0.4,0.7 -0.7,0.4 -1,0.1 -0.3,0.3 0.1,1.4 1,1.3 -0.9,2.8 -0.6,0.5 -1.5,0.5 -0.2,0.5 0.3,1.2 -0.2,1.3 -1.3,0.1 -1.5,1.3 -0.8,1.3 0.1,1.5 -0.2,0.5 -2.5,1.2 -3.4,1.1 -2.5,1.8 -0.2,0.3 0.4,2.2 0.1,2.7 -1.3,2.1 -1.4,1.7 -0.1,0.6 0.2,0.9 0.6,1 1.7,1.7 0.8,0.3 0.1,0.3 -0.7,4 -1.8,5.2 -1.1,0.8 -1.7,3.2 -0.2,1 -0.9,1.5 -0.7,0.8 -1.1,0.2 -1.4,0.9 -1,1.9 -1.2,1.7 -1.2,1.1 -1.1,1.6 -1.1,4.5 -1.6,3.7 z m 21.2,-130.3 -4.5,2 -3.4,0.5 -2,-0.3 -0.7,1.1 -1.8,1.2 -0.7,-0.6 -0.6,-1.5 -0.2,0.3 0.4,1.2 -0.3,0.8 -0.7,0.4 -3.8,-1.6 -0.8,0.7 -4.2,1.3 -3.2,-0.6 -0.8,-0.6 -0.2,-1.9 -0.2,-0.4 -1.1,-1 -1.1,-1.6 -0.2,-1.8 0.5,-2.8 0.6,-0.4 1.8,0.4 0.9,-0.7 0.1,-0.6 -1.3,0.4 -1.2,-0.1 -0.9,-0.7 -0.2,-1.1 0.3,-5.1 0.7,-0.8 0.3,0.8 1.8,0.6 0.6,-0.1 -0.5,-0.4 -1.3,-0.2 -0.9,-2.2 0.4,-1.7 0.9,-2 1.3,-1.3 1,-0.6 1.3,-0.5 1.3,-0.1 3.5,0.5 7.2,1.8 3.7,-0.5 0.1,-0.3 1.1,-0.6 2.2,-0.4 2.9,0.3 2.8,0.8 6.5,0.8 0.6,0.5 -0.1,1.2 -0.7,0.7 -0.7,1.5 -0.4,2.6 -0.9,3.3 -1.3,0.7 -0.3,0.7 0.2,1.2 -2,2.6 -1.4,3.5 -0.5,0.5 z m -47.2,-0.2 -0.8,-0.5 1.1,-2.2 -0.1,-1.8 0.2,-0.2 2.3,-0.5 0.9,-0.9 0.1,-0.5 -0.2,-2.3 0.9,-2.6 1.3,-1.5 2.3,-1.5 2.9,-0.2 0.7,2.4 -1.1,2.2 -0.8,3 -1.1,0.7 -1.3,2 -0.8,0.7 -4.9,3.3 -1.6,0.4 z m 28.5,-22.9 -1,-0.2 -2.5,0.1 -0.8,-0.2 -0.3,-0.3 -0.4,-1.1 0,-1.2 1.5,-0.4 1.9,0 2.2,-1.3 4.8,-0.6 0.8,0.3 0.7,0.7 -0.2,1 -2.6,1.4 -1.8,2.5 -1.1,0.5 -1.3,-1.1 z m 4.8,0 1.9,-1.2 2,0 1.6,0.6 0.5,1 0.1,0.6 -0.9,0.8 -2.9,0.3 -1.2,0.3 -2.3,-0.9 -0.2,-0.5 1.3,-1 z m -17,4.4 -0.5,-0.3 -0.6,0 -1.5,-0.7 0.2,-1.2 0.6,-0.9 1.9,-0.4 2.4,-0.9 1.3,0.1 0.8,0.7 0.1,0.1 -1.9,1.6 -1.1,0.3 -1.7,1.4 z m 9.4,-9.7 -0.8,-0.3 -0.2,-1.7 0.1,-0.6 1.2,-1.3 2.5,-0.9 0.2,0.1 0.5,0.7 0,0.9 -1.9,2 -1.6,1.1 z m -13.8,20.2 -0.1,-0.4 0.2,-0.9 1,-2.8 2.6,-1.7 0.7,-0.3 0.7,0.1 -0.2,1.8 -1.6,0.4 -1.6,2.2 -1.8,1.6 z m 10.9,-17.6 -1.2,-0.3 -0.3,-0.5 0.9,-1 0.7,-4 0.9,-1.2 0.3,0.1 0.1,0.3 -0,2.5 0.6,1.9 -0.3,0.9 -1,0.4 -0.6,0.8 z m -14.8,10.2 -0.3,-0.2 0.1,-0.6 0.6,-0.4 1.2,-1.7 0.8,-1.5 0.7,-0.7 1.4,-0.5 -0.2,1.5 -0.4,1 -1.7,1.7 -2.2,1.5 z m 13.9,-7 -0.6,-0.1 -0.8,-0.7 -1,-1.6 -0.1,-0.4 0.2,-0.3 0.8,-0.6 1.9,0.8 0.3,0.4 0.2,2.1 -1,0.4 z m -5.4,30.6 -0.7,-0.1 -0.9,-0.5 -0.7,0.5 -0.8,-0.3 -1.7,-1.7 0,-0.6 1.3,-0 3.1,1.3 0.3,1.5 z m -21.1,-5.5 0,-1 -0.2,-0.3 0.6,-1 2.4,-0.9 0.8,0.4 0.9,0.9 -0.3,0.3 -1,0.5 -2.5,0.4 -0.6,0.7 z m 12.7,-6.7 -0.2,-0 0,-0.3 0.5,-0.9 1.8,-1.6 0.4,-1.2 0.1,-1.3 0.2,-0.3 0.3,0.4 0,1.5 -0.9,2.7 -0.6,0.6 -1.7,0.5 z m 6.3,-9.9 1.6,-3 0.9,-0.2 0.7,0.2 0.3,0.9 -0.6,0.7 -2.9,1.4 z m 31.4,19 -0.8,-0.3 -0.3,-1.1 1,-1.7 1.1,-0.3 0.2,0.1 -0,0.7 -0.7,2.2 -0.4,0.4 z m -33.5,-19.5 -0.5,-0.2 0.3,-2 1.3,-1.8 0.2,0 1.3,0.9 -0,0.2 -1.6,0.6 -1.1,2.2 z m 2.2,5 0.7,0 -0.4,0.5 -0.9,0.3 -0.1,1.1 -0.8,0.7 -1.7,0.8 -0.2,-0.2 0.3,-0.8 0.5,-0.6 1.7,-1.7 0.9,-0.1 z m -22.6,10.2 -0.6,-0.2 -0.1,-0.3 0.4,-0.4 3.6,-1.6 0.5,0.7 -0,0.2 -1.4,0.7 -2.5,0.9 z m 63.5,-4.8 -1,-0.2 -0.8,-0.8 0.9,-1.2 1.3,-0 0.2,1.2 -0.1,0.6 -0.5,0.5 z m -37.2,-18.9 -2.4,0.7 -0.6,0 -0.2,-0.2 1,-1 1,-0.5 1,0.2 0.4,0.3 0.1,0.2 -0.1,0.2 -0.4,0.1 z m -5.3,8.6 -0.1,-0.8 0.2,-0.5 2.5,-1.5 -0.9,2 -0.8,0.6 -0.9,0.1 z m 2.1,4.5 -0.5,-0.1 -0.1,-0.2 0.8,-1.5 1.2,0 -0.1,1.4 -1.3,0.5 z m 28,15.8 -0.3,-0.2 0.9,-1.6 0.7,-0.4 0.2,0.8 0.5,0.4 -0.3,0.5 -0.4,0.3 -0.6,-0.2 -0.7,0.4 z m -26.7,-23.3 -0.9,-0.1 0,-0.2 2.4,-1.8 0,1 -0.2,0.6 -0.2,0.3 -1.1,0.2 z m 67.5,10.2 -0.4,-0.5 0.2,-0.8 1,-0.9 0.2,0.1 0.2,1.8 -1.3,0.3 z"}, {"id": "PB", "n": "Paraíba", "p": "m 610.7,199.4 -2.5,-2.1 -0.8,-0.3 -2.6,-0.2 -2.3,1.1 -1.5,1.3 -0.5,1.8 -1.9,1 -2,0.5 -1.1,-0 0,0.6 -0.8,0.5 -2.2,0.3 -3.9,-0.3 -1.6,0.9 -0.6,0.6 -1.8,0.1 -0.9,0.7 -0.5,0.8 0.4,0.7 0,0.5 -0.4,0.5 -1.8,1.5 -1.3,0.2 -1.6,0.8 -1.6,-0.8 -0.9,-0.9 -0.3,-2.2 0.2,-0.5 -0.2,-0.3 -1.1,-0.3 -0.4,0.3 -1.5,0.2 0,-0.5 2.5,-2.6 0.2,-0.4 -0.7,-1.9 -0,-0.5 0.4,-0.8 3,-1.1 0.1,-0.3 -0.5,-1.4 -3.5,-1.9 -1.5,0.4 -2.2,1.3 -0.9,1.5 -1.5,0.9 -1.1,0.3 -2.7,1.9 -1.5,1.6 -1.6,0.2 -2.6,1 -0.8,-0.3 0.1,-0.7 -0.6,-1.2 -0.4,-0.1 -0.9,0.7 -1.5,0.3 -1,-0.3 -1.4,-1.9 -0.4,-0.1 0,0 -0.2,-0.2 1.2,-1.1 1.6,-3.5 -0.3,-1.2 -0.7,-0.1 -1.2,-0.9 0,-1.7 -0.3,-0.7 -0.6,-0.3 -0.2,-0.4 0.1,-0.9 0.2,-0.4 1.1,-0.6 0.7,-1.3 -0.5,-1.3 1,-3 0.8,-1.1 0.1,-0.5 0,0 0.6,-0.5 1.9,1.6 0.9,0.4 2.9,0.6 1.2,-1.1 3.2,-1.7 0.8,-0.7 0.1,-1 0.4,-0.9 3.2,-1.2 1.4,-0.1 3.3,-1 0.6,0.1 0.5,0.4 0,1.2 -3,3.2 -0.4,1 -0.4,1.7 -0.4,0.4 -0.8,0.2 -0.2,0.3 -0.1,1.7 3.5,0.5 0.3,0.2 0.3,1.4 0.3,0.2 3.1,-1.3 1.8,-0.1 1.9,0.3 0.9,1.2 -0.5,1.5 0.8,0.7 2.4,-0.9 0.5,-0.7 0.6,-1.2 -0.5,-0.9 -0.2,-1.4 0.5,-0.6 1,0.3 -0.5,-1.5 -0.7,-0.8 0.3,-1.5 1.8,-1.4 1.4,-0.1 0.4,0.4 -0.1,1 0.6,0.5 3.4,0.4 0.5,0.3 5.8,-0.4 2.2,0.3 2.5,1.1 1,-0.4 3.5,0.2 0.9,-0.2 0,0 0.1,2.4 1.4,4.4 0.1,0.6 -0.2,0.9 -0.4,0.5 -0,0.9 0.6,-0.7 0.5,-1.5 0,2 0.6,1 -0.3,5.2 -0.4,0.6 z"}, {"id": "PR", "n": "Paraná", "p": "m 397,499.7 -5.2,-0 -0.3,0.4 -1.7,0.2 -0.8,-0.1 -0.1,-0.4 -1.6,0.6 -1.4,1.4 -3.4,2.1 -1.4,-0.2 -1.2,-0.6 -3.1,-2.6 -1,-0.4 -0.8,-0 -2.8,0.7 -2.3,0.2 -0.8,-0 -1.4,-0.8 -1.1,0.1 -1.5,0.7 -0.6,1.5 -0.7,0.9 -1.9,1 -3.6,-0.4 -2,1.1 -0.7,0.8 -0.7,1.6 0.8,3 -0.9,0.9 -0.9,0 -0.8,0.4 -0.2,0.5 -1.3,-1.9 -4.2,0.1 -3.8,-0.4 -1.6,-1.2 -0.2,-0.4 -1,-0.6 -4.3,-0.4 -5.3,-1.7 -2.3,0.6 -2.7,-0 -2,-1.4 -0.3,-0.5 -1.1,-0.2 -0.5,-0 -0.7,0.4 -3.6,-0 0,0 -0.2,-1.2 -2.5,-4.2 0,-2.6 -1,-2.9 -3.4,-2.4 -1.1,1.1 -2.1,-0.1 -1.1,0.4 -1.1,0.9 -1.5,-1.1 -0.8,0.1 -0.3,-2.2 0.7,-1.6 1.1,-1.3 1.2,-2.2 0.1,-0.3 -0.5,-0.8 0,-1.2 0.9,-3.6 1.3,-3 -0.2,-2.3 1.3,-2.4 -0.2,-1 -0.8,-0.9 -0.3,-1.6 0.7,-1.1 0.8,-0.5 0,0 2.4,-1.6 0.4,-0.8 1.6,-7.9 0.3,-0.3 1.1,-0.3 1.7,-1 0.7,-0.7 1.4,-3.6 -0,-1.1 0.9,-2.3 1.1,-0.8 5.4,-2.3 0,0 3.3,-2.3 3.8,0.7 4,-0.1 3.3,0.3 1.2,-0.6 0.3,-0.6 0.7,-0.4 1.2,0.3 1.5,0.8 2.5,0.5 2.6,1.1 1.3,0.1 1.1,-0.5 2.6,-0 0.8,1 1.8,0.8 3.5,0.8 0.6,0.5 0.7,1.3 1.7,0.1 0.4,-0.3 1.6,0.1 0.7,0.5 5.3,0.1 3,-0.8 1.1,1.6 3.6,2.8 0.9,1.8 0,2.7 -0.4,0.6 -0.2,0.8 0.4,1.8 1.3,1.5 -0.1,1.8 -0.4,0.6 1.5,3 1.2,1.1 0.7,0.3 0.5,0.7 -0.1,0.9 0.9,2 0.6,0.3 0.2,0.4 -0.2,1.1 -1.3,2.1 0.3,2 0.6,0.4 1,0.2 2.4,-0.1 3.4,-0.5 0.5,0.4 1.6,-0.2 1.6,0.1 1.6,1.3 -0.1,0.4 -0.9,0.7 -0.7,3.3 0.3,0.8 1.1,0.5 0.7,-0.8 1.1,-2.8 0.8,-0.2 2.1,0.6 -0.4,1.9 0.7,3.3 1.4,0.6 0.2,1.3 0,0 -1.4,1 -0.6,1.5 -0.6,-0.1 0.3,-1.9 1.4,-0.9 -1.4,0.3 -0.9,0.5 -0.9,-0 -0.3,-0.4 -0.6,-0.2 -0.5,0.4 -0.3,0.9 0.5,0.8 -0.7,1 -0.3,0.1 -2.5,-0.5 -0.8,-0.5 -0.5,0.1 -0.2,0.9 0.3,0.4 1.6,0.6 1.4,-0.2 2.1,0.6 0.3,0.5 -1,0.7 -1.5,2.8 -1.2,0.8 -2.4,0.6 -0.2,0.5 3,-0.2 0.1,1.2 z"}, {"id": "PE", "n": "Pernambuco", "p": "m 558.5,227.5 -1.2,-3 -0,-0.9 -2.1,-0.9 -0.5,-0.4 -0.5,-0.8 0.6,-0.9 -0,-0.6 -0.5,-0.3 -1,0 -0.4,0.4 -0.3,1.7 -0.4,0.1 -0.4,-0.3 -0.5,-1.6 -1.6,-1.1 -3,-0.4 -2.4,-0.8 -1.4,-0.8 -0.8,-1.4 -1.5,-0.6 -0.6,0.1 -2.5,1.5 -1.6,0.4 -0.8,2 -2.2,0.5 -0.3,0.2 0.2,1.4 -0.2,0.6 -1.1,1.2 -2.4,1 -0.6,-0.1 -0.8,-0.5 -0.8,0.2 -0.5,0.9 -0.8,3.6 -2.9,0.9 -0.8,0.9 -1,0.2 -1.8,-0.6 0.9,-1.7 -0.3,-2 -2.2,-0.9 -0.7,-1.9 0.1,-2.7 -0.4,-0.5 -2.8,-1.4 -2.2,-0.3 -1.2,0.3 -0.9,-0.4 0,0 2.6,-1.3 2,-1.7 0.5,-0.9 2.3,-1.3 1,-0.3 3.9,-3.9 0.7,-1.8 0.1,-2.3 -0.3,-0.5 -1.6,-1.6 0.1,-2.2 -0.6,-1.1 -0.1,-0.9 0.1,-0.5 0.5,-0.3 1.8,-0.2 0,0 4.9,0.2 0.9,0.2 1.6,-0.2 2.1,-0.8 1.3,-0.1 3.1,0.4 2.9,1.9 1.8,0.8 0.5,1 1,1.1 1.4,0.5 0.8,0.6 0.6,1.6 1.6,-0.1 1.5,-2.3 1.1,-0.8 1.6,-0.5 0,0 0.4,0.1 1.4,1.9 1,0.3 1.5,-0.3 0.9,-0.7 0.4,0.1 0.6,1.2 -0.1,0.7 0.8,0.3 2.6,-1 1.6,-0.2 1.5,-1.6 2.7,-1.9 1.1,-0.3 1.5,-0.9 0.9,-1.5 2.2,-1.3 1.5,-0.4 3.5,1.9 0.5,1.4 -0.1,0.3 -3,1.1 -0.4,0.8 0,0.5 0.7,1.9 -0.2,0.4 -2.5,2.6 -0,0.5 1.5,-0.2 0.4,-0.3 1.1,0.3 0.2,0.3 -0.2,0.5 0.3,2.2 0.9,0.9 1.6,0.8 1.6,-0.8 1.3,-0.2 1.8,-1.5 0.4,-0.5 -0,-0.5 -0.4,-0.7 0.5,-0.8 0.9,-0.7 1.8,-0.1 0.6,-0.6 1.6,-0.9 3.9,0.3 2.2,-0.3 0.8,-0.5 0,-0.6 1.1,0 2,-0.5 1.9,-1 0.5,-1.8 1.5,-1.3 2.3,-1.1 2.6,0.2 0.8,0.3 2.5,2.1 0,0 0.9,0.2 0.6,1.2 -1.3,1.7 -0.1,0.6 0,0.5 0.7,0.4 0.3,0.5 0.2,1.1 -2,6.4 -3.2,8.9 0,0 -0.3,-0.2 -2.9,-0.3 -1.9,-0.8 -1.5,0.2 -2.6,1.3 -2.2,-0.8 -2,0.2 -1.6,1.2 -0.1,0.5 -2.2,2.3 -1.8,1.1 -1.2,-0.1 -1.9,1.1 -1.2,0.1 -3.1,-0.3 -2.5,0.7 -1.9,-0.5 -1.8,-1.1 -1.9,-2.1 -2.5,-2 -1.1,0.1 -1.7,-0.3 -1,-1.2 -0.8,0.6 -0.1,0.7 -2.4,3.3 -2.2,0.8 -0.6,1.1 z"}, {"id": "PI", "n": "Piauí", "p": "m 506,127.2 1.3,0.1 0.7,-0.2 2.2,0.5 1,0.8 0.3,0.6 0,0 -0.1,0.8 -1.1,1.9 -1.6,2 -0.2,1.5 0.3,1.3 1.8,4.7 3.1,6.4 0.4,1.7 1.4,1.6 -0,0.8 -0.7,1.4 0.8,3.9 -0.5,1.6 1,2 0.6,3 -0.6,1.6 -0.8,0.6 0.9,0.7 0.1,0.4 0.9,8.2 -0.2,0.5 0.8,2.6 1.1,5.2 1,2.7 1.3,0.7 2.6,0.5 0.8,1.2 -0,0.7 -1.5,2.2 -1.1,3.1 0.1,1 0.7,0.7 -0.1,1.3 0,0 -1.8,0.2 -0.5,0.3 -0.1,0.5 0.1,0.9 0.6,1.1 -0.1,2.2 1.6,1.6 0.3,0.5 -0.1,2.3 -0.7,1.8 -3.9,3.9 -1,0.3 -2.3,1.3 -0.5,0.9 -2,1.7 -2.6,1.3 0,0 -0.5,1.2 -1.5,2.3 -1.1,0.7 -0.8,-0.2 -2,0.4 0.1,2.4 -1.9,1.8 -0.3,-0.1 -0.6,-0.6 -2.2,-0 -0.8,1 -0.8,0.4 -2.7,0.3 -1.5,1.3 -0.8,1.2 -1.7,0.1 -1.5,0.6 -3,0.1 -0.8,-0.3 -0.2,-0.3 0.1,-0.7 -1.7,-1 -1.3,-0.4 -1.4,0.6 -2.1,0.4 -0.3,-0.2 -0.4,-0.9 -1.5,-0.5 -1.9,0 -3.2,1.6 -0.1,0.9 2.2,4.4 0.1,1.1 -0.3,2.6 -0.2,0.9 -0.7,0.9 -3,5 -3,2.4 -1.4,0.4 -1.5,-0.5 -1.3,-0.2 -2.2,0.8 -1.2,0.9 -0.7,0.9 -1.1,0.4 -0.8,1.4 -0.3,0.2 -2.1,-0.2 -1.8,0.5 -4.2,-1.9 -1.8,-2.5 -0.5,-2.2 -0.7,-1 -1.4,-1.3 -2.3,0 0,0 -2.9,-0.2 0,0 0.1,-1.9 0.3,-1.1 1.1,-2.5 0.1,-6.4 0.8,-1.4 0,-0.5 -1.7,-3.1 -0.5,-3.2 -0.7,-1.9 0.7,-2 1.7,-1.4 1.2,-2.5 0.1,-1.5 0.3,-0.8 0.3,-0.2 1.4,-2.7 0.6,-2.3 0.4,-3 1,-3 2.1,-1.9 2.7,-0.8 2.6,-0.3 1.1,-0.4 1.7,-1.5 1.1,-0 1.3,-0.5 2.9,-2.6 2.3,-0.9 2,-2 0.6,-0.9 0,-0.5 1.9,-1.9 0.5,-0.2 0.8,-0.2 0.2,0.3 1.1,-0.3 1,-0.6 1.5,-0.2 1,0.2 2.5,1.8 1.5,-0.1 2.4,-0.9 0.8,-0 0.7,0.3 2.3,-0.3 1.2,-1.3 0.5,-1.5 0.1,-1.2 0.3,-0.4 0.4,-2.2 -0.1,-0.8 -0.2,-0.5 -1.6,-0.9 -1.8,-2 -0.5,-2.3 -0.1,-2.1 0.2,-2.5 4.1,-4.4 0.2,-0.6 0.1,-2.4 -0.6,-3 -1.6,-2.8 1.1,-2.9 0.3,-1.5 -0.4,-1.3 -1.2,-0.8 -0.3,-1.9 0.8,-1.1 0.6,-0.2 0.8,-2 1.9,-1.9 0.9,-1.8 -0,-1.8 2.9,-3.4 0.8,0.2 3.3,-0.5 4.1,-4 1.8,-2.3 0.4,-1.5 -0.6,-0.5 -0.2,-0.7 0.5,-1.4 0,0 0.7,0.1 1.5,0.9 0.5,0.5 -0.1,0.3 z"}, {"id": "RJ", "n": "Rio de Janeiro", "p": "m 468.6,450.5 -0.1,-0.8 0.4,-0.3 3.2,0.2 2.6,-0.6 -2.5,-1.6 -1.4,-0.5 -2.8,0.7 -1.4,1.6 -1,0.3 -0.7,-0.1 -1.4,-2.1 -0.5,0 -0.9,0.4 -1,1.1 -3.1,0.8 -0.3,0.9 -0.2,1.9 2.2,0.1 1.1,1 -1.1,1.1 -0.9,-0.2 -1.4,0.2 0,0 -0.5,-0.3 -1.6,-1.7 -0.1,-0.4 1.1,-3.5 1.1,-1.1 2.4,-1 0.5,0.1 2.8,-0.4 1.5,-0.7 1.6,-2.1 -0.8,-1.6 -1.7,-0 -3.1,0.5 -1.8,-0.4 -1.2,-1.6 -0.6,-1.2 -1.3,-0.5 0,0 0.7,-0.5 2.4,-0.7 2.9,-1.3 2.6,-0.2 0.5,0.3 1.7,-0.8 1.1,-0.8 4.1,-1.8 0.5,-0.1 0.4,0.3 3.2,-0.1 1.2,-0.2 1.6,-0.9 0.6,-0.1 2.5,0.3 0.5,0.2 -0,0.5 1.4,-0.2 9.5,-4.5 2.5,-1 0.2,-0.5 -0.3,-0.6 -1.4,-0.1 0.1,-0.8 1.9,-3.7 2.4,-6 -0.7,-0.7 0.6,-0.5 1.2,-0.3 2.5,-2.4 0,0 1.9,0.8 0.7,4.7 2.5,1.1 4.3,1 3,-0.4 1.6,1.1 0,0 -0.1,1.3 -0.9,1.6 -0.2,2.1 1.1,6.8 -0.5,0.7 -3.1,1.8 -6,1.9 -2.8,1.7 -3.5,3.7 -0.1,1.7 0.3,1.2 -0.2,1.6 -0.7,1.5 -1.8,0.5 -6.5,-0.2 -5.8,0.7 -2.4,-0.5 -0.5,-0.4 -0.1,-0.7 1,-1.5 0.7,-1.4 -0.1,-0.6 -0.8,-0.2 -2.8,1.1 -0.3,0.7 0.3,0.8 1.4,1.2 0.2,1 -0.6,0.5 -1.6,0.5 -1.6,-0 -8,1.1 -1.5,0.5 z m -5.1,2 -0.7,-1 2.1,-1.6 1.9,0.9 0.4,0.7 -2.5,0.5 -0.4,-0.3 -0.5,0 -0.4,0.7 z"}, {"id": "RN", "n": "Rio Grande do Norte", "p": "m 609.6,183.2 -0.9,0.2 -3.5,-0.2 -1,0.4 -2.5,-1.1 -2.2,-0.3 -5.8,0.4 -0.5,-0.3 -3.4,-0.4 -0.6,-0.5 0.1,-1 -0.4,-0.4 -1.4,0.1 -1.8,1.4 -0.3,1.5 0.7,0.8 0.5,1.5 -1,-0.3 -0.5,0.6 0.2,1.4 0.5,0.9 -0.6,1.2 -0.5,0.7 -2.4,0.9 -0.8,-0.7 0.5,-1.5 -0.9,-1.2 -1.9,-0.3 -1.8,0.1 -3.1,1.3 -0.3,-0.2 -0.3,-1.4 -0.3,-0.2 -3.5,-0.5 0.1,-1.7 0.2,-0.3 0.8,-0.2 0.4,-0.4 0.4,-1.7 0.4,-1 3,-3.2 -0,-1.2 -0.5,-0.4 -0.6,-0.1 -3.3,1 -1.4,0.1 -3.2,1.2 -0.4,0.9 -0.1,1 -0.8,0.7 -3.2,1.7 -1.2,1.1 -2.9,-0.6 -0.9,-0.4 -1.9,-1.6 -0.6,0.5 0,0 -0.7,0.4 -0.6,-0.2 0.3,-2 1.4,-2.2 0.8,-0.9 0.5,-0.1 0.8,0.5 1,-0.3 0.6,-1.1 1.5,-1.5 1.4,-2.4 -0.1,-0.7 0.7,-1.7 0.9,-0.6 0.8,-1.1 3.3,-6.7 2.6,-2 4.9,-1.6 0,0 0.5,0.8 0.9,0.8 3.1,-0 1.2,0.4 1.7,1.8 1.3,0.5 3.3,-0.3 2.9,0.5 2.5,-0.2 2.3,-0.7 4.5,0.9 1.3,0 1.9,0.9 1,0.8 0.6,0.9 2.3,4.7 0.5,1.8 -0,0.8 1.5,5.4 0.2,1.7 0.7,0.5 1,2.7 z"}, {"id": "RS", "n": "Rio Grande do Sul", "p": "m 322.3,638.8 -0.4,0 -1.9,-1.1 -0.2,-0.5 0.5,-4.3 -0.5,-4.2 0.1,-1.1 0.6,-1.2 2.8,-2.4 0.8,-1.6 2.3,-2.6 -1.5,-1.6 -1.1,-0.6 -2.2,-0.6 -2.3,-2.2 -1.2,-1.6 -0.1,-1.6 -0.4,-1.2 -1.2,-2 -2.1,-2.2 -0.7,-0.6 -2.4,-1.2 -1.4,0.2 -1.9,-1.5 -1.5,-1.6 -1.2,-0.8 -0.1,-1.7 -1.9,-2.2 -3.3,-0.5 -0.9,-0.5 -1.7,-1.7 -1.8,0.1 -2.2,-1.4 -1.9,-3.7 -1.1,-1.5 -2.5,-2.1 -0.7,0.1 -0.7,1.8 -2.6,2.2 -2.7,0.1 0.1,-2.9 0.4,-1.3 -0.4,-1 -3.6,-4.3 -2.4,-1.8 -2.2,-2.1 -1.8,-2.1 -2.7,-2.2 -1.9,-0.1 -2.1,0.2 -1.1,1.4 -0.1,1 -1,1 -1.1,0 -0.6,-0.5 -3.2,0.1 -0.7,-0.5 -0.2,-0.9 -0.5,-0.2 0.8,-0.2 1,-0.7 2.5,-2.8 0.1,-1.8 0.6,-1.2 0.8,-0.5 1.3,-0.1 0.6,-0.3 0.9,-1 5.5,-6.5 0.6,-1.4 0.2,-1.1 0.8,-1.1 1.2,-0.8 1.4,-0.4 2,-4.2 0.1,-0.6 0.3,-0.4 1.6,-0.9 1.6,-1.8 0.8,-1.1 0.5,-1.3 1.3,-2.1 0.9,-0.3 1.6,0.2 0.6,0.8 0.5,-1.3 -0.2,-0.6 -1.4,-0.8 -0.1,-0.4 0.3,-0.3 1.1,-0.4 0.8,-1 2.8,-0.9 1.1,-1.1 0.1,-0.9 0.8,-0.9 2.2,-1.1 2.5,-0.4 1.8,-1.8 0.1,-1.1 1.3,-2.4 0.3,-0 0.1,0.4 0.3,0.2 1.3,-0.2 2.4,-1.1 2.7,-0.6 1.2,-0.6 2.1,-2.4 0.5,0 0.7,-0.4 1,-1.4 2.3,-0.7 0.3,0.4 0,0 3.5,0.4 3.3,-1.1 0.6,-0.8 1.4,0.6 -0.1,0.9 3.1,-0 1.6,1 2.6,-0.4 1.9,1.1 2.6,-0.4 1.5,0.2 2.8,-0.2 2.3,0.9 2.5,1.4 1,2.4 1.6,0.2 0.1,-0.5 1.8,-0.3 5.6,3.5 1.4,1.6 0.7,-0 1.6,1 3,3.5 1.6,2.2 0.5,1.5 2.2,2.7 1.2,0.6 6.7,1.1 2.1,-0.4 3.4,0.3 0.9,2.3 -2.1,1.6 -1.3,0.4 -0.7,1.9 0.2,2.2 -0.4,1.6 -0.5,1.3 -1.2,0.2 -1.3,1.7 -0,1.4 1.8,1.2 0.3,-0.2 -0.3,-1 0,-1 1.5,-0.8 1.6,0.6 0.7,0.9 1.2,0.8 0.5,-0 0,0 -1.4,1.7 -3.9,7 -4.2,11.6 -6.3,10.5 -5.4,6.7 -6.5,6 -6.1,3.7 -3.1,4.3 -0.2,-0.4 0.7,-1.6 0.3,-2.2 -1.2,-1.7 0.1,-0.4 0.9,-0.2 1,0.4 0.6,0.6 1,0 2.6,-1.4 0.8,-0.7 2.9,-3.7 0.8,-0.7 0.5,0.2 1,-0.2 1.1,-0.8 0.9,-1.3 0.4,-1.5 0.2,-0.9 -0.2,-2.1 0.2,-1.4 1.6,-0.1 0.7,0.3 0.3,0.8 0.3,-0.3 -0.3,-1.4 0.5,-2.1 0.5,-0.6 2.7,-1.6 0.7,-1.1 0.5,-2.8 -0.2,-2.3 0.6,-0.7 0.5,0.8 0.4,0 0.4,-0.4 0.5,-3.1 -0.1,-0.4 -0.9,-1.2 -0.7,-0 -0.3,0.7 0.2,0.4 -0.1,0.6 -0.3,0.2 -1.5,-0 -2,0.4 -0.3,1.6 -0.5,0.1 -0.8,-0.4 0.1,-1.7 -0.8,-0.9 -1,0.3 -0.6,-0.5 -0.7,-1.3 -0.4,-1.4 0.1,-0.6 -0.6,-0.7 -0.6,2.7 0.4,2.2 1.2,2.1 -0.6,0.8 -0.7,2.5 0.4,3 -0.2,0.8 -0.5,-0.4 0.3,-0.2 -0,-0.7 -0.5,-1.3 -0.5,-0.4 -0.5,0.7 -0,1.4 -1.4,3.3 -0.1,1.9 0.2,0.5 -0.7,0.7 -1.6,0.6 -0.6,1.6 -4.1,1.6 -0.7,0.5 -0.5,1.6 -0.1,2.3 -1,2.3 -2.4,1.3 -0.1,1.8 0.5,0.8 0.2,1 -0.9,0.6 -0.2,1.5 0.4,0.6 0.7,-0.1 1.3,0.6 0.1,0.9 -2.1,1.6 -2.3,4.5 -1.9,6.9 -2,4.5 -1.7,2.5 -7.8,7.5 z"}, {"id": "RO", "n": "Rondônia", "p": "m 187.6,291.2 -1.3,-1.4 -0.4,-1.9 -1.6,-0.5 -0.9,0.3 -1.8,0.1 -4.1,-1.8 -0,-0.4 -0.7,-0.6 -1.3,0.6 -2,-1.7 -1.5,-1 -0.9,-1.5 -0.3,-1.4 -1,-0.4 -1.8,1.1 -1.2,-0 -1.4,-0.8 -0.9,-1.3 -3.1,-1.6 -2,-0.2 -1.1,0.5 -0.9,0.8 -1.4,-0.2 -0.3,-0.3 -2.1,-0.5 -3.1,-0.3 -0.8,-0.4 -1.2,-1.2 -0.3,-2 -1.6,-0.5 -1.9,-1 -0.8,-1.7 -0.3,-0.2 -2.7,-0.3 -0.4,-0.3 -0.8,-3.7 -0.9,-0.9 -0.5,1.2 -0.7,-0.3 -0.3,-0.6 0.6,-1.5 -0.8,-1.5 -1.4,-0.4 -1.3,-3.5 -0.2,-1.7 1.6,-2.9 -0.2,-1.7 -1.2,-2 -0.8,-2.2 -0.1,-2.3 0.6,-0.5 0.4,-1.4 1,-1.1 0.4,-1.5 -0.2,-1.5 -0.4,-0.9 -0.1,-1.5 0.5,-1.6 -1.2,-2.2 -1,-0.4 -1.1,1 -0.1,0.5 -0.8,1 -0.6,0 -2.2,-1 -5.2,0.1 -5.6,1.8 -1.7,-0 -1.5,0.5 0,0 -3,-1.3 0,0 3.3,-2.6 1.9,-0.6 1.6,-1.8 0.1,-0.6 -0.2,-1.3 4,0.3 2.9,-0.3 0.7,0.4 2.3,2.3 0.4,-0 1.2,-0.8 0.1,-0.7 0.4,-0.5 1.1,-0.5 0.8,0.1 1.4,-0.4 1.3,-1.2 1.8,-1 0.4,0.1 0.6,2.3 0.7,0.5 0.7,-0.1 2.5,-3.2 -0.3,-1.8 0.5,-0.8 1.8,-1.3 0.5,0 0.8,0.6 1.8,0.1 1.2,-1.1 2.1,-0.4 3.9,0.5 -0.2,-1.5 0.1,-1.8 2.1,-1.2 0.8,-1.1 0.4,-1 -0.2,-0.5 -0.9,-0.7 0.1,-0.7 1.2,-1.6 2.5,-0.5 0.3,-0.2 -0.1,-1.2 1.7,-0.5 1.4,-2.6 10.8,-0.1 2.1,1.1 0.5,0.5 0.8,1.9 1.3,1.3 2.5,1 1.2,3.3 0.5,0.2 1,-0.1 0.6,0.2 0.7,2.9 3.2,1.5 0.7,-0.2 0.5,-1.7 1.9,-1.1 1.4,0.3 0.4,0.4 -0,0.7 0,0 1.4,1 0.6,1.2 -0.8,1.4 -1.3,5 0.1,0.3 0.8,0.5 0.3,0.6 0.1,1.4 0.8,2.3 -0.9,1.7 0.4,1.9 -1,3.5 -0,0.8 0.3,1.8 1.5,2.8 -0.9,9 17.2,0.1 -0.2,0.6 1.2,1.1 3.5,-0.1 1.1,0.1 1.1,0.4 1.4,3.6 -0.2,0.8 -1.4,1.8 -1.4,1.1 -0.1,1.3 0.4,3.2 0.6,0.5 0.9,-0 1.5,3.3 -0,2 0.6,1.5 -0.1,1.7 -0.6,2.2 -1.7,2 -0.5,2.2 -0.6,0.8 -0.4,0.4 -1.6,0.5 -0.9,1.1 -1.4,3.8 -0.5,2.5 -4.1,2.6 -1.5,1.4 0,0 -0.7,-0 -2.6,-1.6 -1.3,-1.4 -7.1,1 -1.3,-0.4 -0.2,-0.3 -3.4,0.7 -0.5,-0.2 -0.5,-1.4 z"}, {"id": "RR", "n": "Roraima", "p": "m 234.9,61.7 1.6,17 0,0 -18.5,-0.1 0,0.7 -2.3,3.3 -1.7,3 -0.1,1.1 -1.1,2.6 -0.1,0.7 0.2,0.7 1.1,1.4 -0,0.5 -0.4,0.4 -2,0.6 -1.4,1.4 -1.2,0.5 -1.8,-0.2 -0.9,-2.5 -1.9,-2 -2.8,-0.9 -1.6,0.1 -0.6,0.9 -2.1,0.7 -1.3,0.7 -1,1.3 -0.8,3 0.4,1.8 -0.2,1.7 -0.8,2.3 0.4,2.1 -2.4,-1 -1.3,0.4 -0.5,-0.1 -1,-2 -1.5,-1.6 -2,-1.3 -0.5,-0 -5,-4.4 0.1,-1.1 1.8,0.3 1.1,-1.3 0.1,-0.6 -1.1,-4.3 -0.6,-0.9 -1.2,-0.8 -0.9,-2.2 -0.3,-5 0.6,-1 0.8,-3 -0.7,-1.6 -0.4,-1.6 1.6,-1.5 -0.1,-0.5 -0.9,-1.1 -0.2,-2.3 -1.7,-4.8 -2.7,-3.7 0.7,-1.5 0.9,-3.3 -0.5,-0.7 -1.9,-0.9 -1.4,-0.1 -0.9,0.2 -1,-0.4 -1.2,-1.2 -0.1,-1 -0.6,-0.1 -1.1,0.4 -0.6,-0 -0.8,-0.3 -0.7,-0.8 0,0 0.3,-0.5 0.2,-2.3 -0.3,-0.2 -3.4,-0.2 -3.8,0.1 -3.3,-0.7 -0.2,-0.6 0.8,-1.8 0.1,-1.5 -0.7,-1.8 -1.9,-3.5 -0.7,-2.1 -0.5,-3.7 0.8,-1.5 -0.1,-1 -1.8,-2 -2.2,-1.1 -2.8,-2.8 -1.1,-1.8 -0.3,-1 -1.1,-0.7 -0.2,-0.4 0,-0.8 0.3,-0.3 0.9,0.1 1.1,0.7 0.9,1.7 0.6,0.1 3.4,-0.5 1.4,0.1 1.9,0.6 0.6,1.2 0.6,1.9 0.5,0.3 1,-0.1 0.7,-0.7 0.9,-0.4 3.2,0.2 0.5,0.1 1.3,1.2 0.6,0.1 0.5,-0.1 0.6,-1.6 1.3,0.1 1.4,0.9 3.9,4.6 1.1,0.6 0.7,0.1 1.5,-0.7 0.7,-1.1 0.1,-0.8 -0.8,-2.8 0.4,-1.7 0.5,-0.3 1.9,-0.1 1,-1.1 1.6,-1.1 0.8,0.1 3.9,1.3 0.6,-0.2 0.8,-0.7 1,-0.3 1.1,0.3 1,-0.2 1.3,-1.3 1,-0.2 1.1,0.2 1.1,-0.1 0.7,-0.8 0.1,-1.4 3,-1.8 2.3,0.2 2.8,-0.4 0.9,-1.1 0.1,-0.7 0.6,-1.1 0.8,-0.1 1.9,-0.9 1.1,-1 1.1,-1.7 -1.2,-3.6 -1.2,-0.4 0.6,-0.2 1.4,0.1 0.8,0.3 3.6,-0.1 1.1,-0.9 0.7,-0.2 1.4,0.4 0.5,1.3 1,0.8 0.5,1.4 -0.7,4.9 -0.7,1.4 -1.2,0.7 0.1,0.8 1.6,0.4 1.6,-0.2 2.4,0.8 1.8,1.1 -0.9,1.4 -0,1.1 2.3,3.4 0.2,1.6 -1.5,2.9 -1.9,1.4 -0.7,1.5 0.3,0.4 0.1,2.2 -1.5,2.4 -0.9,2.8 -0.3,2.6 -0.1,2.7 1,1.9 0.5,1.8 -0,1.4 1.6,1 0.9,0.2 0.1,0.7 -0.5,5.2 0.1,0.7 1.8,0.3 -0.7,1.2 0.5,0.5 2.1,0.7 1.5,1.9 2.7,2.7 z"}, {"id": "SC", "n": "Santa Catarina", "p": "m 379.6,558.3 -0.5,0 -1.2,-0.8 -0.7,-0.9 -1.6,-0.6 -1.5,0.8 -0,1 0.3,1 -0.3,0.2 -1.8,-1.2 0,-1.4 1.3,-1.7 1.2,-0.2 0.5,-1.3 0.4,-1.6 -0.2,-2.2 0.7,-1.9 1.3,-0.4 2.1,-1.6 -0.9,-2.3 -3.4,-0.3 -2.1,0.4 -6.7,-1.1 -1.2,-0.5 -2.2,-2.7 -0.5,-1.5 -1.6,-2.2 -3,-3.5 -1.6,-1 -0.7,0 -1.4,-1.6 -5.6,-3.5 -1.8,0.3 -0.1,0.5 -1.6,-0.2 -1,-2.4 -2.5,-1.4 -2.3,-0.9 -2.8,0.2 -1.5,-0.2 -2.6,0.4 -1.9,-1.1 -2.6,0.4 -1.6,-1 -3.1,0 0.1,-0.9 -1.4,-0.6 -0.6,0.8 -3.3,1.2 -3.5,-0.4 0,0 1.4,-2.9 0.7,-2.1 -0.6,-3.2 0.4,-3.2 -0,-2.5 1,-1.8 0,0 3.6,0 0.7,-0.4 0.5,0 1.1,0.2 0.3,0.5 2,1.4 2.7,0 2.3,-0.6 5.3,1.7 4.3,0.4 1,0.6 0.2,0.4 1.6,1.2 3.8,0.4 4.2,-0.1 1.3,1.9 0.2,-0.5 0.7,-0.4 0.9,-0 0.9,-0.9 -0.8,-3 0.7,-1.6 0.7,-0.8 2,-1.1 3.6,0.4 1.9,-1 0.7,-0.9 0.6,-1.5 1.5,-0.7 1.1,-0.1 1.4,0.8 0.8,0 2.3,-0.2 2.8,-0.7 0.8,0 1,0.4 3.1,2.6 1.2,0.6 1.4,0.2 3.4,-2.1 1.4,-1.4 1.6,-0.6 0.1,0.4 0.8,0.1 1.7,-0.2 0.3,-0.4 5.2,0 0,0 -0.4,1.3 0.5,1.6 -0.1,0.4 -1.5,1.1 -1,-0.5 -0.8,-2.5 -0,1.1 0.6,2.7 1.7,1.7 0.6,0.9 -1,2.3 -0.2,2.3 0.1,0.4 0.8,0.7 0.3,5.9 0.3,0.6 0.4,0.2 0.8,-0.5 0.3,0.7 0.1,0.9 -0.5,0.1 -0.4,-0.3 -1.2,0.6 -0.3,3.8 0.6,2.6 -0.6,0.8 0.3,1.9 0.9,1.9 -0.9,2.3 -0.5,4 -1.7,4.7 -0.3,-0.1 -0.4,-0.8 0.2,-1 -0.9,-1.2 -0.3,0.3 0.2,2.4 1.2,0.8 -0.9,1.7 -1.6,0.7 -4.1,3 -2.8,2.6 -3.8,4.4 -1,1.9 z m 17.9,-26.6 -0.1,-0.5 0.2,-1.8 0.8,-2.4 -0.4,-1.2 0.2,-1 1.4,-0.8 0.2,0.1 0.7,0.9 -0.5,2.6 -0.8,0.9 -0.6,1.2 0.2,1.2 -1.1,0.8 z m -0.5,-24.4 -1.9,-2 2.5,-2.4 0.2,0 0.7,1.1 -0.9,1.3 -0.7,2 z"}, {"id": "SP", "n": "São Paulo", "p": "m 404.8,488.2 -0.2,-1.3 -1.4,-0.6 -0.7,-3.3 0.4,-1.9 -2.1,-0.6 -0.8,0.2 -1.1,2.8 -0.7,0.8 -1.1,-0.5 -0.3,-0.8 0.7,-3.3 0.9,-0.7 0.1,-0.4 -1.6,-1.3 -1.6,-0.1 -1.6,0.2 -0.5,-0.4 -3.4,0.5 -2.4,0.1 -1,-0.2 -0.6,-0.4 -0.3,-2 1.3,-2.1 0.2,-1.1 -0.2,-0.4 -0.6,-0.3 -0.9,-2 0.1,-0.9 -0.5,-0.7 -0.7,-0.3 -1.2,-1.1 -1.5,-3 0.4,-0.6 0.1,-1.8 -1.3,-1.5 -0.4,-1.8 0.2,-0.8 0.4,-0.6 -0,-2.7 -0.9,-1.8 -3.6,-2.8 -1.1,-1.6 -3,0.9 -5.3,-0.1 -0.7,-0.5 -1.6,-0.1 -0.4,0.3 -1.7,-0.1 -0.7,-1.3 -0.6,-0.5 -3.5,-0.8 -1.8,-0.8 -0.8,-1 -2.6,0 -1.1,0.5 -1.3,-0.1 -2.6,-1.1 -2.5,-0.5 -1.5,-0.8 -1.2,-0.3 -0.7,0.4 -0.3,0.6 -1.2,0.6 -3.3,-0.3 -4,0.1 -3.8,-0.7 -3.2,2.3 0,0 0.8,-1.1 0.7,-1.5 1.3,-1.1 7.6,-4.5 1.9,-1.9 1.3,-2.4 1.7,-1.7 0.4,-1.2 1.4,-1 0.3,-1.2 -0.3,-0.8 2,-2.3 1.2,-2.3 0.1,-0.9 -0.3,-1.9 0.2,-0.4 1,-0.5 2.6,-3.6 0.2,-2.9 0.6,-1.7 1,-0.3 0.7,-0.6 2,-2.7 1.2,-1 0.5,-0.2 1.3,-0 1.5,-0.8 0.3,-0.4 0.4,-2.5 0,0 1.2,-1.1 2.1,-1.1 1.9,-0.4 1.4,-1.7 1.5,-0.6 0.8,0.1 1.7,1.6 2.5,0.1 4.3,1 1.7,-0.4 1.6,0.2 2,-0.6 2.2,1.4 1.7,0.8 -0.1,0.9 0.3,1.4 1.2,2.1 0.6,0 0.5,-0.3 0.7,-0.9 0.4,-1.1 0.3,-0.2 0.6,0.1 0.4,0.4 0.2,1 0,2.8 1.2,0.5 0.4,-0.5 -0.3,-2.5 0.5,-1.2 0.5,-0.5 8.2,-0.7 1,-1.2 1.5,1.5 1.1,0.4 2.8,-0.7 0.4,-1 -0.2,-0.5 0.3,-0.6 2.4,-0.1 1.7,0.8 0.8,-0.6 1.3,-0.3 3.3,3.4 0.2,1 -0.6,1 -0.3,2.4 0.6,0.6 1.9,1.2 0.4,1.6 -0.1,0.6 -1.5,2 -0.2,1.9 0.8,0.7 0.3,0.6 0.4,2.2 1.3,1.8 0.8,2 -0,0.8 1.6,-0.1 0.8,-0.3 0.3,-0.4 1,-0.1 3.7,1.3 0.2,0.4 -0.1,1.3 -0.7,2.2 -1.9,2.7 0.3,2.9 -0.2,3.5 -0.5,1.6 0.7,1.6 1.8,1.2 1.8,0.8 0.5,1.7 -1.2,0.7 2,3.3 1.1,0.2 2,-0.2 0.2,0.5 3.6,-1 0.6,0.4 1.3,-0.3 0.8,-1 0.1,-0.8 -0.2,-0.2 0.2,-2.3 1.2,-0.3 0.1,0.3 -0.3,0.5 0,0.5 2.3,0.1 2.4,-0.2 1.8,-0.7 1.2,-1.2 1.9,-1 2.2,-0.2 1.2,-0.7 0,0 1.3,0.5 0.6,1.2 1.2,1.6 1.8,0.4 3.1,-0.5 1.7,0 0.8,1.6 -1.6,2.1 -1.5,0.7 -2.8,0.4 -0.5,-0.1 -2.4,1 -1.1,1.1 -1.1,3.5 0.1,0.4 1.6,1.7 0.5,0.3 0,0 -0.1,0.2 -1.7,0.4 -1.1,-0.8 -1.5,1.1 -0.4,0.7 0.3,0.2 -0.8,0.6 -3.2,1.6 -2.2,0.7 -0.3,0.4 0,1 0.5,1.6 -0.3,0.4 -1.4,0.3 -0.7,-0.6 -1.3,-0.3 -3.1,-0.5 -0.9,0.1 -1.3,0.3 -1.7,0.8 -0.5,0.5 -1.2,2.1 -1.3,0.6 -0.5,-0.1 0.6,-0.5 -0.5,-1.2 -1.2,-0.8 -0.8,1.2 0.3,0.8 -0.3,0.6 -7.6,4.2 -0.9,0.8 -0.3,1.2 -3.3,3 -3.2,1.9 -1.9,0.5 -4.5,3.2 -2.3,2 -0.7,0.1 -0.4,0.6 0.9,0.4 0.7,0.1 0.9,-0.4 0,0.8 -0.6,1.3 -1.3,0.8 -1.1,1.5 z m 44.3,-23 -1.5,-0.7 -1.2,0.2 -0.5,-0.4 0.1,-0.8 0.9,-0.7 1.1,-1.9 0.7,0.2 0.7,0.7 0.1,2.9 -0.5,0.3 z"}, {"id": "SE", "n": "Sergipe", "p": "m 570.2,262 -2.9,0.9 -1.6,-0.6 -0.5,-0.3 -0.5,-0.7 -1.9,-0.9 -0.6,-0.5 -0.1,-0.4 0.3,-0.4 0.1,-1.4 -0.1,-0.4 -1.4,-1.5 -0.5,-1.5 -1.1,-0.7 -1,-1.6 -0,-0.8 0.6,-1.6 0.3,-0.3 1.7,0 1.1,0.8 2.5,-1 0.7,-0.6 0.3,-0.6 -0.8,-2.8 0.1,-0.9 0.7,-1.6 0.1,-3.1 -0.8,-1.1 -2,-1.9 -1.3,-2.5 -0.2,-2.1 0.7,-1.1 0,0 6.5,3 3.7,0.9 5.4,3.1 1.3,2.5 1.8,1.4 1.7,0.8 0.5,0 3.6,2.2 0.6,1.3 0,0 -2.4,0.8 -4.6,2.9 -1,0.9 -1.6,2.2 -0.3,-0 0.1,-1.1 -1.1,-1.8 -1,0.2 0.3,1.2 1.2,0 0.2,0.2 -0.5,2 -1.3,2.1 -0.5,-0.3 -0.4,-0.7 -1,-0.2 0.2,0.7 1.1,0.6 -0.3,1.8 -0.9,1.1 -0.9,2 -0.8,0.1 -0.3,-0.5 0.5,-1.4 0.4,-0.1 0.3,-0.4 0.4,-1 -0.8,-0.4 0.1,0.7 -0.5,1.1 -0.5,0.5 -0.3,1.1 0.3,0.7 -0.3,0.5 z"}, {"id": "TO", "n": "Tocantins", "p": "m 433.6,282.1 -5.4,1.4 -1.7,1.3 -2.6,1.1 -1.6,0 -4.5,1 -2.5,2.1 -1.8,0.9 -0.5,-0.2 -1.5,-2.6 -0.6,-0 -0.5,3.3 -0.7,0.1 -3.4,-0.7 -3.1,-1.5 0.6,-1.6 -0.2,-0.7 -4.5,0.5 -2.8,-0.3 -0.6,0.5 -0.3,1 -0.8,0.8 -1.1,-0.1 -0.6,-3.1 -1.1,-3.7 -1,-1.9 -1.1,-1.3 -1.2,1 -1.5,2.4 -1.6,5.9 -0.6,0.2 -4.1,-1.4 -3.1,-1.7 -3.9,-0.4 -2.2,-1 -2.4,-0.4 0.5,-2.3 1.2,-1.9 0,-1.7 -0.6,0.3 -1.8,2.1 -0.7,1.2 -0.2,1.9 -0.3,0.5 0,0 -0.8,-0 -1,-0.5 -1,-3.3 0.7,-2.8 -0.4,-3 -0.5,-0.6 -0,-1.6 0.5,-3.3 -1.1,-2.2 0.1,-0.5 0.8,-0.9 0.2,-0.9 -1.4,-1.3 -0.1,-0.9 1.9,-6 0,-3 0.5,-3 1.9,-5.3 0.4,-0.3 0.4,-0.8 0.4,-3.1 1.1,-1.2 0.6,-1.9 0.7,-1 0,0 1.6,-3.7 1.1,-4.5 1.1,-1.6 1.2,-1.1 1.2,-1.7 1,-1.9 1.4,-0.9 1.1,-0.2 0.7,-0.8 0.9,-1.5 0.2,-1 1.7,-3.2 1.1,-0.8 1.8,-5.2 0.7,-4 -0.1,-0.3 -0.7,-0.3 -1.7,-1.7 -0.6,-0.9 -0.2,-0.9 0.1,-0.6 1.4,-1.7 1.3,-2.1 -0.1,-2.7 -0.4,-2.2 0.2,-0.3 2.5,-1.8 3.4,-1.1 2.5,-1.2 0.2,-0.5 -0.1,-1.5 0.9,-1.3 1.5,-1.3 1.3,-0.1 0.2,-1.3 -0.3,-1.2 0.2,-0.5 1.5,-0.5 0.6,-0.5 0.9,-2.8 -1,-1.3 -0.1,-1.4 0.3,-0.3 1,-0.1 0.7,-0.4 0.4,-0.7 0,-0.6 -1.3,-1.2 -0.9,-0.1 -0.4,-0.3 -1,-1.7 -1.3,-0.1 -1.9,0.2 -2.3,-0.8 0,0 0.5,-0.6 2.6,-1.9 2,-0.5 0.9,0.1 2.8,1.5 1.4,0.1 0.9,-0.5 1.7,0.3 0.6,0.7 0.1,1 0.3,0.3 1.2,0 3.4,1.4 0.8,1 0.5,3.5 0.6,1.5 -0.2,3.7 0.2,1.1 0.7,1.1 -0,0.4 -1.8,6.2 -0.3,2.4 0.3,1 -0.2,1.6 -1.8,2 -1.8,0.7 -0.2,0.7 1.9,1.3 0.4,-0.3 1.4,0.2 0.2,0.3 0.1,0.9 -0.6,1.2 0.8,1.4 0.9,-0.1 3,4.2 0.9,0.8 2.3,3 2.1,-1.3 4.3,-0.9 1.8,1.2 0.1,1.8 -0.6,3.2 0.4,1.4 -3.4,0.3 -1.3,0.5 -0.6,0.6 -0.7,1.4 -0.7,2.7 0.4,1.3 -2.6,2.5 -0.3,0.7 0.2,0.4 2.1,0.3 0.9,0.7 0.7,1.6 0.1,1.7 0.6,1 3.9,1.9 0.1,0.5 -1.6,1.8 0.1,1.6 2.1,1.6 1,2.9 1.3,2 0.7,0.2 1.8,-0.2 1,0.3 0.8,0.4 0.6,0.8 1.3,0.7 0,0 2.9,0.2 0,0 -0.7,0.7 -0.2,1 -0.6,0.5 -3.8,2 -3.2,2.6 -0.2,0.4 1.3,1.8 -0.4,0.4 -1,0.3 -0.9,0.6 -1.5,3.5 -1,0.7 -0.5,1.2 0.2,0.9 1.9,1.9 3.6,0.7 1.9,1 0.1,0.8 -0.6,0.5 -2,0.8 -0.4,1 0.1,0.5 0.3,0.3 1,-0.2 0.9,0.3 0.6,0.5 0.3,0.6 -1,0.7 -1.1,0.4 -1.9,1.7 -0.2,0.8 -0.1,2.9 0.3,1.2 0.9,0.7 1.1,0.2 0.4,0.2 0.2,0.4 0.1,1.1 -1.4,2.4 z"}]};
+const DEFAULT_FILE = 'dados.csv';
+const REGIOES = {Norte:['AC','AP','AM','PA','RO','RR','TO'],Nordeste:['AL','BA','CE','MA','PB','PE','PI','RN','SE'],'Centro-Oeste':['DF','GO','MT','MS'],Sudeste:['ES','MG','RJ','SP'],Sul:['PR','RS','SC']};
+const UF2REG = {}; Object.entries(REGIOES).forEach(([r,l])=>l.forEach(u=>UF2REG[u]=r));
+const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MEIOS = {BOL:'Boleto',PIX:'PIX',CRE:'Cartão de crédito',DEB:'Cartão de débito'};
+const SIT_ORDER = ['Paga','A Vencer','Aberta','Em Processamento','Vencida','Suspensa','Cancelada','Em cancelamento','Estornada'];
+
+/* ---------- Mapeamento de colunas (tolerante a acento/maiúsculas) ---------- */
+const COLS = {
+  uf:['ufprincipal','uf','estado'], cliente:['cliente'], tipo:['tipodecobranca','tipocobranca','tipo'],
+  situacao:['situacaocobranca','situacaodacobranca','situacao','status'],
+  venc:['datavencimento','datadevencimento','vencimento'], pag:['datadepagamento','datapagamento','pagamento'],
+  valor:['valor','valorcobranca','valortotal'], desconto:['valordesconto','desconto'],
+  prazo:['prazoderecebimento','prazorecebimento'], meio:['meiodepagamento','meiopagamento','formadepagamento'],
+  acesso:['acessoaplataforma','acesso'], anoger:['anogerador']
+};
+const REQUIRED = {valor:'Valor', venc:'Data Vencimento', situacao:'Situação Cobranca'};
+const norm = s => String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+
+function parseNum(v){
+  if(v==null||v==='') return null;
+  if(typeof v==='number') return isFinite(v)?v:null;
+  let s=String(v).replace(/R\$|\s/g,'');
+  if(!s) return null;
+  const c=s.lastIndexOf(','), d=s.lastIndexOf('.');
+  if(c>-1&&d>-1) s = c>d ? s.replace(/\./g,'').replace(',','.') : s.replace(/,/g,'');
+  else if(c>-1) s=s.replace(/\./g,'').replace(',','.');
+  const n=parseFloat(s); return isFinite(n)?n:null;
+}
+let DATE_MDY=false; // true quando o arquivo vem com datas no formato americano (mês/dia/ano)
+function parseDate(v){
+  if(v==null||v==='') return null;
+  if(v instanceof Date) return isNaN(v)?null:{y:v.getFullYear(),m:v.getMonth()};
+  if(typeof v==='number'){ if(v<20000) return null; const d=new Date(Math.round((v-25569)*864e5)); return {y:d.getUTCFullYear(),m:d.getUTCMonth()}; }
+  const s=String(v).trim();
+  let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(m){ let y=+m[3]; if(y<100) y+=2000; let a=+m[1], b=+m[2];
+    let mo = DATE_MDY ? a : b; if(mo>12 && (DATE_MDY?b:a)<=12) mo = DATE_MDY ? b : a;
+    if(mo<1||mo>12) return null; return {y, m:mo-1}; }
+  m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return {y:+m[1], m:+m[2]-1};
+  if(/^\d+([.,]\d+)?$/.test(s)) return parseDate(parseNum(s));
+  return null;
+}
+const FAIXAS=['0 a 30','31 a 60','61 a 120','121 a 180','181 a 360','361 a 540','> 540'];
+function faixaPrazo(d){ if(d==null) return null; d=Math.max(0,d);
+  return d<=30?FAIXAS[0]:d<=60?FAIXAS[1]:d<=120?FAIXAS[2]:d<=180?FAIXAS[3]:d<=360?FAIXAS[4]:d<=540?FAIXAS[5]:FAIXAS[6]; }
+function meioLabel(v){
+  const s=String(v??'').trim().toUpperCase(); if(!s) return null;
+  if(s.includes(',')||s.includes('/')) return 'Misto';
+  return MEIOS[s]||s;
+}
+
+function buildRows(objs){
+  if(!objs.length) throw new Error('O arquivo não tem linhas de dados.');
+  const headers=Object.keys(objs[0]); const map={};
+  for(const [k,alts] of Object.entries(COLS)){
+    const h=headers.find(h=>alts.includes(norm(h)))||headers.find(h=>alts.some(a=>norm(h).startsWith(a)&&a.length>4));
+    if(h) map[k]=h;
+  }
+  const miss=Object.keys(REQUIRED).filter(k=>!map[k]);
+  if(miss.length) throw new Error('Não encontrei as colunas: '+miss.map(k=>'“'+REQUIRED[k]+'”').join(', ')+'. Colunas lidas: '+headers.join(' | '));
+  // Detecta se as datas vêm como dd/mm/aaaa (padrão BR) ou mm/dd/aaaa (padrão americano)
+  let firstBig=0, secondBig=0;
+  for(const o of objs){ for(const k of ['venc','pag']){ if(!map[k]) continue; const mm=String(o[map[k]]??'').trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{2,4}/);
+    if(mm){ if(+mm[1]>12) firstBig++; if(+mm[2]>12) secondBig++; } } }
+  DATE_MDY = secondBig>firstBig;
+  const rows=[]; let skipped=0;
+  for(const o of objs){
+    const valor=parseNum(o[map.valor]); const venc=parseDate(o[map.venc]);
+    if(valor==null||!venc){skipped++;continue;}
+    const uf=String(o[map.uf]??'').trim().toUpperCase();
+    rows.push({
+      valor, y:venc.y, m:venc.m, uf, regiao:UF2REG[uf]||'Outros',
+      cliente:String(o[map.cliente]??'').trim()||'—',
+      tipo:String(o[map.tipo]??'').trim()||'Não informado',
+      situacao:String(o[map.situacao]??'').trim()||'Não informada',
+      desconto:parseNum(o[map.desconto])||0,
+      prazo:parseNum(o[map.prazo]),
+      faixa:faixaPrazo(parseNum(o[map.prazo])),
+      meio:meioLabel(o[map.meio]),
+      acesso:String(o[map.acesso]??'').trim()||'Não informado',
+      anoGer:(()=>{const n=parseNum(o[map.anoger]);return n?String(Math.round(n)):'Sem ano';})()
+    });
+  }
+  return {rows, skipped, cols:map};
+}
+
+/* ---------- Leitura de arquivos ---------- */
+function decode(buf){
+  try{ return new TextDecoder('utf-8',{fatal:true}).decode(buf); }
+  catch(e){ return new TextDecoder('windows-1252').decode(buf); }
+}
+function parseCSVText(txt){
+  const r=Papa.parse(txt.replace(/^﻿/,''),{header:true,skipEmptyLines:'greedy',delimitersToGuess:[';',',','\t','|']});
+  return r.data;
+}
+function parseBuffer(buf,name){
+  if(/\.xlsx?$/i.test(name)){
+    const wb=XLSX.read(buf,{type:'array',cellDates:true});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
+  }
+  return parseCSVText(decode(buf));
+}
+async function loadFile(file){
+  showMsg(''); setMeta('Lendo <b>'+esc(file.name)+'</b>…');
+  try{
+    const buf=await file.arrayBuffer();
+    ingest(parseBuffer(buf,file.name), file.name);
+  }catch(e){ showMsg(e.message); setMeta(DATA?metaTxt():'Nenhum dado carregado.'); }
+}
+async function loadDefault(){
+  try{
+    const r=await fetch(DEFAULT_FILE,{cache:'no-store'});
+    if(!r.ok) throw 0;
+    const buf=await r.arrayBuffer();
+    ingest(parseBuffer(buf,DEFAULT_FILE), DEFAULT_FILE);
+  }catch(e){
+    if(e&&e.message) showMsg(e.message);
+    setMeta('Nenhum dado carregado.');
+    document.getElementById('app').innerHTML='<div class="empty"><h2>Carregue a planilha de cobranças</h2><p>Use o botão <b>Carregar planilha</b> ou arraste um arquivo <code>.csv</code> / <code>.xlsx</code> para esta página.<br>Para abrir já com dados, coloque um <code>'+DEFAULT_FILE+'</code> na mesma pasta do <code>index.html</code>.</p></div>';
+  }
+}
+
+/* ---------- Estado ---------- */
+let DATA=null, SRC='', CH={};
+const F={ano:new Set(),regiao:new Set(),situacao:new Set(),cliente:new Set(),uf:new Set(),tipo:new Set(),meio:new Set(),anoGer:new Set(),acesso:new Set(),faixa:new Set()};
+const FIELD={ano:'y',regiao:'regiao',situacao:'situacao',cliente:'cliente',uf:'uf',tipo:'tipo',meio:'meio',anoGer:'anoGer',acesso:'acesso',faixa:'faixa'};
+const FLABEL={ano:'Ano',regiao:'Região',situacao:'Situação',cliente:'Cliente',uf:'UF',tipo:'Tipo',meio:'Pagamento',anoGer:'Ano gerador',acesso:'Acesso',faixa:'Prazo'};
+
+function ingest(objs,name){
+  const res=buildRows(objs);
+  if(!res.rows.length) throw new Error('Nenhuma linha válida (verifique as colunas Valor e Data Vencimento).');
+  DATA=res; SRC=name; Object.values(F).forEach(s=>s.clear());
+  setMeta(metaTxt());
+  if(res.skipped) showMsg(res.skipped.toLocaleString('pt-BR')+' linha(s) ignorada(s) por não terem valor ou data de vencimento válidos.', true);
+  mount(); render();
+}
+function metaTxt(){
+  const ys=[...new Set(DATA.rows.map(r=>r.y))].sort();
+  return 'Fonte: <b>'+esc(SRC)+'</b> · '+DATA.rows.length.toLocaleString('pt-BR')+' cobranças · vencimentos de '+ys[0]+' a '+ys[ys.length-1];
+}
+const pass=(r,skip)=>{ for(const k in F){ if(k===skip||!F[k].size) continue; if(!F[k].has(r[FIELD[k]])) return false; } return true; };
+
+/* ---------- Formatação ---------- */
+const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const brl2=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2,minimumFractionDigits:2});
+const int=new Intl.NumberFormat('pt-BR');
+function cmp(v){
+  const a=Math.abs(v), f=(n,d)=>n.toLocaleString('pt-BR',{maximumFractionDigits:d,minimumFractionDigits:0});
+  if(a>=1e9) return 'R$ '+f(v/1e9,2)+' bi'; if(a>=1e6) return 'R$ '+f(v/1e6,1)+' mi';
+  if(a>=1e3) return 'R$ '+f(v/1e3,0)+' mil'; return brl.format(v);
+}
+const pct=v=>(v*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function setMeta(h){document.getElementById('meta').innerHTML=h}
+function showMsg(t,soft){document.getElementById('msg').innerHTML=t?'<div class="err" style="'+(soft?'border-color:var(--accent-lo);background:var(--accent-soft)':'')+'">'+esc(t)+'</div>':''}
+
+/* ---------- Montagem ---------- */
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function mount(){
+  const app=document.getElementById('app'); app.innerHTML=''; app.appendChild(document.getElementById('tpl').content.cloneNode(true));
+  Object.values(CH).forEach(c=>c.destroy()); CH={};
+  const svg=document.getElementById('map');
+  svg.innerHTML=MAP.l.map(s=>'<path class="uf" tabindex="0" data-uf="'+s.id+'" d="'+s.p+'"><title>'+s.n+'</title></path>').join('');
+  const tip=document.getElementById('tip');
+  svg.addEventListener('mousemove',e=>{const p=e.target.closest('path.uf'); if(!p){tip.hidden=true;return;}
+    const s=MAP.l.find(x=>x.id===p.dataset.uf); tip.innerHTML='<b>'+s.n+' ('+s.id+')</b><br>Liquidado: '+brl.format(UFV[s.id]||0)+' · '+int.format(UFN[s.id]||0)+' cobranças pagas';
+    tip.hidden=false; tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY+12)+'px';});
+  svg.addEventListener('mouseleave',()=>tip.hidden=true);
+  svg.querySelectorAll('title').forEach(t=>t.remove());
+  svg.addEventListener('click',e=>{const p=e.target.closest('path.uf'); if(p) toggle('uf',p.dataset.uf);});
+  svg.addEventListener('keydown',e=>{const p=e.target.closest('path.uf'); if(p&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggle('uf',p.dataset.uf);}});
+  document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{F[b.dataset.clear].clear();render();});
+  buildCharts();
+}
+function toggle(k,v){ F[k].has(v)?F[k].delete(v):F[k].add(v); render(); }
+
+function buildCharts(){
+  Chart.register(ChartDataLabels);
+  const T=css('--text'), M=css('--muted'), L=css('--line'), A=css('--accent'), AH=css('--accent-hi'), AL=css('--accent-lo');
+  Chart.defaults.color=M; Chart.defaults.font.family=css('--body'); Chart.defaults.font.size=12;
+  Chart.defaults.plugins.legend.display=false; Chart.defaults.maintainAspectRatio=false;
+  Chart.defaults.plugins.tooltip.backgroundColor='#0d0c0b'; Chart.defaults.plugins.tooltip.borderColor=A; Chart.defaults.plugins.tooltip.borderWidth=1;
+  const grad=(ctx,horiz)=>{const {chart}=ctx; const a=chart.chartArea; if(!a) return A;
+    const g=horiz?chart.ctx.createLinearGradient(a.left,0,a.right,0):chart.ctx.createLinearGradient(0,a.bottom,0,a.top);
+    g.addColorStop(0,AL); g.addColorStop(1,AH); return g;};
+  const money={callbacks:{label:c=>' '+brl.format(c.parsed.y??c.parsed)}};
+  const click=(key,labelsFn)=>(e,els)=>{ if(els.length) toggle(key,labelsFn(els[0].index)); };
+
+  CH.sit=new Chart(cSit,{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:c=>grad(c,true),borderRadius:3,barPercentage:.75}]},
+    options:{indexAxis:'y',layout:{padding:{right:62}},onClick:click('situacao',i=>CH.sit.data.labels[i]),
+      scales:{x:{display:false,grid:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{color:T,font:{weight:600}}}},
+      plugins:{tooltip:{callbacks:{label:c=>' '+brl.format(c.parsed.x)}},datalabels:{anchor:'end',align:'end',color:T,font:{size:11,weight:600},formatter:cmp,clip:false}}}});
+
+  CH.ac=new Chart(document.getElementById('cAc'),{type:'bar',data:{labels:[],datasets:[]},
+    options:{indexAxis:'y',onClick:(e,els)=>{ if(els.length) toggle('acesso',CH.ac.data.datasets[els[0].datasetIndex].label); },
+      scales:{x:{display:false,stacked:true,max:1},y:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:T,font:{weight:600},autoSkip:false}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:T,boxWidth:12,boxHeight:10,padding:12}},
+        tooltip:{callbacks:{label:c=>{const d=AC[c.dataIndex],k=c.dataset.label;return ' '+k+': '+pct(c.parsed.x)+' · '+int.format(d.c[k]||0)+' cobranças · '+cmp(d.v[k]||0);}}},
+        datalabels:{color:c=>c.datasetIndex===0?'#1a0d04':'#1a0d04',font:{size:10.5,weight:700},formatter:v=>v>=.12?pct(v):''}}}});
+
+  CH.ger=new Chart(document.getElementById('cGer'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:c=>grad(c,true),borderRadius:3,barPercentage:.8}]},
+    options:{indexAxis:'y',layout:{padding:{right:62}},onClick:click('anoGer',i=>CH.ger.data.labels[i]),
+      scales:{x:{display:false,beginAtZero:true},y:{grid:{display:false},border:{display:false},ticks:{color:T,font:{weight:600},autoSkip:false}}},
+      plugins:{tooltip:{callbacks:{label:c=>' '+brl.format(c.parsed.x)}},datalabels:{anchor:'end',align:'end',color:T,font:{size:10,weight:600},formatter:cmp,clip:false}}}});
+
+  CH.uf=new Chart(document.getElementById('cUf'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:c=>grad(c,false),borderRadius:3,barPercentage:.75}]},
+    options:{layout:{padding:{top:60}},onClick:click('uf',i=>CH.uf.data.labels[i]),
+      scales:{y:{display:false,beginAtZero:true},x:{grid:{display:false},border:{color:L},ticks:{color:T,font:{weight:600},maxRotation:0,autoSkip:false}}},
+      plugins:{tooltip:money,datalabels:{anchor:'end',align:'end',rotation:-90,offset:2,color:T,font:{size:10,weight:600},formatter:cmp,clip:false}}}});
+
+  CH.perf=new Chart(document.getElementById('cPerf'),{type:'bar',data:{labels:[],datasets:[
+      {label:'Quantidade',data:[],backgroundColor:A,borderRadius:3,barPercentage:.85,categoryPercentage:.75},
+      {label:'Valor',data:[],backgroundColor:css('--text'),borderRadius:3,barPercentage:.85,categoryPercentage:.75}]},
+    options:{indexAxis:'y',layout:{padding:{right:52}},onClick:click('cliente',i=>CH.perf.data.labels[i]),
+      scales:{x:{display:false,beginAtZero:true,suggestedMax:1},y:{grid:{display:false},border:{color:L},ticks:{color:T,font:{weight:700},autoSkip:false}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:T,boxWidth:12,boxHeight:10,padding:12}},
+        tooltip:{callbacks:{label:c=>{const d=PERF[c.dataIndex];return c.datasetIndex===0?' Quantidade: '+pct(c.parsed.x)+' ('+int.format(d.np)+' de '+int.format(d.n)+')':' Valor: '+pct(c.parsed.x)+' ('+cmp(d.vp)+' de '+cmp(d.v)+')';}}},
+        datalabels:{anchor:'end',align:'end',offset:3,color:T,font:{size:10.5,weight:600},formatter:v=>(v*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%',clip:false}}}});
+
+  CH.ano=new Chart(cAno,{type:'bar',data:{labels:FAIXAS,datasets:[{data:[],backgroundColor:c=>grad(c,false),borderRadius:3,barPercentage:.78}]},
+    options:{layout:{padding:{top:34}},onClick:click('faixa',i=>FAIXAS[i]),
+      scales:{y:{display:false,beginAtZero:true},x:{grid:{display:false},border:{color:L},ticks:{color:T,font:{size:11,weight:600},maxRotation:0,autoSkip:false,callback:(v,i)=>FAIXAS[i].split(' ').length>2?[FAIXAS[i].replace(/ a .*/,''),'a '+FAIXAS[i].split(' a ')[1]]:FAIXAS[i]}}},
+      plugins:{tooltip:{callbacks:{title:c=>FAIXAS[c[0].dataIndex]+' dias',label:c=>{const d=PRZ[c.dataIndex];return [' '+int.format(d.n)+' cobranças ('+pct(d.n/PRZT)+')',' Valor: '+brl.format(d.v),' Prazo médio da faixa: '+(d.n?(d.s/d.n).toLocaleString('pt-BR',{maximumFractionDigits:1}):'—')+' dias'];}}},
+        datalabels:{anchor:'end',align:'end',color:T,font:{size:10.5,weight:600},textAlign:'center',
+          formatter:(v,c)=>v?[int.format(v),pct(v/PRZT)]:''}}}});
+
+  CH.mes=null;
+
+  CH.meio=new Chart(cMeio,{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[AH,A,AL,'#7a3412','#f6c9a3','#5c2a10'],borderColor:css('--panel'),borderWidth:2}]},
+    options:{cutout:'52%',layout:{padding:8},onClick:click('meio',i=>CH.meio.data.labels[i]),
+      plugins:{legend:{display:true,position:'right',labels:{color:T,boxWidth:12,padding:10}},
+        tooltip:{callbacks:{label:c=>' '+c.label+': '+brl.format(c.parsed)}},
+        datalabels:{color:'#1a0d04',font:{weight:700,size:12},formatter:(v,c)=>{const t=c.dataset.data.reduce((a,b)=>a+b,0); const p=v/t; return p<.04?'':pct(p).replace(/,\d%/,'%');}}}}});
+}
+
+/* ---------- Render ---------- */
+let UFV={}, UFN={}, PERF=[], AC=[], INAD=[], PRZ=[], PRZT=1;
+const sum=(rs,f=r=>r.valor)=>rs.reduce((a,r)=>a+f(r),0);
+function groupSum(rs,key){const m=new Map(); for(const r of rs){const k=r[key]; if(k==null) continue; m.set(k,(m.get(k)||0)+r.valor);} return m;}
+
+function render(){
+  if(!DATA) return;
+  const all=DATA.rows, rs=all.filter(r=>pass(r));
+  renderSlicers(all); renderChips();
+
+  // KPIs
+  const tot=sum(rs), n=rs.length;
+  const paga=rs.filter(r=>r.situacao==='Paga'), venc=rs.filter(r=>r.situacao==='Vencida');
+  const vp=sum(paga), vv=sum(venc), desc=sum(rs,r=>r.desconto);
+  const prz=rs.filter(r=>r.prazo!=null); const pm=prz.length?sum(prz,r=>r.prazo)/prz.length:null;
+  const K=[
+    ['Ticket médio por cobrança', n?brl.format(tot/n):'—', int.format(n)+' cobranças'],
+    ['Faturamento total', tot>=1e7?cmp(tot):brl.format(tot), tot>=1e7?brl.format(tot):''],
+    ['Valor recebido (pagas)', vp>=1e7?cmp(vp):brl.format(vp), tot?'<span class="ok">'+pct(vp/tot)+'</span> do faturado':''],
+    ['Valor vencido em aberto', vv>=1e7?cmp(vv):brl.format(vv), tot?'<span class="bad">'+pct(vv/tot)+'</span> de inadimplência':''],
+    ['Desconto concedido', desc>=1e4?brl.format(desc):brl2.format(desc), rs.length?int.format(rs.filter(r=>r.desconto>0).length)+' cobranças com desconto':''],
+    ['Prazo médio de recebimento', pm==null?'—':pm.toLocaleString('pt-BR',{maximumFractionDigits:1})+' dias', prz.length?'entre notificação e pagamento':'']
+  ];
+  document.getElementById('kpis').innerHTML=K.map(k=>'<div class="kpi"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div><div class="s">'+k[2]+'</div></div>').join('');
+
+  // Situação
+  const sit=[...groupSum(rs,'situacao')].sort((a,b)=>b[1]-a[1]);
+  setBar(CH.sit,sit.map(x=>x[0]),sit.map(x=>x[1]),'situacao');
+  // Acesso × situação (100% empilhado, por quantidade)
+  const acKeys=[...new Set(all.map(r=>r.acesso))].sort();
+  const am=new Map();
+  all.filter(r=>pass(r,'acesso')).forEach(r=>{let d=am.get(r.situacao); if(!d) am.set(r.situacao,d={s:r.situacao,n:0,c:{},v:{}});
+    d.n++; d.c[r.acesso]=(d.c[r.acesso]||0)+1; d.v[r.acesso]=(d.v[r.acesso]||0)+r.valor;});
+  AC=[...am.values()].sort((a,b)=>b.n-a.n);
+  document.getElementById('acBox').style.height=Math.max(180,AC.length*30+60)+'px';
+  const acCol=[css('--accent'),css('--text'),css('--muted'),css('--accent-lo')];
+  CH.ac.data.labels=AC.map(d=>d.s);
+  CH.ac.data.datasets=acKeys.map((k,i)=>({label:k,data:AC.map(d=>(d.c[k]||0)/d.n),
+    backgroundColor:F.acesso.size&&!F.acesso.has(k)?'#4a443f':acCol[i%acCol.length],borderColor:css('--panel'),borderWidth:1,barPercentage:.8}));
+  CH.ac.resize(); CH.ac.update();
+
+  // Ano gerador (destaca seleção em vez de esconder)
+  const rsGer=all.filter(r=>pass(r,'anoGer'));
+  const ger=[...groupSum(rsGer,'anoGer')].sort((a,b)=>(a[0]==='Sem ano')-(b[0]==='Sem ano')||a[0].localeCompare(b[0]));
+  setBar(CH.ger,ger.map(x=>x[0]),ger.map(x=>x[1]),'anoGer');
+  // UF principal
+  const rsUf=all.filter(r=>pass(r,'uf'));
+  const ufs=[...groupSum(rsUf,'uf')].filter(x=>x[0]).sort((a,b)=>b[1]-a[1]);
+  setBar(CH.uf,ufs.map(x=>x[0]),ufs.map(x=>x[1]),'uf');
+
+  // Performance de pagamentos por cliente (pago / faturado)
+  const pm2=new Map();
+  all.filter(r=>pass(r,'cliente')).forEach(r=>{let d=pm2.get(r.cliente); if(!d) pm2.set(r.cliente,d={c:r.cliente,n:0,np:0,v:0,vp:0});
+    d.n++; d.v+=r.valor; if(r.situacao==='Paga'){d.np++; d.vp+=r.valor;}});
+  PERF=[...pm2.values()].sort((a,b)=>(b.vp/b.v)-(a.vp/a.v));
+  CH.perf.data.labels=PERF.map(d=>d.c);
+  const dimC='#4a443f';
+  CH.perf.data.datasets[0].data=PERF.map(d=>d.np/d.n);
+  CH.perf.data.datasets[1].data=PERF.map(d=>d.v?d.vp/d.v:0);
+  CH.perf.data.datasets[0].backgroundColor=PERF.map(d=>F.cliente.size&&!F.cliente.has(d.c)?dimC:css('--accent'));
+  CH.perf.data.datasets[1].backgroundColor=PERF.map(d=>F.cliente.size&&!F.cliente.has(d.c)?'#5e5751':css('--text'));
+  CH.perf.update();
+
+  // Prazo de recebimento por faixa (analítico do prazo médio)
+  PRZ=FAIXAS.map(()=>({n:0,v:0,s:0}));
+  all.filter(r=>r.faixa&&pass(r,'faixa')).forEach(r=>{const d=PRZ[FAIXAS.indexOf(r.faixa)]; d.n++; d.v+=r.valor; d.s+=Math.max(0,r.prazo);});
+  PRZT=PRZ.reduce((a,d)=>a+d.n,0)||1;
+  setBar(CH.ano,FAIXAS,PRZ.map(d=>d.n),'faixa');
+  const pz=PRZ.reduce((a,d)=>a+d.s,0)/PRZT;
+  document.getElementById('przNote').textContent=PRZT>1?'Prazo médio '+pz.toLocaleString('pt-BR',{maximumFractionDigits:1})+' dias · '+int.format(PRZT)+' cobranças pagas':'Dias entre notificação e pagamento';
+
+  // Inadimplência mensal: vencidas / total do mês (quantidade e valor), por mês de vencimento
+  const ys=[...new Set(rs.map(r=>r.y))].sort(), multi=ys.length>1;
+  const im=new Map();
+  rs.forEach(r=>{const k=r.y*12+r.m; let d=im.get(k); if(!d) im.set(k,d={k,y:r.y,m:r.m,n:0,nv:0,v:0,vv:0}); d.n++; d.v+=r.valor; if(r.situacao==='Vencida'){d.nv++; d.vv+=r.valor;}});
+  INAD=[...im.values()].sort((a,b)=>a.k-b.k).map(d=>({...d,lbl:MESES[d.m]+'/'+String(d.y).slice(2)}));
+  drawMes(multi);
+
+  // Meio
+  const mi=[...groupSum(rs,'meio')].sort((a,b)=>b[1]-a[1]);
+  CH.meio.data.labels=mi.map(x=>x[0]); CH.meio.data.datasets[0].data=mi.map(x=>x[1]);
+  const base=[css('--accent-hi'),css('--accent'),css('--accent-lo'),'#7a3412','#f6c9a3','#5c2a10'];
+  CH.meio.data.datasets[0].backgroundColor=mi.map((x,i)=>F.meio.size&&!F.meio.has(x[0])?'#4a443f':base[i%base.length]);
+  CH.meio.update();
+
+  // Mapa de liquidação: só cobranças pagas; considera todos os filtros exceto UF
+  const rsMap=all.filter(r=>r.situacao==='Paga'&&pass(r,'uf')); UFV={}; UFN={};
+  rsMap.forEach(r=>{UFV[r.uf]=(UFV[r.uf]||0)+r.valor; UFN[r.uf]=(UFN[r.uf]||0)+1;});
+  const mx=Math.max(1,...Object.values(UFV));
+  const b=hex(css('--map-base')), h=hex(css('--map-hi')), dim=hex('#3b4636');
+  document.querySelectorAll('#map path.uf').forEach(p=>{
+    const u=p.dataset.uf, v=UFV[u]||0;
+    const selected=F.uf.has(u)||(!F.uf.size&&F.regiao.size&&F.regiao.has(UF2REG[u]));
+    if(selected){p.style.fill=css('--map-sel');return;}
+    if(!v){p.style.fill=rgb(dim);return;}
+    const t=Math.sqrt(v/mx); p.style.fill=rgb(b.map((c,i)=>c+(h[i]-c)*t));
+  });
+  // Ranking top 5
+  const liqTot=Object.values(UFV).reduce((a,b)=>a+b,0);
+  const top5=Object.entries(UFV).filter(x=>x[0]&&x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const rk=document.getElementById('rank');
+  document.getElementById('rankTot').textContent=liqTot?'Total liquidado '+cmp(liqTot):'';
+  rk.innerHTML=top5.length?top5.map((x,i)=>'<li data-uf="'+esc(x[0])+'" class="'+(F.uf.has(x[0])?'on':'')+'" tabindex="0" title="'+brl.format(x[1])+'"><span class="n">'+(i+1)+'</span><span class="u">'+esc(x[0])+'</span><span class="b"><i style="width:'+(x[1]/top5[0][1]*100).toFixed(1)+'%"></i></span><span class="v">'+cmp(x[1])+'<small>'+pct(x[1]/liqTot)+' do liquidado</small></span></li>').join('')
+    :'<li class="rank-empty">Nenhuma cobrança paga com os filtros atuais.</li>';
+  rk.querySelectorAll('li[data-uf]').forEach(li=>{li.onclick=()=>toggle('uf',li.dataset.uf); li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle('uf',li.dataset.uf);}};});
+  const selLbl=document.getElementById('selLbl'), selVal=document.getElementById('selVal');
+  if(F.uf.size||F.regiao.size){
+    const lbl=F.uf.size?[...F.uf].join(', '):[...F.regiao].join(', ');
+    const selLiq=F.uf.size?[...F.uf].reduce((a,u)=>a+(UFV[u]||0),0):Object.entries(UFV).filter(x=>F.regiao.has(UF2REG[x[0]])).reduce((a,x)=>a+x[1],0);
+    selLbl.textContent='Liquidado '+(F.uf.size?'UF ':'região ')+lbl; selVal.textContent=brl.format(selLiq);
+  } else { selLbl.textContent='Clique em um estado ou no ranking para filtrar'; selVal.textContent=''; }
+  document.getElementById('foot').textContent='Atualizado em '+new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+}
+function drawMes(multi){
+  if(CH.mes) CH.mes.destroy();
+  const T=css('--text'),M=css('--muted'),L=css('--line'),A=css('--accent');
+  const p1=v=>(v*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  const p2=v=>(v*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+  const many=INAD.length>14;
+  const XL=INAD.map(d=>multi?d.lbl:MESES[d.m]), nX=XL.length;
+  CH.mes=new Chart(document.getElementById('cMes'),{type:'line',data:{datasets:[
+      {label:'Valor',data:INAD.map((d,i)=>({x:i,y:d.v?d.vv/d.v:0})),borderColor:T,backgroundColor:T,pointBackgroundColor:T,borderWidth:2.5,pointRadius:3.5,tension:.25,
+        datalabels:{align:'top',offset:6,color:T}},
+      {label:'Quantidade',data:INAD.map((d,i)=>({x:i,y:d.n?d.nv/d.n:0})),borderColor:A,backgroundColor:A,pointBackgroundColor:A,borderWidth:2.5,pointRadius:3.5,tension:.25,
+        datalabels:{align:'bottom',offset:6,color:css('--accent-hi')}}]},
+    options:{maintainAspectRatio:false,layout:{padding:{top:8,right:32,left:4}},interaction:{mode:'index',intersect:false},
+      scales:{y:{min:0,max:1,ticks:{color:M,stepSize:.25,callback:v=>Math.round(v*100)+'%'},grid:{color:'rgba(255,255,255,.06)'},border:{display:false}},
+        x:{type:'linear',min:-0.4,max:Math.max(nX-0.6,0.6),afterBuildTicks:sc=>{sc.ticks=XL.map((_,i)=>({value:i}));},grid:{display:false},border:{color:L},ticks:{color:T,maxRotation:0,stepSize:1,autoSkip:true,autoSkipPadding:10,callback:v=>Number.isInteger(v)?(XL[v]??''):''}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:T,boxWidth:14,boxHeight:3,padding:14}},
+        tooltip:{callbacks:{title:c=>INAD[c[0].dataIndex].lbl,label:c=>{const d=INAD[c.dataIndex];return c.dataset.label==='Quantidade'?' Quantidade: '+p2(c.parsed.y)+' ('+int.format(d.nv)+' de '+int.format(d.n)+')':' Valor: '+p2(c.parsed.y)+' ('+cmp(d.vv)+' de '+cmp(d.v)+')';}}},
+        datalabels:{display:many?'auto':true,font:{size:10.5,weight:700},formatter:v=>p1(v.y),clip:false}}}});
+}
+function setBar(ch,labels,vals,key){
+  ch.data.labels=labels; ch.data.datasets[0].data=vals;
+  const ds=ch.data.datasets[0];
+  if(F[key].size){ const orig=ds._bg||(ds._bg=ds.backgroundColor); ds.backgroundColor=c=>F[key].has(labels[c.dataIndex])?orig(c):'#4a443f'; }
+  else if(ds._bg) ds.backgroundColor=ds._bg;
+  ch.update();
+}
+const hex=s=>{s=s.replace('#','');return [0,2,4].map(i=>parseInt(s.slice(i,i+2),16));};
+const rgb=a=>'rgb('+a.map(Math.round).join(',')+')';
+
+function renderSlicers(all){
+  const opts={
+    ano:[...new Set(all.map(r=>r.y))].sort(),
+    regiao:Object.keys(REGIOES).filter(r=>all.some(x=>x.regiao===r)).concat(all.some(x=>x.regiao==='Outros')?['Outros']:[]),
+    situacao:[...new Set(all.map(r=>r.situacao))].sort((a,b)=>{const ia=SIT_ORDER.indexOf(a),ib=SIT_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);}),
+    cliente:[...new Set(all.map(r=>r.cliente))].sort(),
+    tipo:[...new Set(all.map(r=>r.tipo))].sort()
+  };
+  document.querySelectorAll('.slicer').forEach(el=>{
+    const k=el.dataset.key, f=FIELD[k];
+    const avail=new Set(all.filter(r=>pass(r,k)).map(r=>r[f]));
+    const cnt=el.querySelector('.cnt'); cnt.textContent=F[k].size?F[k].size+' sel.':'Todos'; cnt.classList.toggle('on',F[k].size>0);
+    el.querySelector('.clr').hidden=!F[k].size;
+    el.querySelector('.opts').innerHTML=opts[k].map(v=>'<button type="button" class="'+(F[k].has(v)?'on ':'')+(avail.has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(v)+'</button>').join('');
+    el.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>toggle(k,k==='ano'?+b.dataset.v:b.dataset.v));
+  });
+}
+function renderChips(){
+  const el=document.getElementById('chips'); const parts=[];
+  for(const k in F) for(const v of F[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+FLABEL[k]+': '+esc(v)+' ✕</button>');
+  el.innerHTML=parts.length?parts.join('')+'<button type="button" class="btn ghost" id="clearAll" style="padding:4px 10px;font-size:12px">Limpar filtros</button>':'Dica: clique nas barras, na rosca ou no mapa para filtrar o painel.';
+  el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k; F[k].delete(k==='ano'?+b.dataset.v:b.dataset.v); render();});
+  const ca=document.getElementById('clearAll'); if(ca) ca.onclick=()=>{Object.values(F).forEach(s=>s.clear()); render();};
+}
+
+/* ---------- Upload / drag-and-drop ---------- */
+const fileIn=document.getElementById('file');
+document.getElementById('btnUp').onclick=()=>fileIn.click();
+fileIn.onchange=()=>{ if(fileIn.files[0]) loadFile(fileIn.files[0]); fileIn.value=''; };
+const drop=document.getElementById('drop'); let dc=0;
+addEventListener('dragenter',e=>{if([...e.dataTransfer.types].includes('Files')){dc++;drop.hidden=false;}});
+addEventListener('dragleave',()=>{if(--dc<=0){dc=0;drop.hidden=true;}});
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f) loadFile(f);});
+
+loadDefault();
+</script>
+
+</body>
+</html>
