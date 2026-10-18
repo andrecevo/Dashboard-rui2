@@ -423,7 +423,7 @@ function buildCharts(){
         y:{stacked:true,beginAtZero:true,grid:{color:'rgba(255,255,255,.07)'},border:{display:false},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxTicksLimit:5,callback:axisFmt}}},
       plugins:{legend:{display:true,position:'top',align:'end',onClick:()=>{},labels:{color:T,boxWidth:10,boxHeight:10,padding:12,font:{size:11.5},generateLabels:()=>[{text:PM==='v'?'Valor pago':'Qtde paga',fillStyle:A,strokeStyle:A,fontColor:T,lineWidth:0,datasetIndex:0}]}},
         tooltip:{callbacks:{title:c=>ymLbl(PERF[c[0].dataIndex].k),
-          label:c=>{const d=PERF[c.dataIndex]; return [' Valor pago: '+brl.format(d.vp),' Qtde paga: '+int.format(d.np)+' cobranças'];}}},
+          label:c=>{const d=PERF[c.dataIndex]; const tv=PERF.reduce((s,x)=>s+x.vp,0)||1, tn=PERF.reduce((s,x)=>s+x.np,0)||1; return [' Valor pago: '+brl.format(d.vp)+' ('+pct(d.vp/tv)+' do total pago)',' Qtde paga: '+int.format(d.np)+' cobranças ('+pct(d.np/tn)+' do total pago)'];}}},
         datalabels:{display:false}}}});
   document.querySelectorAll('.a-perf .seg button').forEach(b=>b.onclick=()=>{PM=b.dataset.pm; document.querySelectorAll('.a-perf .seg button').forEach(x=>x.classList.toggle('on',x===b)); render();});
 
