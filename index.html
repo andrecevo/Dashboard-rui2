@@ -14,10 +14,24 @@
   --text:#f4efea; --muted:#a69d95; --dim:#6b645e;
   --map-base:#5f8a4e; --map-hi:#8fbf72; --map-sel:#ef8a6f;
   --ok:#6fbf73; --bad:#e8604c;
+  --bar2:#f4efea; --dimbar:#4a443f; --grid:rgba(255,255,255,.07); --tipbg:#0d0c0b; --mapdim:#3b4636; --ink:#1a0d04;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Barlow","Segoe UI",Arial,sans-serif;
   color-scheme:dark;
 }
+/* Tema claro (botão Claro/Escuro no topo) */
+:root[data-ui="light"]{
+  --bg:#efebe6; --frame:#faf8f5; --panel:#ffffff; --panel-2:#f3eee8; --line:#e2d9cf;
+  --accent:#e06a1b; --accent-hi:#f28a3d; --accent-lo:#b5521a; --accent-soft:rgba(224,106,27,.12);
+  --text:#26201b; --muted:#6e645b; --dim:#9b9188;
+  --map-base:#b9d1ab; --map-hi:#4e7f3a; --map-sel:#e8714f;
+  --ok:#2f8f3a; --bad:#cf3f2b;
+  --bar2:#6e645b; --dimbar:#dcd4cb; --grid:rgba(0,0,0,.08); --tipbg:#ffffff; --mapdim:#e4e9e0; --ink:#1a0d04;
+  color-scheme:light;
+}
+.theme-btn{font:600 13px var(--body);background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.theme-btn:hover{border-color:var(--accent)}
+.theme-btn:focus-visible{outline:2px solid var(--accent-hi);outline-offset:2px}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{background:var(--bg);color:var(--text);font-family:var(--body)}
@@ -116,7 +130,7 @@ path.uf:hover{stroke:var(--text);stroke-width:1.4}
 .seg button.on{background:var(--accent);color:#1a0d04}
 .seg button:focus-visible{outline:2px solid var(--accent-hi);outline-offset:-2px}
 .a-perf .cv{height:270px;margin-top:8px}
-.tip{position:fixed;pointer-events:none;background:#0d0c0b;border:1px solid var(--accent);color:var(--text);padding:6px 9px;border-radius:6px;font-size:12px;z-index:20;white-space:nowrap}
+.tip{position:fixed;pointer-events:none;background:var(--tipbg);border:1px solid var(--accent);color:var(--text);padding:6px 9px;border-radius:6px;font-size:12px;z-index:20;white-space:nowrap}
 
 .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:28px;font-size:12px;color:var(--muted)}
 .chip{background:var(--accent-soft);border:1px solid var(--accent-lo);color:var(--accent-hi);border-radius:20px;padding:4px 10px;font:600 12px var(--body);cursor:pointer}
@@ -145,6 +159,7 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
       <div class="meta" id="meta">Carregando dados…</div>
     </div>
     <div class="actions">
+      <button type="button" class="theme-btn" id="themeBtn"></button>
       <button class="btn" id="btnUp" type="button">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
         Carregar planilha
@@ -364,7 +379,7 @@ function showMsg(t,soft){document.getElementById('msg').innerHTML=t?'<div class=
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function mount(){
   const app=document.getElementById('app'); app.innerHTML=''; app.appendChild(document.getElementById('tpl').content.cloneNode(true));
-  Object.values(CH).forEach(c=>c.destroy()); CH={};
+  Object.values(CH).forEach(c=>c&&c.destroy()); CH={};
   const svg=document.getElementById('map');
   svg.innerHTML=MAP.l.map(s=>'<path class="uf" tabindex="0" data-uf="'+s.id+'" d="'+s.p+'"><title>'+s.n+'</title></path>').join('');
   const tip=document.getElementById('tip');
@@ -385,7 +400,7 @@ function buildCharts(){
   const T=css('--text'), M=css('--muted'), L=css('--line'), A=css('--accent'), AH=css('--accent-hi'), AL=css('--accent-lo');
   Chart.defaults.color=M; Chart.defaults.font.family=css('--body'); Chart.defaults.font.size=12;
   Chart.defaults.plugins.legend.display=false; Chart.defaults.maintainAspectRatio=false;
-  Chart.defaults.plugins.tooltip.backgroundColor='#0d0c0b'; Chart.defaults.plugins.tooltip.borderColor=A; Chart.defaults.plugins.tooltip.borderWidth=1;
+  Chart.defaults.plugins.tooltip.backgroundColor=css('--tipbg'); Chart.defaults.plugins.tooltip.titleColor=T; Chart.defaults.plugins.tooltip.bodyColor=T; Chart.defaults.plugins.tooltip.footerColor=T; Chart.defaults.plugins.tooltip.borderColor=A; Chart.defaults.plugins.tooltip.borderWidth=1;
   const grad=(ctx,horiz)=>{const {chart}=ctx; const a=chart.chartArea; if(!a) return A;
     const g=horiz?chart.ctx.createLinearGradient(a.left,0,a.right,0):chart.ctx.createLinearGradient(0,a.bottom,0,a.top);
     g.addColorStop(0,AL); g.addColorStop(1,AH); return g;};
@@ -402,7 +417,7 @@ function buildCharts(){
       scales:{x:{display:false,stacked:true,max:1},y:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:T,font:{weight:600},autoSkip:false}}},
       plugins:{legend:{display:true,position:'top',align:'end',labels:{color:T,boxWidth:12,boxHeight:10,padding:12}},
         tooltip:{callbacks:{label:c=>{const d=AC[c.dataIndex],k=c.dataset.label;return ' '+k+': '+pct(c.parsed.x)+' · '+int.format(d.c[k]||0)+' cobranças · '+cmp(d.v[k]||0);}}},
-        datalabels:{color:c=>c.datasetIndex===0?'#1a0d04':'#1a0d04',font:{size:10.5,weight:700},formatter:v=>v>=.12?pct(v):''}}}});
+        datalabels:{color:c=>c.datasetIndex===0?'#1a0d04':css('--panel'),font:{size:10.5,weight:700},formatter:v=>v>=.12?pct(v):''}}}});
 
   CH.ger=new Chart(document.getElementById('cGer'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:c=>grad(c,true),borderRadius:3,barPercentage:.8}]},
     options:{indexAxis:'y',layout:{padding:{right:62}},onClick:click('anoGer',i=>CH.ger.data.labels[i]),
@@ -420,7 +435,7 @@ function buildCharts(){
     options:{layout:{padding:{top:4,right:6}},interaction:{mode:'index',intersect:false},
       onClick:(e,els)=>{ if(els.length) toggle('mes',PERF[els[0].index].k); },
       scales:{x:{stacked:true,grid:{display:false},border:{color:L},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxRotation:0,autoSkip:true,autoSkipPadding:8}},
-        y:{stacked:true,beginAtZero:true,grid:{color:'rgba(255,255,255,.07)'},border:{display:false},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxTicksLimit:5,callback:axisFmt}}},
+        y:{stacked:true,beginAtZero:true,grid:{color:css('--grid')},border:{display:false},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxTicksLimit:5,callback:axisFmt}}},
       plugins:{legend:{display:true,position:'top',align:'end',onClick:()=>{},labels:{color:T,boxWidth:10,boxHeight:10,padding:12,font:{size:11.5},generateLabels:()=>[{text:PM==='v'?'Valor pago':'Qtde paga',fillStyle:A,strokeStyle:A,fontColor:T,lineWidth:0,datasetIndex:0}]}},
         tooltip:{callbacks:{title:c=>ymLbl(PERF[c[0].dataIndex].k),
           label:c=>{const d=PERF[c.dataIndex]; return [' Valor pago: '+brl.format(d.vp)+' ('+pct(d.vp/((d.vp+d.vv)||1))+' de pago + vencido)',' Qtde paga: '+int.format(d.np)+' cobranças ('+pct(d.np/((d.np+d.nv)||1))+' de pago + vencido)'];}}},
@@ -478,10 +493,10 @@ function render(){
     d.n++; d.c[r.acesso]=(d.c[r.acesso]||0)+1; d.v[r.acesso]=(d.v[r.acesso]||0)+r.valor;});
   AC=[...am.values()].sort((a,b)=>b.n-a.n);
   document.getElementById('acBox').style.height=Math.max(180,AC.length*30+60)+'px';
-  const acCol=[css('--accent'),css('--text'),css('--muted'),css('--accent-lo')];
+  const acCol=[css('--accent'),css('--bar2'),css('--muted'),css('--accent-lo')];
   CH.ac.data.labels=AC.map(d=>d.s);
   CH.ac.data.datasets=acKeys.map((k,i)=>({label:k,data:AC.map(d=>(d.c[k]||0)/d.n),
-    backgroundColor:F.acesso.size&&!F.acesso.has(k)?'#4a443f':acCol[i%acCol.length],borderColor:css('--panel'),borderWidth:1,barPercentage:.8}));
+    backgroundColor:F.acesso.size&&!F.acesso.has(k)?css('--dimbar'):acCol[i%acCol.length],borderColor:css('--panel'),borderWidth:1,barPercentage:.8}));
   CH.ac.resize(); CH.ac.update();
 
   // Ano gerador (destaca seleção em vez de esconder)
@@ -501,7 +516,7 @@ function render(){
   CH.perf.data.labels=PERF.map(d=>ymLbl(d.k));
   const selM=d=>!F.mes.size||F.mes.has(d.k);
   CH.perf.data.datasets[0].data=PERF.map(d=>PM==='v'?d.vp:d.np);
-  CH.perf.data.datasets[0].backgroundColor=PERF.map(d=>selM(d)?css('--accent'):'#4a443f');
+  CH.perf.data.datasets[0].backgroundColor=PERF.map(d=>selM(d)?css('--accent'):css('--dimbar'));
   CH.perf.update();
 
   // Prazo de recebimento por faixa (analítico do prazo médio)
@@ -523,14 +538,14 @@ function render(){
   const mi=[...groupSum(rs,'meio')].sort((a,b)=>b[1]-a[1]);
   CH.meio.data.labels=mi.map(x=>x[0]); CH.meio.data.datasets[0].data=mi.map(x=>x[1]);
   const base=[css('--accent-hi'),css('--accent'),css('--accent-lo'),'#7a3412','#f6c9a3','#5c2a10'];
-  CH.meio.data.datasets[0].backgroundColor=mi.map((x,i)=>F.meio.size&&!F.meio.has(x[0])?'#4a443f':base[i%base.length]);
+  CH.meio.data.datasets[0].backgroundColor=mi.map((x,i)=>F.meio.size&&!F.meio.has(x[0])?css('--dimbar'):base[i%base.length]);
   CH.meio.update();
 
   // Mapa de liquidação: só cobranças pagas; considera todos os filtros exceto UF
   const rsMap=all.filter(r=>r.situacao==='Paga'&&pass(r,'uf')); UFV={}; UFN={};
   rsMap.forEach(r=>{UFV[r.uf]=(UFV[r.uf]||0)+r.valor; UFN[r.uf]=(UFN[r.uf]||0)+1;});
   const mx=Math.max(1,...Object.values(UFV));
-  const b=hex(css('--map-base')), h=hex(css('--map-hi')), dim=hex('#3b4636');
+  const b=hex(css('--map-base')), h=hex(css('--map-hi')), dim=hex(css('--mapdim'));
   document.querySelectorAll('#map path.uf').forEach(p=>{
     const u=p.dataset.uf, v=UFV[u]||0;
     const selected=F.uf.has(u)||(!F.uf.size&&F.regiao.size&&F.regiao.has(UF2REG[u]));
@@ -568,7 +583,7 @@ function drawMes(multi){
       {label:'Quantidade',data:INAD.map((d,i)=>({x:i,y:d.n?d.nv/d.n:0})),borderColor:A,backgroundColor:A,pointBackgroundColor:A,borderWidth:2.5,pointRadius:3.5,tension:.25,
         datalabels:{align:'bottom',offset:6,color:css('--accent-hi')}}]},
     options:{maintainAspectRatio:false,layout:{padding:{top:8,right:32,left:4}},interaction:{mode:'index',intersect:false},
-      scales:{y:{min:0,max:1,ticks:{color:M,stepSize:.25,callback:v=>Math.round(v*100)+'%'},grid:{color:'rgba(255,255,255,.06)'},border:{display:false}},
+      scales:{y:{min:0,max:1,ticks:{color:M,stepSize:.25,callback:v=>Math.round(v*100)+'%'},grid:{color:css('--grid')},border:{display:false}},
         x:{type:'linear',min:-0.4,max:Math.max(nX-0.6,0.6),afterBuildTicks:sc=>{sc.ticks=XL.map((_,i)=>({value:i}));},grid:{display:false},border:{color:L},ticks:{color:T,maxRotation:0,stepSize:1,autoSkip:true,autoSkipPadding:10,callback:v=>Number.isInteger(v)?(XL[v]??''):''}}},
       plugins:{legend:{display:true,position:'top',align:'end',labels:{color:T,boxWidth:14,boxHeight:3,padding:14}},
         tooltip:{callbacks:{title:c=>INAD[c[0].dataIndex].lbl,label:c=>{const d=INAD[c.dataIndex];return c.dataset.label==='Quantidade'?' Quantidade: '+p2(c.parsed.y)+' ('+int.format(d.nv)+' de '+int.format(d.n)+')':' Valor: '+p2(c.parsed.y)+' ('+cmp(d.vv)+' de '+cmp(d.v)+')';}}},
@@ -577,7 +592,7 @@ function drawMes(multi){
 function setBar(ch,labels,vals,key){
   ch.data.labels=labels; ch.data.datasets[0].data=vals;
   const ds=ch.data.datasets[0];
-  if(F[key].size){ const orig=ds._bg||(ds._bg=ds.backgroundColor); ds.backgroundColor=c=>F[key].has(labels[c.dataIndex])?orig(c):'#4a443f'; }
+  if(F[key].size){ const orig=ds._bg||(ds._bg=ds.backgroundColor); ds.backgroundColor=c=>F[key].has(labels[c.dataIndex])?orig(c):css('--dimbar'); }
   else if(ds._bg) ds.backgroundColor=ds._bg;
   ch.update();
 }
@@ -620,6 +635,22 @@ addEventListener('dragenter',e=>{if([...e.dataTransfer.types].includes('Files'))
 addEventListener('dragleave',()=>{if(--dc<=0){dc=0;drop.hidden=true;}});
 addEventListener('dragover',e=>e.preventDefault());
 addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f) loadFile(f);});
+
+/* Tema claro/escuro */
+const ICON_SUN='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
+const ICON_MOON='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+let UI='dark';
+function setUI(t,save){
+  UI=t; document.documentElement.setAttribute('data-ui',t);
+  const b=document.getElementById('themeBtn');
+  b.innerHTML=t==='dark'?ICON_SUN+'Tema claro':ICON_MOON+'Tema escuro';
+  b.setAttribute('aria-label',t==='dark'?'Mudar para tema claro':'Mudar para tema escuro');
+  if(save){ try{localStorage.setItem('dash-tema',t);}catch(e){} }
+  if(DATA){ mount(); render(); }
+}
+document.getElementById('themeBtn').onclick=()=>setUI(UI==='dark'?'light':'dark',true);
+(function(){ let t=null; try{t=localStorage.getItem('dash-tema');}catch(e){}
+  setUI(t==='light'||t==='dark'?t:'dark',false); })();
 
 loadDefault();
 </script>
