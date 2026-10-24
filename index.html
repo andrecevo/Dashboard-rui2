@@ -71,6 +71,8 @@ header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 header h1{font-family:var(--body);font-weight:600;font-size:clamp(26px,3.4vw,44px);margin:0;letter-spacing:-.01em;line-height:1.05;text-wrap:balance}
 .meta{color:var(--muted);font-size:13px;margin-top:4px}
 .meta b{color:var(--text);font-weight:600}
+.dfmt{white-space:nowrap}
+.dfmt select{font:500 12px var(--body);background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:2px 4px;margin-left:4px}
 .head-txt{flex:1 1 320px;min-width:0}
 .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .btn{font:600 14px var(--body);border:1px solid var(--accent);background:var(--accent);color:var(--ink);border-radius:8px;padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
@@ -267,7 +269,7 @@ const COLS = {
   situacao:['situacaocobranca','situacaodacobranca','situacao','status'],
   venc:['datavencimento','datadevencimento','vencimento'], pag:['datadepagamento','datapagamento','pagamento'],
   valor:['valor','valorcobranca','valortotal'], desconto:['valordesconto','desconto'],
-  prazo:['prazoderecebimento','prazorecebimento'], meio:['meiodepagamento','meiopagamento','formadepagamento'],
+  prazo:['prazoderecebimento','prazorecebimento'], notif:['datanotificacao','datadenotificacao'], meio:['meiodepagamento','meiopagamento','formadepagamento'],
   acesso:['acessoaplataforma','acesso'], anoger:['anogerador'], parcelas:['parcelas','qtdparcelas','quantidadeparcelas','numeroparcelas','qtdeparcelas']
 };
 const REQUIRED = {valor:'Valor', venc:'Data Vencimento', situacao:'Situação Cobranca'};
@@ -284,9 +286,11 @@ function parseNum(v){
   const n=parseFloat(s); return isFinite(n)?n:null;
 }
 let DATE_MDY=false; // true quando o arquivo vem com datas no formato americano (mês/dia/ano)
+let DATE_MODE='auto'; // auto | dmy (BR) | mdy (EUA)
+let DATE_EVID={br:0,us:0};
 function parseDate(v){
   if(v==null||v==='') return null;
-  if(v instanceof Date) return isNaN(v)?null:{y:v.getFullYear(),m:v.getMonth(),d:v.getDate()};
+  if(v instanceof Date){ if(isNaN(v)) return null; const t=new Date(v.getTime()+12*3600e3); return {y:t.getFullYear(),m:t.getMonth(),d:t.getDate()}; }
   if(typeof v==='number'){ if(v<20000) return null; const d=new Date(Math.round((v-25569)*864e5)); return {y:d.getUTCFullYear(),m:d.getUTCMonth(),d:d.getUTCDate()}; }
   const s=String(v).trim();
   let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
@@ -337,9 +341,10 @@ function buildRows(objs){
   if(miss.length) throw new Error('Não encontrei as colunas: '+miss.map(k=>'“'+REQUIRED[k]+'”').join(', ')+'. Colunas lidas: '+headers.join(' | '));
   // Detecta se as datas vêm como dd/mm/aaaa (padrão BR) ou mm/dd/aaaa (padrão americano)
   let firstBig=0, secondBig=0;
-  for(const o of objs){ for(const k of ['venc','pag']){ if(!map[k]) continue; const mm=String(o[map[k]]??'').trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{2,4}/);
+  for(const o of objs){ for(const k of ['venc','pag','notif']){ if(!map[k]) continue; const mm=String(o[map[k]]??'').trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{2,4}/);
     if(mm){ if(+mm[1]>12) firstBig++; if(+mm[2]>12) secondBig++; } } }
-  DATE_MDY = secondBig>firstBig;
+  DATE_EVID={br:firstBig,us:secondBig};
+  DATE_MDY = DATE_MODE==='mdy' ? true : DATE_MODE==='dmy' ? false : secondBig>firstBig;
   const rows=[]; let skipped=0;
   for(const o of objs){
     const valor=parseNum(o[map.valor]); const venc=parseDate(o[map.venc]);
@@ -405,17 +410,24 @@ const F={ano:new Set(),regiao:new Set(),situacao:new Set(),cliente:new Set(),uf:
 const FIELD={ano:'y',regiao:'regiao',situacao:'situacao',cliente:'cliente',uf:'uf',tipo:'tipo',meio:'meio',anoGer:'anoGer',acesso:'acesso',faixa:'faixa',mes:'ym'};
 const FLABEL={ano:'Ano',regiao:'Região',situacao:'Situação',cliente:'Cliente',uf:'UF',tipo:'Tipo',meio:'Pagamento',anoGer:'Ano gerador',acesso:'Acesso',faixa:'Prazo',mes:'Mês'};
 
+let LAST=null;
 function ingest(objs,name){
+  LAST={objs,name};
   const res=buildRows(objs);
   if(!res.rows.length) throw new Error('Nenhuma linha válida (verifique as colunas Valor e Data Vencimento).');
   DATA=res; SRC=name; Object.values(F).forEach(s=>s.clear());
-  setMeta(metaTxt());
+  setMeta(metaTxt()); bindDateMode();
   if(res.skipped) showMsg(res.skipped.toLocaleString('pt-BR')+' linha(s) ignorada(s) por não terem valor ou data de vencimento válidos.', true);
   mount(); render();
 }
+function bindDateMode(){ const sel=document.getElementById('dateMode'); if(!sel) return;
+  sel.onchange=()=>{ DATE_MODE=sel.value; try{localStorage.setItem('dash-datas',DATE_MODE);}catch(e){} if(LAST) ingest(LAST.objs,LAST.name); }; }
+try{ const dm=localStorage.getItem('dash-datas'); if(dm==='auto'||dm==='dmy'||dm==='mdy') DATE_MODE=dm; }catch(e){}
 function metaTxt(){
   const ys=[...new Set(DATA.rows.map(r=>r.y))].sort();
-  return 'Fonte: <b>'+esc(SRC)+'</b> · '+DATA.rows.length.toLocaleString('pt-BR')+' cobranças · vencimentos de '+ys[0]+' a '+ys[ys.length-1];
+  const det=(!DATE_EVID.br&&!DATE_EVID.us&&DATE_MODE==='auto')?'datas do Excel':DATE_MDY?'mm/dd/aaaa (EUA)':'dd/mm/aaaa (BR)';
+  return 'Fonte: <b>'+esc(SRC)+'</b> · '+DATA.rows.length.toLocaleString('pt-BR')+' cobranças · vencimentos de '+ys[0]+' a '+ys[ys.length-1]+
+    ' · <label class="dfmt">Datas do arquivo: <select id="dateMode"><option value="auto"'+(DATE_MODE==='auto'?' selected':'')+'>Automático ('+det+')</option><option value="mdy"'+(DATE_MODE==='mdy'?' selected':'')+'>mm/dd/aaaa (EUA)</option><option value="dmy"'+(DATE_MODE==='dmy'?' selected':'')+'>dd/mm/aaaa (BR)</option></select></label>';
 }
 const pass=(r,skip)=>{ for(const k in F){ if(k===skip||!F[k].size) continue; if(!F[k].has(r[FIELD[k]])) return false; } return true; };
 
