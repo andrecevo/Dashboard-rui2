@@ -416,9 +416,9 @@ async function loadDefault(){
 
 /* ---------- Estado ---------- */
 let DATA=null, SRC='', CH={};
-const F={ano:new Set(),regiao:new Set(),situacao:new Set(),cliente:new Set(),uf:new Set(),tipo:new Set(),meio:new Set(),anoGer:new Set(),acesso:new Set(),faixa:new Set(),mes:new Set()};
-const FIELD={ano:'y',regiao:'regiao',situacao:'situacao',cliente:'cliente',uf:'uf',tipo:'tipo',meio:'meio',anoGer:'anoGer',acesso:'acesso',faixa:'faixa',mes:'ym'};
-const FLABEL={ano:'Ano',regiao:'Região',situacao:'Situação',cliente:'Cliente',uf:'UF',tipo:'Tipo',meio:'Pagamento',anoGer:'Ano gerador',acesso:'Acesso',faixa:'Prazo',mes:'Mês'};
+const F={ano:new Set(),regiao:new Set(),situacao:new Set(),cliente:new Set(),uf:new Set(),tipo:new Set(),meio:new Set(),anoGer:new Set(),acesso:new Set(),faixa:new Set(),mes:new Set(),agm:new Set()};
+const FIELD={ano:'y',regiao:'regiao',situacao:'situacao',cliente:'cliente',uf:'uf',tipo:'tipo',meio:'meio',anoGer:'anoGer',acesso:'acesso',faixa:'faixa',mes:'ym',agm:null};
+const FLABEL={ano:'Ano',regiao:'Região',situacao:'Situação',cliente:'Cliente',uf:'UF',tipo:'Tipo',meio:'Pagamento',anoGer:'Ano gerador',acesso:'Acesso',faixa:'Prazo',mes:'Mês',agm:'Parcela em'};
 
 let LAST=null;
 function ingest(objs,name){
@@ -439,7 +439,9 @@ function metaTxt(){
   return 'Fonte: <b>'+esc(SRC)+'</b> · '+DATA.rows.length.toLocaleString('pt-BR')+' cobranças · vencimentos de '+ys[0]+' a '+ys[ys.length-1]+
     ' · <label class="dfmt">Datas do arquivo: <select id="dateMode"><option value="auto"'+(DATE_MODE==='auto'?' selected':'')+'>Automático ('+det+')</option><option value="mdy"'+(DATE_MODE==='mdy'?' selected':'')+'>mm/dd/aaaa (EUA)</option><option value="dmy"'+(DATE_MODE==='dmy'?' selected':'')+'>dd/mm/aaaa (BR)</option></select></label>';
 }
-const pass=(r,skip)=>{ for(const k in F){ if(k===skip||!F[k].size) continue; if(!F[k].has(r[FIELD[k]])) return false; } return true; };
+const pass=(r,skip)=>{ for(const k in F){ if(k===skip||!F[k].size) continue;
+  if(k==='agm'){ if(!r.parc||!r.parc.some(p=>F.agm.has(p.ym))) return false; continue; }
+  if(!F[k].has(r[FIELD[k]])) return false; } return true; };
 
 /* ---------- Formatação ---------- */
 const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
@@ -515,9 +517,10 @@ function buildCharts(){
       {label:'Liquidado',data:[],backgroundColor:css('--accent-lo'),borderRadius:3,stack:'s',barPercentage:.78,categoryPercentage:.85},
       {label:'A receber',data:[],backgroundColor:A,borderRadius:3,stack:'s',barPercentage:.78,categoryPercentage:.85}]},
     options:{layout:{padding:{top:4,right:6}},interaction:{mode:'index',intersect:false},
+      onClick:(e,els)=>{ if(els.length) toggle('agm',AG[els[0].index].k); },
       scales:{x:{stacked:true,grid:{display:false},border:{color:L},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxRotation:0,autoSkip:true,autoSkipPadding:8}},
         y:{stacked:true,beginAtZero:true,grid:{color:css('--grid')},border:{display:false},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxTicksLimit:5,callback:agFmt}}},
-      plugins:{legend:{display:true,position:'top',align:'end',onClick:()=>{},labels:{color:T,boxWidth:10,boxHeight:10,padding:12,font:{size:11.5}}},
+      plugins:{legend:{display:true,position:'top',align:'end',onClick:()=>{},labels:{color:T,boxWidth:10,boxHeight:10,padding:12,font:{size:11.5},generateLabels:()=>[{text:'Liquidado',fillStyle:css('--accent-lo'),strokeStyle:css('--accent-lo'),fontColor:T,lineWidth:0},{text:'A receber',fillStyle:css('--accent'),strokeStyle:css('--accent'),fontColor:T,lineWidth:0}]}},
         tooltip:{callbacks:{title:c=>ymLbl(AG[c[0].dataIndex].k),
           label:c=>{const d=AG[c.dataIndex]; return c.datasetIndex===0?(d.vl?' Liquidado: '+brl.format(d.vl)+' · '+int.format(d.nl)+' parcelas':null):(d.vr?' A receber: '+brl.format(d.vr)+' · '+int.format(d.nr)+' parcelas':null);}}},
         datalabels:{display:false}}}});
@@ -603,15 +606,18 @@ function render(){
 
   // Agenda de recebíveis de cartão (parcelas CRE)
   const now=Date.now(), agm=new Map(); let totR=0, nR=0;
-  rs.forEach(r=>{ if(!r.parc) return; r.parc.forEach(p=>{ let d=agm.get(p.ym); if(!d) agm.set(p.ym,d={k:p.ym,vl:0,nl:0,vr:0,nr:0});
-    if(p.t>now){d.vr+=p.v; d.nr++; totR+=p.v; nR++;} else {d.vl+=p.v; d.nl++;} }); });
+  all.filter(r=>r.parc&&pass(r,'agm')).forEach(r=>{ r.parc.forEach(p=>{ let d=agm.get(p.ym); if(!d) agm.set(p.ym,d={k:p.ym,vl:0,nl:0,vr:0,nr:0});
+    const inSel=!F.agm.size||F.agm.has(p.ym); if(p.t>now){d.vr+=p.v; d.nr++; if(inSel){totR+=p.v; nR++;}} else {d.vl+=p.v; d.nl++;} }); });
   AG=[...agm.values()].sort((a,b)=>a.k-b.k);
   CH.ag.data.labels=AG.map(d=>ymLbl(d.k));
   CH.ag.data.datasets[0].data=AG.map(d=>AM==='v'?d.vl:d.nl);
   CH.ag.data.datasets[1].data=AG.map(d=>AM==='v'?d.vr:d.nr);
+  const selA=d=>!F.agm.size||F.agm.has(d.k);
+  CH.ag.data.datasets[0].backgroundColor=AG.map(d=>selA(d)?css('--accent-lo'):css('--dimbar'));
+  CH.ag.data.datasets[1].backgroundColor=AG.map(d=>selA(d)?css('--accent'):css('--dimbar'));
   CH.ag.update();
   document.getElementById('agEmpty').hidden=AG.length>0;
-  document.getElementById('agNote').innerHTML=AG.length?'<b>'+brl.format(totR)+'</b> a receber em '+int.format(nR)+' parcelas. Parcelas a cada 30 dias a partir do pagamento; cliente AL liquida tudo em 30 dias.':'Parcelas projetadas a cada 30 dias a partir da data de pagamento. Cliente AL: tudo liquidado em 30 dias.';
+  document.getElementById('agNote').innerHTML=AG.length?'<b>'+brl.format(totR)+'</b> a receber em '+int.format(nR)+' parcelas'+(F.agm.size?' no(s) mês(es) selecionado(s)':'')+'. Clique numa barra para filtrar as cobranças com parcela naquele mês. Cliente AL liquida tudo em 30 dias.':'Parcelas projetadas a cada 30 dias a partir da data de pagamento. Cliente AL: tudo liquidado em 30 dias.';
 
   // Performance de Pgtos: pago × vencido por mês de vencimento (valor ou quantidade)
   const pmap=new Map();
@@ -725,9 +731,9 @@ const ymLbl=v=>MESES[v%12]+'/'+String(Math.floor(v/12)).slice(2);
 let PM='v';
 function renderChips(){
   const el=document.getElementById('chips'); const parts=[];
-  for(const k in F) for(const v of F[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+FLABEL[k]+': '+esc(k==='mes'?ymLbl(v):v)+' ✕</button>');
+  for(const k in F) for(const v of F[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+FLABEL[k]+': '+esc(k==='mes'||k==='agm'?ymLbl(v):v)+' ✕</button>');
   el.innerHTML=parts.length?parts.join('')+'<button type="button" class="btn ghost" id="clearAll" style="padding:4px 10px;font-size:12px">Limpar filtros</button>':'Dica: clique nas barras, na rosca ou no mapa para filtrar o painel.';
-  el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k; F[k].delete(k==='ano'||k==='mes'?+b.dataset.v:b.dataset.v); render();});
+  el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k; F[k].delete(k==='ano'||k==='mes'||k==='agm'?+b.dataset.v:b.dataset.v); render();});
   const ca=document.getElementById('clearAll'); if(ca) ca.onclick=()=>{Object.values(F).forEach(s=>s.clear()); render();};
 }
 
