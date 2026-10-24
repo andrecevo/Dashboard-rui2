@@ -231,7 +231,7 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
       <div class="kpis" id="kpis"></div>
       <div class="grid">
         <div class="panel a-sit"><div class="ttl">Status da Cobrança</div><div class="cv"><canvas id="cSit"></canvas></div></div>
-        <div class="panel a-ag"><div class="ttl">Agenda de recebíveis · Cartão (CRE)</div><div class="seg" role="group" aria-label="Medida"><button type="button" class="on" data-am="v">Valor</button><button type="button" data-am="n">Parcelas</button></div><div class="cv"><canvas id="cAg"></canvas><div class="ag-empty" id="agEmpty" hidden>Nenhuma parcela de cartão encontrada. A agenda usa a coluna <b>&nbsp;Parcelas&nbsp;</b> dos pagamentos com meio CRE.</div></div><div class="perf-note left" id="agNote">Parcelas projetadas a cada 30 dias a partir da data de pagamento. Cliente AL: tudo liquidado em 30 dias.</div></div>
+        <div class="panel a-ag"><div class="ttl">Agenda de recebíveis · Cartão (CRE)</div><div class="seg" role="group" aria-label="Medida"><button type="button" class="on" data-am="v">Valor</button><button type="button" data-am="n">Parcelas</button></div><div class="cv"><canvas id="cAg"></canvas><div class="ag-empty" id="agEmpty" hidden>Nenhuma parcela de cartão encontrada. A agenda usa a coluna <b>&nbsp;Parcela(s)&nbsp;</b> dos pagamentos com meio CRE.</div></div><div class="perf-note left" id="agNote">Parcelas projetadas a cada 30 dias a partir da data de pagamento. Cliente AL: tudo liquidado em 30 dias.</div></div>
         <div class="panel a-perf"><div class="ttl">Performance de Pagamentos</div><div class="seg" role="group" aria-label="Medida"><button type="button" class="on" data-pm="v">Valor</button><button type="button" data-pm="n">Qtde</button></div><div class="cv"><canvas id="cPerf"></canvas></div><div class="perf-note left">Cobranças pagas por mês de vencimento. Clique numa barra para filtrar o mês.</div></div>
         <div class="panel a-ano"><div class="ttl">Prazo de recebimento por faixa</div><div class="cv"><canvas id="cAno"></canvas></div><div class="perf-note" id="przNote">Dias entre notificação e pagamento</div></div>
         <div class="panel a-map"><div class="ttl">Top 5 - Pagamentos</div>
@@ -270,7 +270,7 @@ const COLS = {
   venc:['datavencimento','datadevencimento','vencimento'], pag:['datadepagamento','datapagamento','pagamento'],
   valor:['valor','valorcobranca','valortotal'], desconto:['valordesconto','desconto'],
   prazo:['prazoderecebimento','prazorecebimento'], notif:['datanotificacao','datadenotificacao'], meio:['meiodepagamento','meiopagamento','formadepagamento'],
-  acesso:['acessoaplataforma','acesso'], anoger:['anogerador'], parcelas:['parcelas','qtdparcelas','quantidadeparcelas','numeroparcelas','qtdeparcelas']
+  acesso:['acessoaplataforma','acesso'], anoger:['anogerador'], parcelas:['parcelas','parcela','qtdparcelas','qtdparcela','quantidadeparcelas','quantidadedeparcelas','numeroparcelas','numerodeparcelas','qtdeparcelas','nparcelas']
 };
 const REQUIRED = {valor:'Valor', venc:'Data Vencimento', situacao:'Situação Cobranca'};
 const norm = s => String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
