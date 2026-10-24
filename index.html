@@ -15,7 +15,7 @@
   --text:#eef3f3; --muted:#9aa2a4; --dim:#6d6e71;
   --map-base:#14474a; --map-hi:#2fbdc3; --map-sel:#f2f4f4;
   --ok:#3fcf8e; --bad:#ef6a5a;
-  --bar2:#eef3f3; --dimbar:#3a4344; --grid:rgba(255,255,255,.07); --tipbg:#0a0c0d; --mapdim:#253031; --ink:#ffffff;
+  --bar2:#eef3f3; --dimbar:#3a4344; --grid:rgba(255,255,255,.07); --tipbg:#0a0c0d; --mapdim:#253031; --ink:#ffffff; --x1:#00505c; --x2:#8fd8db; --x3:#003a40;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Barlow","Segoe UI",Arial,sans-serif;
   color-scheme:dark;
@@ -27,9 +27,36 @@
   --text:#1b2122; --muted:#6d6e71; --dim:#9aa0a2;
   --map-base:#c9e6e7; --map-hi:#005f61; --map-sel:#1b2122;
   --ok:#1f8a4c; --bad:#c9412f;
-  --bar2:#6d6e71; --dimbar:#d6dfe0; --grid:rgba(0,0,0,.08); --tipbg:#ffffff; --mapdim:#e3eaea; --ink:#ffffff;
+  --bar2:#6d6e71; --dimbar:#d6dfe0; --grid:rgba(0,0,0,.08); --tipbg:#ffffff; --mapdim:#e3eaea; --ink:#ffffff; --x1:#00505c; --x2:#8fd8db; --x3:#003a40;
   color-scheme:light;
 }
+:root[data-pal="orange"]{
+  --bg:#121110; --frame:#1b1a19; --panel:#242220; --panel-2:#2c2926; --line:#3a3530;
+  --accent:#f07a2a; --accent-2:#e86f1f; --accent-hi:#ffa25a; --accent-lo:#a9481a; --accent-soft:rgba(240,122,42,.16);
+  --text:#f4efea; --muted:#a69d95; --dim:#6b645e;
+  --map-base:#5f8a4e; --map-hi:#8fbf72; --map-sel:#ef8a6f;
+  --ok:#6fbf73; --bad:#e8604c;
+  --bar2:#f4efea; --dimbar:#4a443f; --grid:rgba(255,255,255,.07); --tipbg:#0d0c0b; --mapdim:#3b4636; --ink:#1a0d04;
+  --x1:#7a3412; --x2:#f6c9a3; --x3:#5c2a10;
+}
+:root[data-pal="orange"][data-ui="light"]{
+  --bg:#efebe6; --frame:#faf8f5; --panel:#ffffff; --panel-2:#f3eee8; --line:#e2d9cf;
+  --accent:#e06a1b; --accent-2:#d2611a; --accent-hi:#f28a3d; --accent-lo:#b5521a; --accent-soft:rgba(224,106,27,.12);
+  --text:#26201b; --muted:#6e645b; --dim:#9b9188;
+  --map-base:#b9d1ab; --map-hi:#4e7f3a; --map-sel:#e8714f;
+  --ok:#2f8f3a; --bad:#cf3f2b;
+  --bar2:#6e645b; --dimbar:#dcd4cb; --grid:rgba(0,0,0,.08); --tipbg:#ffffff; --mapdim:#e4e9e0; --ink:#1a0d04;
+  --x1:#7a3412; --x2:#f6c9a3; --x3:#5c2a10;
+}
+.pal-wrap{position:relative;display:inline-flex}
+.pal-wrap .sw{display:inline-flex;gap:2px;flex:none}
+.pal-wrap .sw i{width:9px;height:9px;border-radius:50%;display:block}
+.pal-menu{position:absolute;right:0;top:calc(100% + 6px);min-width:210px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;z-index:25;box-shadow:0 10px 28px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:2px}
+.pal-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:7px;padding:8px 10px;font:600 13px var(--body);color:var(--text);cursor:pointer}
+.pal-menu button:hover,.pal-menu button:focus-visible{background:var(--panel-2);outline:none}
+.pal-menu button small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+.pal-menu button .ck{margin-left:auto;color:var(--accent);visibility:hidden}
+.pal-menu button[aria-checked="true"] .ck{visibility:visible}
 .theme-btn{font:600 13px var(--body);background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
 .theme-btn:hover{border-color:var(--accent)}
 .theme-btn:focus-visible{outline:2px solid var(--accent-hi);outline-offset:2px}
@@ -160,6 +187,13 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
       <div class="meta" id="meta">Carregando dados…</div>
     </div>
     <div class="actions">
+      <div class="pal-wrap">
+        <button type="button" class="theme-btn pal-btn" id="palBtn" aria-haspopup="true" aria-expanded="false"><span class="sw" id="palSw"></span><span id="palLbl">Template</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="pal-menu" id="palMenu" role="menu" hidden>
+          <button type="button" role="menuitemradio" data-pal="brand"><span class="sw"><i style="background:#009ba2"></i><i style="background:#005f61"></i><i style="background:#6d6e71"></i></span><span>Marca<small>Petróleo · Pantone 321 C</small></span><span class="ck">✓</span></button>
+          <button type="button" role="menuitemradio" data-pal="orange"><span class="sw"><i style="background:#f07a2a"></i><i style="background:#a9481a"></i><i style="background:#5f8a4e"></i></span><span>Original<small>Laranja do primeiro modelo</small></span><span class="ck">✓</span></button>
+        </div>
+      </div>
       <button type="button" class="theme-btn" id="themeBtn"></button>
       <button class="btn" id="btnUp" type="button">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
@@ -452,7 +486,7 @@ function buildCharts(){
 
   CH.mes=null;
 
-  CH.meio=new Chart(cMeio,{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[AH,A,AL,'#00505c','#8fd8db','#003a40'],borderColor:css('--panel'),borderWidth:2}]},
+  CH.meio=new Chart(cMeio,{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[AH,A,AL,css('--x1'),css('--x2'),css('--x3')],borderColor:css('--panel'),borderWidth:2}]},
     options:{cutout:'52%',layout:{padding:8},onClick:click('meio',i=>CH.meio.data.labels[i]),
       plugins:{legend:{display:true,position:'right',labels:{color:T,boxWidth:12,padding:10}},
         tooltip:{callbacks:{label:c=>' '+c.label+': '+brl.format(c.parsed)}},
@@ -538,7 +572,7 @@ function render(){
   // Meio
   const mi=[...groupSum(rs,'meio')].sort((a,b)=>b[1]-a[1]);
   CH.meio.data.labels=mi.map(x=>x[0]); CH.meio.data.datasets[0].data=mi.map(x=>x[1]);
-  const base=[css('--accent-hi'),css('--accent'),css('--accent-lo'),'#00505c','#8fd8db','#003a40'];
+  const base=[css('--accent-hi'),css('--accent'),css('--accent-lo'),css('--x1'),css('--x2'),css('--x3')];
   CH.meio.data.datasets[0].backgroundColor=mi.map((x,i)=>F.meio.size&&!F.meio.has(x[0])?css('--dimbar'):base[i%base.length]);
   CH.meio.update();
 
@@ -652,6 +686,26 @@ function setUI(t,save){
 document.getElementById('themeBtn').onclick=()=>setUI(UI==='dark'?'light':'dark',true);
 (function(){ let t=null; try{t=localStorage.getItem('dash-tema');}catch(e){}
   setUI(t==='light'||t==='dark'?t:'dark',false); })();
+
+/* Template de cores (Marca / Original) */
+const PALS={brand:{lbl:'Marca',sw:['#009ba2','#005f61','#6d6e71']},orange:{lbl:'Original',sw:['#f07a2a','#a9481a','#5f8a4e']}};
+let PAL='brand';
+const palBtn=document.getElementById('palBtn'), palMenu=document.getElementById('palMenu');
+function setPal(p,save){
+  PAL=PALS[p]?p:'brand';
+  if(PAL==='brand') document.documentElement.removeAttribute('data-pal'); else document.documentElement.setAttribute('data-pal',PAL);
+  document.getElementById('palLbl').textContent='Template: '+PALS[PAL].lbl;
+  document.getElementById('palSw').innerHTML=PALS[PAL].sw.map(c=>'<i style="background:'+c+'"></i>').join('');
+  palMenu.querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',b.dataset.pal===PAL));
+  if(save){ try{localStorage.setItem('dash-template',PAL);}catch(e){} }
+  if(DATA){ mount(); render(); }
+}
+function closePal(){ palMenu.hidden=true; palBtn.setAttribute('aria-expanded','false'); }
+palBtn.onclick=e=>{ e.stopPropagation(); const open=palMenu.hidden; palMenu.hidden=!open; palBtn.setAttribute('aria-expanded',open); if(open) palMenu.querySelector('[aria-checked="true"]')?.focus(); };
+palMenu.querySelectorAll('button').forEach(b=>b.onclick=()=>{ closePal(); setPal(b.dataset.pal,true); palBtn.focus(); });
+document.addEventListener('click',e=>{ if(!e.target.closest('.pal-wrap')) closePal(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePal(); });
+(function(){ let p=null; try{p=localStorage.getItem('dash-template');}catch(e){} setPal(p||'brand',false); })();
 
 loadDefault();
 </script>
