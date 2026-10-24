@@ -63,6 +63,8 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{background:var(--bg);color:var(--text);font-family:var(--body)}
+body,button,select,option,label{text-transform:uppercase}
+.dfmt select,.dfmt option{text-transform:uppercase}
 body{padding-inline:16px;padding-block:16px}
 .frame{max-width:1500px;margin:0 auto;background:var(--frame);border:1px solid var(--line);border-radius:14px;padding:18px 20px 22px;display:flex;flex-direction:column;gap:16px}
 
@@ -250,6 +252,14 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
   </div>
 </template>
 
+<script>
+/* Caixa alta em todo o texto dos gráficos (canvas) */
+(function(){ const P=CanvasRenderingContext2D.prototype, up=t=>typeof t==='string'?t.toLocaleUpperCase('pt-BR'):t;
+  const ft=P.fillText, st=P.strokeText, mt=P.measureText;
+  P.fillText=function(t,...a){return ft.call(this,up(t),...a);};
+  P.strokeText=function(t,...a){return st.call(this,up(t),...a);};
+  P.measureText=function(t){return mt.call(this,up(t));}; })();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -437,8 +447,8 @@ const brl2=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximu
 const int=new Intl.NumberFormat('pt-BR');
 function cmp(v){
   const a=Math.abs(v), f=(n,d)=>n.toLocaleString('pt-BR',{maximumFractionDigits:d,minimumFractionDigits:0});
-  if(a>=1e9) return 'R$ '+f(v/1e9,2)+' bi'; if(a>=1e6) return 'R$ '+f(v/1e6,1)+' mi';
-  if(a>=1e3) return 'R$ '+f(v/1e3,0)+' mil'; return brl.format(v);
+  if(a>=1e9) return 'R$ '+f(v/1e9,2)+' B'; if(a>=1e6) return 'R$ '+f(v/1e6,1)+' MM';
+  if(a>=1e3) return 'R$ '+f(v/1e3,0)+' MIL'; return brl.format(v);
 }
 const pct=v=>(v*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -499,8 +509,8 @@ function buildCharts(){
       scales:{y:{display:false,beginAtZero:true},x:{grid:{display:false},border:{color:L},ticks:{color:T,font:{weight:600},maxRotation:0,autoSkip:false}}},
       plugins:{tooltip:money,datalabels:{anchor:'end',align:'end',rotation:-90,offset:2,color:T,font:{size:10,weight:600},formatter:cmp,clip:false}}}});
 
-  const axisFmt=v=>{const a=Math.abs(v); if(PM==='n') return int.format(v); if(a>=1e9) return (v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' bi'; if(a>=1e6) return (v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi'; if(a>=1e3) return Math.round(v/1e3)+' mil'; return int.format(v);};
-  const agFmt=v=>{const a=Math.abs(v); if(AM==='n') return int.format(v); if(a>=1e9) return (v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' bi'; if(a>=1e6) return (v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi'; if(a>=1e3) return Math.round(v/1e3)+' mil'; return int.format(v);};
+  const axisFmt=v=>{const a=Math.abs(v); if(PM==='n') return int.format(v); if(a>=1e9) return (v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' B'; if(a>=1e6) return (v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' MM'; if(a>=1e3) return Math.round(v/1e3)+' MIL'; return int.format(v);};
+  const agFmt=v=>{const a=Math.abs(v); if(AM==='n') return int.format(v); if(a>=1e9) return (v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' B'; if(a>=1e6) return (v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' MM'; if(a>=1e3) return Math.round(v/1e3)+' MIL'; return int.format(v);};
   CH.ag=new Chart(document.getElementById('cAg'),{type:'bar',data:{labels:[],datasets:[
       {label:'Liquidado',data:[],backgroundColor:css('--accent-lo'),borderRadius:3,stack:'s',barPercentage:.78,categoryPercentage:.85},
       {label:'A receber',data:[],backgroundColor:A,borderRadius:3,stack:'s',barPercentage:.78,categoryPercentage:.85}]},
