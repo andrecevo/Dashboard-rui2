@@ -176,6 +176,43 @@ path.uf:hover{stroke:var(--text);stroke-width:1.4}
 .err{background:rgba(232,96,76,.12);border:1px solid var(--bad);color:var(--text);border-radius:8px;padding:10px 14px;font-size:13px}
 .drop{position:fixed;inset:0;background:rgba(14,17,18,.9);display:flex;align-items:center;justify-content:center;z-index:30;border:3px dashed var(--accent);font:700 28px var(--display);color:var(--accent-hi)}
 .loading{color:var(--muted);font-size:14px;padding:30px;text-align:center}
+/* Abas de tela */
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--line);margin-top:-4px;overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 16px;font:700 13px var(--body);letter-spacing:.05em;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent-hi);outline-offset:-2px}
+/* Manutenção de base */
+.kpis.mbk{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.mb-tables{display:flex;flex-direction:column;gap:16px}
+.mb-panel{padding:30px 14px 14px}
+.mb-sub{font-size:11.5px;color:var(--muted);text-align:center;margin:-4px 0 12px;letter-spacing:.04em}
+.tw{overflow-x:auto}
+table.pv{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px;min-width:620px}
+.pv th,.pv td{border:1px solid var(--line);padding:0;text-align:center}
+.pv thead th{background:var(--panel-2);font-weight:700;padding:8px;font-size:12.5px;letter-spacing:.03em}
+.pv tbody th{font-weight:700;padding:6px 12px}
+.pv tfoot th,.pv tfoot td,.pv td.g{background:var(--panel-2);font-weight:700}
+.pv td.z{color:var(--dim);padding:7px 8px}
+.pv .cb{all:unset;display:block;box-sizing:border-box;width:100%;padding:7px 8px;cursor:pointer;background:color-mix(in srgb,var(--accent) calc(var(--h,0) * 55%),transparent)}
+.pv .cb:hover,.pv .cb:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.mb-hint{font-size:12px;color:var(--muted)}
+.mb-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:flex;align-items:center;justify-content:center;padding:16px}
+.mb-dlg{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;width:min(1040px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.mb-dh{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid var(--line)}
+.mb-dht{flex:1;min-width:0}
+.mb-dh h3{margin:0;font:700 17px var(--body);letter-spacing:.02em}
+.mb-dsub{font-size:12px;color:var(--muted);margin-top:4px}
+.mb-x{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;width:32px;height:32px;cursor:pointer;font-size:14px;flex:none}
+.mb-tools{display:flex;gap:10px;align-items:center;padding:10px 16px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.mb-tools input{flex:1 1 220px;min-width:0;font:500 13px var(--body);background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:8px 10px;text-transform:none}
+.mb-count{font-size:12px;color:var(--muted)}
+.mb-list{overflow:auto;flex:1}
+table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.dt th{position:sticky;top:0;background:var(--panel-2);text-align:left;padding:8px 12px;font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap}
+.dt td{padding:7px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.dt td.n,.dt th.n{text-align:right}
+.mb-more{display:block;margin:12px auto;padding:7px 14px}
 footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 
 @media (max-width:1280px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"sit sit ano ano" "ag ag ag ag" "perf perf perf perf" "map map ac ac" "meio meio ger ger" "uf uf uf uf"}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -189,7 +226,7 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
 <div class="frame">
   <header>
     <div class="head-txt">
-      <h1>Dashboard de Faturamento</h1>
+      <h1 id="pageTtl">Dashboard de Faturamento</h1>
       <div class="meta" id="meta">Carregando dados…</div>
     </div>
     <div class="actions">
@@ -208,12 +245,17 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
       <input type="file" id="file" accept=".csv,.txt,.xlsx,.xls" hidden>
     </div>
   </header>
-  <div class="rule"></div>
+  <nav class="tabs" role="tablist" aria-label="Telas">
+    <button type="button" class="tab" role="tab" data-screen="fat" aria-selected="true">Faturamento</button>
+    <button type="button" class="tab" role="tab" data-screen="mb" aria-selected="false">Manutenção de base</button>
+  </nav>
   <div id="msg"></div>
   <div id="app"><div class="loading">Carregando dados…</div></div>
+  <div id="appMB" hidden><div class="loading">Carregando base…</div></div>
   <footer><span>Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.</span><span id="foot"></span></footer>
 </div>
 <div class="tip" id="tip" hidden></div>
+<div class="mb-modal" id="mbModal" hidden><div class="mb-dlg" role="dialog" aria-modal="true" aria-labelledby="mbDlgT"><div class="mb-dh"><div class="mb-dht"><h3 id="mbDlgT"></h3><div class="mb-dsub" id="mbDlgSub"></div></div><button type="button" class="mb-x" id="mbClose" aria-label="Fechar">✕</button></div><div class="mb-tools"><input type="search" id="mbSearch" placeholder="Buscar CPF, nome ou UF" aria-label="Buscar no detalhe"><span id="mbCount" class="mb-count"></span><button type="button" class="theme-btn" id="mbCopy">Copiar lista</button></div><div class="mb-list" id="mbList"></div></div></div>
 <div class="drop" id="drop" hidden>Solte o arquivo para atualizar o dashboard</div>
 
 <template id="tpl">
@@ -386,11 +428,17 @@ function parseCSVText(txt){
   const r=Papa.parse(txt.replace(/^﻿/,''),{header:true,skipEmptyLines:'greedy',delimitersToGuess:[';',',','\t','|']});
   return r.data;
 }
-function parseBuffer(buf,name){
+const WANT_FAT=hs=>hs.some(h=>COLS.valor.includes(h))&&hs.some(h=>COLS.venc.includes(h));
+function parseBuffer(buf,name,want){
   if(/\.xlsx?$/i.test(name)){
     const wb=XLSX.read(buf,{type:'array',cellDates:true});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
+    let first=null;
+    for(const sn of wb.SheetNames){ // usa a aba que tem as colunas esperadas
+      const js=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:'',raw:true});
+      if(first===null) first=js;
+      if(js.length&&(!want||want(Object.keys(js[0]).map(norm)))) return js;
+    }
+    return first||[];
   }
   return parseCSVText(decode(buf));
 }
@@ -398,7 +446,7 @@ async function loadFile(file){
   showMsg(''); setMeta('Lendo <b>'+esc(file.name)+'</b>…');
   try{
     const buf=await file.arrayBuffer();
-    ingest(parseBuffer(buf,file.name), file.name);
+    ingest(parseBuffer(buf,file.name,WANT_FAT), file.name);
   }catch(e){ showMsg(e.message); setMeta(DATA?metaTxt():'Nenhum dado carregado.'); }
 }
 async function loadDefault(){
@@ -406,7 +454,7 @@ async function loadDefault(){
     const r=await fetch(DEFAULT_FILE,{cache:'no-store'});
     if(!r.ok) throw 0;
     const buf=await r.arrayBuffer();
-    ingest(parseBuffer(buf,DEFAULT_FILE), DEFAULT_FILE);
+    ingest(parseBuffer(buf,DEFAULT_FILE,WANT_FAT), DEFAULT_FILE);
   }catch(e){
     if(e&&e.message) showMsg(e.message);
     setMeta('Nenhum dado carregado.');
@@ -454,7 +502,10 @@ function cmp(v){
 }
 const pct=v=>(v*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function setMeta(h){document.getElementById('meta').innerHTML=h}
+const META={fat:'Carregando dados…',mb:'Carregando base…'};
+function setMeta(h){META.fat=h; if(typeof SCREEN==='undefined'||SCREEN==='fat') document.getElementById('meta').innerHTML=h}
+function setMetaMB(h){META.mb=h; if(SCREEN==='mb') document.getElementById('meta').innerHTML=h}
+let SCREEN='fat';
 function showMsg(t,soft){document.getElementById('msg').innerHTML=t?'<div class="err" style="'+(soft?'border-color:var(--accent-lo);background:var(--accent-soft)':'')+'">'+esc(t)+'</div>':''}
 
 /* ---------- Montagem ---------- */
@@ -472,7 +523,7 @@ function mount(){
   svg.querySelectorAll('title').forEach(t=>t.remove());
   svg.addEventListener('click',e=>{const p=e.target.closest('path.uf'); if(p) toggle('uf',p.dataset.uf);});
   svg.addEventListener('keydown',e=>{const p=e.target.closest('path.uf'); if(p&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggle('uf',p.dataset.uf);}});
-  document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{F[b.dataset.clear].clear();render();});
+  document.querySelectorAll('#app [data-clear]').forEach(b=>b.onclick=()=>{F[b.dataset.clear].clear();render();});
   buildCharts();
 }
 function toggle(k,v){ F[k].has(v)?F[k].delete(v):F[k].add(v); render(); }
@@ -718,7 +769,7 @@ function renderSlicers(all){
     cliente:[...new Set(all.map(r=>r.cliente))].sort(),
     tipo:[...new Set(all.map(r=>r.tipo))].sort()
   };
-  document.querySelectorAll('.slicer').forEach(el=>{
+  document.querySelectorAll('#app .slicer').forEach(el=>{
     const k=el.dataset.key, f=FIELD[k];
     const avail=new Set(all.filter(r=>pass(r,k)).map(r=>r[f]));
     const cnt=el.querySelector('.cnt'); cnt.textContent=F[k].size?F[k].size+' sel.':'Todos'; cnt.classList.toggle('on',F[k].size>0);
@@ -740,12 +791,12 @@ function renderChips(){
 /* ---------- Upload / drag-and-drop ---------- */
 const fileIn=document.getElementById('file');
 document.getElementById('btnUp').onclick=()=>fileIn.click();
-fileIn.onchange=()=>{ if(fileIn.files[0]) loadFile(fileIn.files[0]); fileIn.value=''; };
+fileIn.onchange=()=>{ const f=fileIn.files[0]; if(f) (SCREEN==='mb'?mbLoadFile:loadFile)(f); fileIn.value=''; };
 const drop=document.getElementById('drop'); let dc=0;
 addEventListener('dragenter',e=>{if([...e.dataTransfer.types].includes('Files')){dc++;drop.hidden=false;}});
 addEventListener('dragleave',()=>{if(--dc<=0){dc=0;drop.hidden=true;}});
 addEventListener('dragover',e=>e.preventDefault());
-addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f) loadFile(f);});
+addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f) (SCREEN==='mb'?mbLoadFile:loadFile)(f);});
 
 /* Tema claro/escuro */
 const ICON_SUN='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
@@ -782,6 +833,166 @@ palMenu.querySelectorAll('button').forEach(b=>b.onclick=()=>{ closePal(); setPal
 document.addEventListener('click',e=>{ if(!e.target.closest('.pal-wrap')) closePal(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePal(); });
 (function(){ let p=null; try{p=localStorage.getItem('dash-template');}catch(e){} setPal(p||'brand',false); })();
+
+/* =================== MANUTENÇÃO DE BASE =================== */
+const MB_FILE='manutencao.csv';
+const MBCOLS={cpf:['cpf','cpfcnpj','documento','cnpj'],nome:['nome','nomecliente','razaosocial'],uf:['ufprincipal','uf'],cliente:['cliente'],ano:['anogerador','ano'],status:['status','situacao','acao']};
+const WANT_MB=hs=>hs.some(h=>MBCOLS.status.includes(h))&&hs.some(h=>MBCOLS.cliente.includes(h));
+const STATUS_ORDER=['HIGIENIZAR','DISPONIBILIZAR'];
+let MBD=null, MBSRC='';
+const FM={cliente:new Set(),ano:new Set()};
+const MBLABEL={cliente:'Cliente',ano:'Ano gerador'};
+function fmtDoc(d){ if(!d) return '—'; if(d.length<=11){d=d.padStart(11,'0'); return d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9);} if(d.length===14) return d.slice(0,2)+'.'+d.slice(2,5)+'.'+d.slice(5,8)+'/'+d.slice(8,12)+'-'+d.slice(12); return d; }
+function mbIngest(objs,name){
+  if(!objs.length) throw new Error('O arquivo não tem linhas de dados.');
+  const headers=Object.keys(objs[0]), map={};
+  for(const [k,alts] of Object.entries(MBCOLS)){ const h=headers.find(h=>alts.includes(norm(h))); if(h) map[k]=h; }
+  const miss=['cliente','ano','status'].filter(k=>!map[k]);
+  if(miss.length) throw new Error('Manutenção de base: não encontrei as colunas '+miss.map(k=>({cliente:'“Cliente”',ano:'“Ano Gerador”',status:'“Status”'})[k]).join(', ')+'. Colunas lidas: '+headers.join(' | '));
+  const rows=[];
+  for(const o of objs){
+    const cli=String(o[map.cliente]??'').trim().toUpperCase(), st=String(o[map.status]??'').trim().toUpperCase();
+    if(!cli&&!st) continue;
+    const n=parseNum(o[map.ano]);
+    rows.push({cpf:map.cpf?String(o[map.cpf]??'').replace(/\D/g,''):'', nome:map.nome?String(o[map.nome]??'').trim():'', uf:map.uf?String(o[map.uf]??'').trim().toUpperCase():'',
+      cliente:cli||'—', ano:n?String(Math.round(n)):'SEM ANO', status:st||'SEM STATUS'});
+  }
+  if(!rows.length) throw new Error('Nenhuma linha válida na base de manutenção.');
+  MBD={rows, hasCpf:!!map.cpf}; MBSRC=name; FM.cliente.clear(); FM.ano.clear();
+  setMetaMB('Fonte: <b>'+esc(name)+'</b> · '+int.format(rows.length)+' registros · '+[...new Set(rows.map(r=>r.cliente))].length+' clientes');
+  mbMount(); mbRender();
+}
+async function mbLoadFile(file){
+  showMsg(''); setMetaMB('Lendo <b>'+esc(file.name)+'</b>…');
+  try{ const buf=await file.arrayBuffer(); mbIngest(parseBuffer(buf,file.name,WANT_MB),file.name); }
+  catch(e){ showMsg(e.message); setMetaMB(MBD?'Fonte: <b>'+esc(MBSRC)+'</b>':'Nenhuma base carregada.'); }
+}
+async function mbLoadDefault(){
+  try{ const r=await fetch(MB_FILE,{cache:'no-store'}); if(!r.ok) throw 0; const buf=await r.arrayBuffer(); mbIngest(parseBuffer(buf,MB_FILE,WANT_MB),MB_FILE); }
+  catch(e){ if(e&&e.message&&SCREEN==='mb') showMsg(e.message); setMetaMB('Nenhuma base carregada.');
+    document.getElementById('appMB').innerHTML='<div class="empty"><h2>Carregue a base de manutenção</h2><p>Use <b>Carregar planilha</b> com esta tela aberta, ou arraste o arquivo para a página.<br>Colunas esperadas: <code>Cpf</code>, <code>Nome</code>, <code>UF Principal</code>, <code>Cliente</code>, <code>Ano Gerador</code>, <code>Status</code>.<br>Para abrir já com dados, coloque um <code>'+MB_FILE+'</code> na mesma pasta do <code>index.html</code>.</p></div>'; }
+}
+const mbPass=(r,skip)=>{ for(const k in FM){ if(k===skip||!FM[k].size) continue; if(!FM[k].has(r[k])) return false; } return true; };
+const sortAno=(a,b)=>(a==='SEM ANO')-(b==='SEM ANO')||a.localeCompare(b);
+function mbMount(){
+  const el=document.getElementById('appMB');
+  el.innerHTML='<div class="main"><aside class="side" aria-label="Filtros"><div class="side-h">Filtros</div><div class="slicers">'+
+    ['cliente','ano'].map(k=>'<details class="slicer" data-mkey="'+k+'"><summary><span class="sn">'+MBLABEL[k]+'</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr">Limpar seleção</button></details>').join('')+
+    '</div></aside><div class="content"><div class="chips" id="mbChips"></div><div class="kpis mbk" id="mbKpis"></div><div class="mb-tables" id="mbTables"></div></div></div>';
+  el.querySelectorAll('.slicer .clr').forEach(b=>b.onclick=()=>{FM[b.closest('.slicer').dataset.mkey].clear(); mbRender();});
+  document.getElementById('mbTables').addEventListener('click',e=>{ const b=e.target.closest('.cb'); if(b) openDetail({kind:b.dataset.k,s:b.dataset.s||'',c:b.dataset.c||'',a:b.dataset.a||''}); });
+}
+function mbToggle(k,v){ FM[k].has(v)?FM[k].delete(v):FM[k].add(v); mbRender(); }
+function mbRender(){
+  if(!MBD) return;
+  const all=MBD.rows, rs=all.filter(r=>mbPass(r));
+  // filtros
+  const opts={cliente:[...new Set(all.map(r=>r.cliente))].sort(), ano:[...new Set(all.map(r=>r.ano))].sort(sortAno)};
+  document.querySelectorAll('#appMB .slicer').forEach(el=>{
+    const k=el.dataset.mkey, avail=new Set(all.filter(r=>mbPass(r,k)).map(r=>r[k]));
+    const cnt=el.querySelector('.cnt'); cnt.textContent=FM[k].size?FM[k].size+' sel.':'Todos'; cnt.classList.toggle('on',FM[k].size>0);
+    el.querySelector('.clr').hidden=!FM[k].size;
+    el.querySelector('.opts').innerHTML=opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail.has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(v)+'</button>').join('');
+    el.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>mbToggle(k,b.dataset.v));
+  });
+  // chips
+  const ch=document.getElementById('mbChips'), parts=[];
+  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(v)+' ✕</button>');
+  ch.innerHTML=parts.length?parts.join('')+'<button type="button" class="btn ghost" id="mbClearAll" style="padding:4px 10px;font-size:12px">Limpar filtros</button>':'Dica: clique em qualquer número das tabelas para abrir o analítico com o detalhe.';
+  ch.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{FM[b.dataset.k].delete(b.dataset.v); mbRender();});
+  const ca=document.getElementById('mbClearAll'); if(ca) ca.onclick=()=>{FM.cliente.clear();FM.ano.clear();mbRender();};
+  // status, clientes, anos
+  const sts=[...new Set(rs.map(r=>r.status))].sort((a,b)=>{const ia=STATUS_ORDER.indexOf(a),ib=STATUS_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);});
+  const clis=[...new Set(rs.map(r=>r.cliente))].sort(), anos=[...new Set(rs.map(r=>r.ano))].sort(sortAno);
+  const cpfs=new Set(rs.map(r=>r.cpf).filter(Boolean));
+  // KPIs
+  const K=[['Total de registros',int.format(rs.length),clis.length+' clientes · '+anos.length+' anos']];
+  sts.forEach(s=>{const n=rs.filter(r=>r.status===s).length; K.push([s,int.format(n),(rs.length?pct(n/rs.length):'0%')+' da base']);});
+  if(MBD.hasCpf) K.push(['CPFs únicos',int.format(cpfs.size),cpfs.size?(rs.length/cpfs.size).toLocaleString('pt-BR',{maximumFractionDigits:1})+' registros por CPF':'']);
+  document.getElementById('mbKpis').innerHTML=K.map(k=>'<div class="kpi"><div class="k">'+esc(k[0])+'</div><div class="v">'+k[1]+'</div><div class="s">'+esc(k[2])+'</div></div>').join('');
+  // tabelas
+  let html='';
+  sts.forEach(s=>{ html+=pivot(s, 'Visão quantidade', rs.filter(r=>r.status===s), clis, anos, 'q', r=>1); });
+  if(MBD.hasCpf) html+=pivot('Quantidade de CPFs','CPFs únicos por cliente e ano gerador (todos os status)', rs, clis, anos, 'cpf', null);
+  document.getElementById('mbTables').innerHTML=html||'<div class="empty"><h2>Sem dados</h2><p>Nenhum registro com os filtros atuais.</p></div>';
+}
+function pivot(title,sub,rows,clis,anos,kind,_){
+  const isCpf=kind==='cpf', cell=new Map(), rowT=new Map(), colT=new Map(), all=new Set();
+  const add=(m,k,r)=>{ if(isCpf){ let s=m.get(k); if(!s) m.set(k,s=new Set()); if(r.cpf) s.add(r.cpf); } else m.set(k,(m.get(k)||0)+1); };
+  rows.forEach(r=>{ add(cell,r.cliente+'|'+r.ano,r); add(rowT,r.cliente,r); add(colT,r.ano,r); if(isCpf){ if(r.cpf) all.add(r.cpf);} });
+  const val=(m,k)=>{ const v=m.get(k); return isCpf?(v?v.size:0):(v||0); };
+  let mx=1; clis.forEach(c=>anos.forEach(a=>{mx=Math.max(mx,val(cell,c+'|'+a));}));
+  const s=isCpf?'':title, tot=isCpf?all.size:rows.length;
+  const btn=(v,c,a,heat)=>v?'<button type="button" class="cb" data-k="'+kind+'" data-s="'+esc(s)+'" data-c="'+esc(c)+'" data-a="'+esc(a)+'"'+(heat?' style="--h:'+(v/mx).toFixed(3)+'"':'')+' title="Abrir analítico">'+int.format(v)+'</button>':'';
+  const td=(v,c,a,heat,cls)=>'<td'+(cls?' class="'+cls+'"':'')+(v?'':' class="z"')+'>'+(v?btn(v,c,a,heat):'–')+'</td>';
+  let h='<section class="panel mb-panel"><div class="ttl">'+esc(title)+'</div><div class="mb-sub">'+esc(sub)+' · '+int.format(tot)+(isCpf?' CPFs':' registros')+'</div><div class="tw"><table class="pv"><thead><tr><th>Cliente</th>'+anos.map(a=>'<th>'+esc(a)+'</th>').join('')+'<th>Geral</th></tr></thead><tbody>';
+  clis.forEach(c=>{ const rt=val(rowT,c); if(!rt) return; h+='<tr><th>'+esc(c)+'</th>'+anos.map(a=>td(val(cell,c+'|'+a),c,a,true)).join('')+td(rt,c,'',false,'g')+'</tr>'; });
+  h+='</tbody><tfoot><tr><th>Total</th>'+anos.map(a=>td(val(colT,a),'',a,false)).join('')+td(tot,'','',false)+'</tr></tfoot></table></div></section>';
+  return h;
+}
+let DET={list:[],kind:'q',shown:0,q:''};
+function openDetail(sel){
+  const rs=MBD.rows.filter(r=>mbPass(r)&&(!sel.s||r.status===sel.s)&&(!sel.c||r.cliente===sel.c)&&(!sel.a||r.ano===sel.a));
+  const parts=[sel.kind==='cpf'?'Quantidade de CPFs':(sel.s||'Todos os status'), sel.c?'Cliente '+sel.c:'Todos os clientes', sel.a?'Ano gerador '+sel.a:'Todos os anos'];
+  let list;
+  if(sel.kind==='cpf'){
+    const m=new Map(); rs.forEach(r=>{ if(!r.cpf) return; let d=m.get(r.cpf); if(!d) m.set(r.cpf,d={cpf:r.cpf,nome:r.nome,n:0,st:new Set(),uf:new Set()}); d.n++; d.st.add(r.status); if(r.uf) d.uf.add(r.uf); });
+    list=[...m.values()].sort((a,b)=>b.n-a.n).map(d=>({cpf:d.cpf,nome:d.nome,n:d.n,status:[...d.st].join(', '),uf:[...d.uf].join(', ')}));
+  } else list=rs;
+  const ufc=new Map(); rs.forEach(r=>{ if(r.uf) ufc.set(r.uf,(ufc.get(r.uf)||0)+1); });
+  const topUf=[...ufc].sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]+' '+int.format(x[1])).join(' · ');
+  document.getElementById('mbDlgT').textContent=parts.join(' · ');
+  document.getElementById('mbDlgSub').textContent=int.format(rs.length)+' registros'+(sel.kind==='cpf'?' · '+int.format(list.length)+' CPFs únicos':'')+(topUf?' · Principais UFs: '+topUf:'');
+  DET={list,kind:sel.kind,shown:0,q:''};
+  const si=document.getElementById('mbSearch'); si.value='';
+  drawDetail(true);
+  const m=document.getElementById('mbModal'); m.hidden=false; document.body.style.overflow='hidden'; si.focus();
+}
+function detFiltered(){ const q=DET.q.trim().toUpperCase(), qd=q.replace(/\D/g,''); if(!q) return DET.list;
+  return DET.list.filter(r=>(qd&&r.cpf.includes(qd))||(r.nome||'').toUpperCase().includes(q)||(r.uf||'').includes(q)); }
+function drawDetail(reset){
+  const L=detFiltered(); if(reset) DET.shown=0; DET.shown=Math.min(L.length,Math.max(DET.shown,300));
+  const cpf=DET.kind==='cpf';
+  const head=cpf?'<tr><th>CPF</th><th>Nome</th><th class="n">Registros</th><th>Status</th><th>UF principal</th></tr>':'<tr><th>CPF</th><th>Nome</th><th>UF principal</th><th>Cliente</th><th>Ano gerador</th><th>Status</th></tr>';
+  const body=L.slice(0,DET.shown).map(r=>cpf?'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td class="n">'+int.format(r.n)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.uf||'—')+'</td></tr>'
+    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td>'+esc(r.status)+'</td></tr>').join('');
+  document.getElementById('mbList').innerHTML='<table class="dt"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>'+(L.length>DET.shown?'<button type="button" class="btn ghost mb-more" id="mbMore">Mostrar mais ('+int.format(L.length-DET.shown)+' restantes)</button>':'');
+  document.getElementById('mbCount').textContent=int.format(L.length)+(L.length===DET.list.length?'':' de '+int.format(DET.list.length))+' linhas';
+  const mo=document.getElementById('mbMore'); if(mo) mo.onclick=()=>{DET.shown+=300; drawDetail(false);};
+}
+function closeDetail(){ document.getElementById('mbModal').hidden=true; document.body.style.overflow=''; }
+document.getElementById('mbSearch').addEventListener('input',e=>{DET.q=e.target.value; drawDetail(true);});
+document.getElementById('mbClose').onclick=closeDetail;
+document.getElementById('mbModal').addEventListener('click',e=>{ if(e.target.id==='mbModal') closeDetail(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!document.getElementById('mbModal').hidden) closeDetail(); });
+document.getElementById('mbCopy').onclick=async()=>{
+  const L=detFiltered(), cpf=DET.kind==='cpf';
+  const tsv=(cpf?['CPF','NOME','REGISTROS','STATUS','UF PRINCIPAL']:['CPF','NOME','UF PRINCIPAL','CLIENTE','ANO GERADOR','STATUS']).join('\t')+'\n'+
+    L.map(r=>cpf?[fmtDoc(r.cpf),r.nome,r.n,r.status,r.uf].join('\t'):[fmtDoc(r.cpf),r.nome,r.uf,r.cliente,r.ano,r.status].join('\t')).join('\n');
+  const b=document.getElementById('mbCopy');
+  try{ await navigator.clipboard.writeText(tsv); b.textContent='Copiado ✓'; }
+  catch(e){ b.textContent='Não foi possível copiar'; }
+  setTimeout(()=>b.textContent='Copiar lista',1800);
+};
+
+/* Troca de tela */
+const FOOT={fat:'Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.',mb:'Manutenção de base: aceita CSV ou XLSX com Cpf, Nome, UF Principal, Cliente, Ano Gerador e Status. Clique nos números para ver o detalhe.'};
+function setScreen(sc,save){
+  SCREEN=sc==='mb'?'mb':'fat';
+  document.getElementById('app').hidden=SCREEN!=='fat'; document.getElementById('appMB').hidden=SCREEN!=='mb';
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.screen===SCREEN));
+  document.getElementById('pageTtl').textContent=SCREEN==='mb'?'Manutenção de Base':'Dashboard de Faturamento';
+  document.getElementById('meta').innerHTML=META[SCREEN]; if(SCREEN==='fat') bindDateMode();
+  document.querySelector('footer span').textContent=FOOT[SCREEN];
+  showMsg('');
+  if(SCREEN==='fat') Object.values(CH).forEach(c=>c&&c.resize());
+  if(save){ try{localStorage.setItem('dash-tela',SCREEN);}catch(e){} try{history.replaceState(null,'','#'+(SCREEN==='mb'?'manutencao':'faturamento'));}catch(e){} }
+}
+document.querySelectorAll('.tabs .tab').forEach(t=>t.onclick=()=>setScreen(t.dataset.screen,true));
+(function(){ let sc=null; const hsh=(location.hash||'').slice(1);
+  if(hsh==='manutencao') sc='mb'; else if(hsh==='faturamento') sc='fat'; else { try{sc=localStorage.getItem('dash-tela');}catch(e){} }
+  setScreen(sc||'fat',false); })();
+mbLoadDefault();
 
 loadDefault();
 </script>
