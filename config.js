@@ -3,5 +3,5 @@
    NUNCA coloque aqui a chave service_role. */
 window.DASH_CONFIG = {
   supabaseUrl: 'https://gykhtaakgjaoffrglhfh.supabase.co',
-  supabaseAnonKey: 'sb_publishable_Gx2oL7y01plVZZkEe2g7hw_9HeWVfeP'
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5a2h0YWFrZ2phb2ZmcmdsaGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2NTY5MjUsImV4cCI6MjEwOTIzMjkyNX0.07ExEygi0xl4GgdaUVCIeZQeviTSFNss5RRtZwytDgU'
 };
