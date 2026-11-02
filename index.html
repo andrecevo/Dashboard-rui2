@@ -14,7 +14,7 @@
   --accent:#009ba2; --accent-2:#008c95; --accent-hi:#2fbdc3; --accent-lo:#005f61; --accent-soft:rgba(0,155,162,.18);
   --text:#eef3f3; --muted:#9aa2a4; --dim:#6d6e71;
   --map-base:#14474a; --map-hi:#2fbdc3; --map-sel:#f2f4f4;
-  --ok:#3fcf8e; --bad:#ef6a5a;
+  --ok:#3fcf8e; --bad:#ef6a5a; --warn:#e3a63c;
   --bar2:#eef3f3; --dimbar:#3a4344; --grid:rgba(255,255,255,.07); --tipbg:#0a0c0d; --mapdim:#253031; --ink:#ffffff; --x1:#00505c; --x2:#8fd8db; --x3:#003a40;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Barlow","Segoe UI",Arial,sans-serif;
@@ -26,7 +26,7 @@
   --accent:#009ba2; --accent-2:#00737a; --accent-hi:#33b5bb; --accent-lo:#005f61; --accent-soft:rgba(0,155,162,.12);
   --text:#1b2122; --muted:#6d6e71; --dim:#9aa0a2;
   --map-base:#c9e6e7; --map-hi:#005f61; --map-sel:#1b2122;
-  --ok:#1f8a4c; --bad:#c9412f;
+  --ok:#1f8a4c; --bad:#c9412f; --warn:#b26d12;
   --bar2:#6d6e71; --dimbar:#d6dfe0; --grid:rgba(0,0,0,.08); --tipbg:#ffffff; --mapdim:#e3eaea; --ink:#ffffff; --x1:#00505c; --x2:#8fd8db; --x3:#003a40;
   color-scheme:light;
 }
@@ -209,10 +209,78 @@ table.pv{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;f
 .mb-count{font-size:12px;color:var(--muted)}
 .mb-list{overflow:auto;flex:1}
 table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
-.dt th{position:sticky;top:0;background:var(--panel-2);text-align:left;padding:8px 12px;font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap}
-.dt td{padding:7px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.dt th{position:sticky;top:0;background:var(--panel-2);text-align:left;padding:8px 10px;font-weight:700;border-bottom:1px solid var(--line);z-index:1}
+.dt td{padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.dt td small{display:block;color:var(--muted);font-size:10.5px;margin-top:2px}
+.dt td.wrap{white-space:normal}
+.mb-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.mb-bar .chips{flex:1 1 300px}
+.mb-hist{display:grid;grid-template-columns:1fr 1.35fr;gap:16px;align-items:start}
+.mb-hist .mb-panel>div:last-child{max-height:340px;overflow-y:auto}
+.lnk{background:none;border:0;color:var(--accent-hi);cursor:pointer;font:700 11.5px var(--body);text-transform:uppercase;padding:2px 4px}
+.lnk[data-armed="1"]{color:var(--bad)}
+.mb-bulk{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.mb-bulk select,.stsel{font:600 12px var(--body);text-transform:uppercase;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 6px;max-width:100%}
+.mb-bulk .theme-btn{padding:6px 10px;font-size:12px}
+.stsel{border-width:1.5px;cursor:pointer}
+.stsel.st-h{border-color:var(--accent);color:var(--text)}
+.stsel.st-d{border-color:var(--ok);color:var(--ok)}
+.stsel.st-c{border-color:var(--warn);color:var(--warn)}
+.stsel.st-f{border-color:var(--muted);color:var(--muted)}
+.stsel.st-b{border-color:var(--bad);color:var(--bad)}
+.kpi.st-d .k,.mb-panel.st-d>.ttl{background:var(--ok);color:#fff}
+.kpi.st-c .k,.mb-panel.st-c>.ttl{background:var(--warn);color:#1a1205}
+.kpi.st-f .k,.mb-panel.st-f>.ttl{background:var(--dim);color:#fff}
+.kpi.st-b .k,.mb-panel.st-b>.ttl{background:var(--bad);color:#fff}
+.edt{color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tipbg);color:var(--text);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;display:flex;gap:14px;align-items:center;z-index:60;max-width:calc(100% - 32px);box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:13px}
+.toast button{background:var(--accent);color:var(--ink);border:0;border-radius:6px;padding:6px 10px;font:700 12px var(--body);cursor:pointer;text-transform:uppercase;flex:none}
+@media (max-width:980px){.mb-hist{grid-template-columns:1fr}}
+@media (max-width:700px){.dte{font-size:11px}.dte th,.dte td{padding:5px 6px}}
 .dt td.n,.dt th.n{text-align:right}
 .mb-more{display:block;margin:12px auto;padding:7px 14px}
+/* Login, usuários e status */
+body.locked{overflow:hidden}
+.gate{position:fixed;inset:0;z-index:80;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.g-card{width:min(400px,100%);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.g-card form,.g-card [data-view]{display:flex;flex-direction:column;gap:12px}
+.g-card [hidden]{display:none!important}
+.g-brand{display:flex;align-items:center;gap:8px;font:700 12px var(--body);letter-spacing:.1em;color:var(--accent-hi)}
+.g-dot{width:10px;height:10px;border-radius:3px;background:var(--accent)}
+.g-card h2{margin:0;font:700 24px var(--body)}
+.g-txt{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5;text-transform:none}
+.g-txt code{color:var(--accent-hi)}
+.g-f{display:flex;flex-direction:column;gap:6px;font:700 11.5px var(--body);letter-spacing:.06em;color:var(--muted)}
+.g-f input,.nu input,.nu select{font:500 14px var(--body);text-transform:none;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 12px;letter-spacing:0}
+.g-f input:focus,.nu input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+.g-go{justify-content:center;padding:11px 14px;font-size:14px}
+.g-lnk{align-self:center}
+.g-msg{margin:0;font-size:13px;padding:9px 11px;border-radius:8px;text-transform:none}
+.g-msg.err{background:rgba(239,106,90,.12);border:1px solid var(--bad);color:var(--text)}
+.g-msg.note{background:var(--accent-soft);border:1px solid var(--accent-lo);color:var(--text)}
+.f-err{color:var(--bad);font-size:12.5px;text-transform:none;margin:0}
+.f-err:empty{display:none}
+.lc,.lc *{text-transform:none!important}
+.btn:disabled,.theme-btn:disabled{opacity:.5;cursor:not-allowed}
+.user-wrap{position:relative;display:inline-flex}
+.user-btn .u-t{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
+.user-btn small{font-size:10px;color:var(--muted);font-weight:600}
+.mb-dlg.sm{width:min(420px,100%)}
+.nu{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.nu b{width:100%;font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.nu input{flex:1 1 150px;min-width:0;padding:8px 10px;font-size:13px}
+.nu select{padding:8px 10px;font-size:13px}
+.pw{display:flex;flex-direction:column;gap:12px;padding:16px}
+.sw-l{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+.sw-l input{accent-color:var(--accent);width:16px;height:16px}
+.prog{display:flex;align-items:center;gap:12px;font-size:12.5px;color:var(--text);background:var(--panel);border:1px solid var(--accent-lo);border-radius:8px;padding:10px 12px}
+.prog .pt{flex:none}
+.prog .pb{flex:1;height:8px;border-radius:4px;background:var(--panel-2);overflow:hidden}
+.prog .pb i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.stt{display:inline-block;font:700 11px var(--body);padding:3px 7px;border-radius:5px;border:1.5px solid var(--line)}
+.stt.st-d{border-color:var(--ok);color:var(--ok)}.stt.st-c{border-color:var(--warn);color:var(--warn)}.stt.st-f{color:var(--muted)}.stt.st-b{border-color:var(--bad);color:var(--bad)}.stt.st-h{border-color:var(--accent)}
+tr.undone td{opacity:.55}
+.live{display:inline-flex;align-items:center;gap:5px}.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 25%,transparent)}
 footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 
 @media (max-width:1280px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"sit sit ano ano" "ag ag ag ag" "perf perf perf perf" "map map ac ac" "meio meio ger ger" "uf uf uf uf"}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -230,6 +298,14 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
       <div class="meta" id="meta">Carregando dados…</div>
     </div>
     <div class="actions">
+      <div class="user-wrap">
+        <button type="button" class="theme-btn user-btn" id="userBtn" aria-haspopup="true" aria-expanded="false" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span class="u-t"><span id="userNm"></span><small id="userPp"></small></span></button>
+        <div class="pal-menu" id="userMenu" role="menu" hidden>
+          <button type="button" role="menuitem" id="umUsers" hidden><span>Usuários e acessos<small>Aprovar, criar e definir papéis</small></span></button>
+          <button type="button" role="menuitem" id="umSenha"><span>Alterar minha senha</span></button>
+          <button type="button" role="menuitem" id="umSair"><span>Sair</span></button>
+        </div>
+      </div>
       <div class="pal-wrap">
         <button type="button" class="theme-btn pal-btn" id="palBtn" aria-haspopup="true" aria-expanded="false"><span class="sw" id="palSw"></span><span id="palLbl">Template</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="pal-menu" id="palMenu" role="menu" hidden>
@@ -255,7 +331,35 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
   <footer><span>Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.</span><span id="foot"></span></footer>
 </div>
 <div class="tip" id="tip" hidden></div>
-<div class="mb-modal" id="mbModal" hidden><div class="mb-dlg" role="dialog" aria-modal="true" aria-labelledby="mbDlgT"><div class="mb-dh"><div class="mb-dht"><h3 id="mbDlgT"></h3><div class="mb-dsub" id="mbDlgSub"></div></div><button type="button" class="mb-x" id="mbClose" aria-label="Fechar">✕</button></div><div class="mb-tools"><input type="search" id="mbSearch" placeholder="Buscar CPF, nome ou UF" aria-label="Buscar no detalhe"><span id="mbCount" class="mb-count"></span><button type="button" class="btn" id="mbCopy"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>Exportar</button></div><div class="mb-list" id="mbList"></div></div></div>
+<div class="mb-modal" id="mbModal" hidden><div class="mb-dlg" role="dialog" aria-modal="true" aria-labelledby="mbDlgT"><div class="mb-dh"><div class="mb-dht"><h3 id="mbDlgT"></h3><div class="mb-dsub" id="mbDlgSub"></div></div><button type="button" class="mb-x" id="mbClose" aria-label="Fechar">✕</button></div><div class="mb-tools"><input type="search" id="mbSearch" placeholder="Buscar CPF, nome ou UF" aria-label="Buscar no detalhe"><span id="mbCount" class="mb-count"></span><span id="mbBulk" class="mb-bulk" hidden>Alterar as <b id="mbBulkN"></b> linhas para <select id="mbBulkSel" aria-label="Novo status em lote"><option value="">escolha…</option><option>DISPONIBILIZAR</option><option>INCOBRÁVEL NO CLIENTE</option><option>FALECIDO</option><option>INCOBRÁVEL NA BASE</option></select><button type="button" class="theme-btn" id="mbBulkGo">Aplicar</button></span><button type="button" class="btn" id="mbCopy"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>Exportar</button></div><div class="mb-list" id="mbList"></div></div></div>
+<div class="gate" id="gate">
+  <div class="g-card">
+    <div class="g-brand"><span class="g-dot"></span>Dashboard de Faturamento</div>
+    <div data-view="setup" hidden><h2>Configuração pendente</h2><p class="g-txt">Este painel usa o Supabase para guardar os dados. Preencha a <b>URL do projeto</b> e a <b>chave anon public</b> no arquivo <code>config.js</code>, que fica ao lado do <code>index.html</code>. O passo a passo está no arquivo <code>LEIA-ME.md</code>.</p></div>
+    <form data-view="login" id="gLogin" hidden><h2>Entrar</h2><p class="g-msg err" hidden></p>
+      <label class="g-f">E-mail<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="g-f">Senha<input type="password" id="gSenha" autocomplete="current-password" required></label>
+      <button class="btn g-go" type="submit">Entrar</button>
+      <button class="lnk g-lnk" type="button" id="gEsqueci">Esqueci minha senha</button></form>
+    <form data-view="esqueci" id="gReset" hidden><h2>Recuperar senha</h2><p class="g-msg note" hidden></p>
+      <label class="g-f">E-mail cadastrado<input type="email" id="gEmail2" autocomplete="username" required></label>
+      <button class="btn g-go" type="submit">Enviar link</button>
+      <button class="lnk g-lnk" type="button" data-back>Voltar para o login</button></form>
+    <form data-view="nova" id="gNova" hidden><h2>Criar nova senha</h2><p class="g-msg err" hidden></p>
+      <label class="g-f">Nova senha<input type="password" id="gNova1" autocomplete="new-password" minlength="8" required></label>
+      <label class="g-f">Repita a nova senha<input type="password" id="gNova2" autocomplete="new-password" minlength="8" required></label>
+      <button class="btn g-go" type="submit">Salvar senha</button></form>
+    <div data-view="pendente" hidden><h2>Acesso aguardando aprovação</h2><p class="g-txt">O usuário <b id="gPendEmail" class="lc"></b> ainda não foi liberado. Peça para um administrador liberar seu acesso em <b>Usuários e acessos</b>.</p><button class="theme-btn" type="button" id="gSairPend">Sair</button></div>
+  </div>
+</div>
+<div class="mb-modal" id="userModal" hidden><div class="mb-dlg" role="dialog" aria-modal="true" aria-labelledby="umT"><div class="mb-dh"><div class="mb-dht"><h3 id="umT">Usuários e acessos</h3><div class="mb-dsub">Administrador: tudo, inclusive remover cargas e liberar usuários · Editor: carrega planilhas e altera status · Leitor: consulta e exporta</div></div><button type="button" class="mb-x" data-close="userModal" aria-label="Fechar">✕</button></div>
+  <form class="nu" id="newUserForm"><b>Novo usuário</b>
+    <input id="nuNome" placeholder="Nome" required aria-label="Nome"><input id="nuEmail" type="email" placeholder="E-mail" required aria-label="E-mail" class="lc"><input id="nuSenha" type="password" placeholder="Senha provisória (8+)" required minlength="8" aria-label="Senha provisória" autocomplete="new-password">
+    <select id="nuPapel" aria-label="Papel"><option value="leitor">Leitor</option><option value="editor">Editor</option><option value="admin">Administrador</option></select>
+    <button class="btn" type="submit">Criar</button><span class="f-err" id="nuMsg"></span></form>
+  <div class="mb-list" id="usersList"></div></div></div>
+<div class="mb-modal" id="pwdModal" hidden><div class="mb-dlg sm" role="dialog" aria-modal="true" aria-labelledby="pwT"><div class="mb-dh"><div class="mb-dht"><h3 id="pwT">Alterar minha senha</h3></div><button type="button" class="mb-x" data-close="pwdModal" aria-label="Fechar">✕</button></div>
+  <form id="pwdForm" class="pw"><label class="g-f">Nova senha<input type="password" id="pwd1" minlength="8" autocomplete="new-password" required></label><label class="g-f">Repita a nova senha<input type="password" id="pwd2" minlength="8" autocomplete="new-password" required></label><p class="f-err" id="pwdMsg"></p><button class="btn" type="submit">Salvar</button></form></div></div>
 <div class="drop" id="drop" hidden>Solte o arquivo para atualizar o dashboard</div>
 
 <template id="tpl">
@@ -302,6 +406,8 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
   P.strokeText=function(t,...a){return st.call(this,up(t),...a);};
   P.measureText=function(t){return mt.call(this,up(t));}; })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -834,16 +940,195 @@ document.addEventListener('click',e=>{ if(!e.target.closest('.pal-wrap')) closeP
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePal(); });
 (function(){ let p=null; try{p=localStorage.getItem('dash-template');}catch(e){} setPal(p||'brand',false); })();
 
-/* =================== MANUTENÇÃO DE BASE =================== */
-const MB_FILE='manutencao.csv';
-const MBCOLS={cpf:['cpf','cpfcnpj','documento','cnpj'],nome:['nome','nomecliente','razaosocial'],uf:['ufprincipal','uf'],cliente:['cliente'],ano:['anogerador','ano'],status:['status','situacao','acao']};
+/* =================== MANUTENÇÃO DE BASE · SUPABASE (multiusuário) =================== */
+const CFG=window.DASH_CONFIG||{};
+const SB=(window.supabase&&CFG.supabaseUrl&&CFG.supabaseAnonKey)?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+const MBCOLS={cpf:['cpf','cpfcnpj','documento','cnpj'],nome:['nome','nomecliente','razaosocial'],uf:['ufprincipal','uf'],cliente:['cliente'],ano:['anogerador','ano'],status:['status','situacao','acao','statusatual']};
 const WANT_MB=hs=>hs.some(h=>MBCOLS.status.includes(h))&&hs.some(h=>MBCOLS.cliente.includes(h));
-const STATUS_ORDER=['HIGIENIZAR','DISPONIBILIZAR'];
-let MBD=null, MBSRC='';
-const FM={cliente:new Set(),ano:new Set()};
-const MBLABEL={cliente:'Cliente',ano:'Ano gerador'};
+const ST_BASE='INCOBRÁVEL NA BASE';
+const EDIT_OPTS=['DISPONIBILIZAR','INCOBRÁVEL NO CLIENTE','FALECIDO',ST_BASE];
+const STATUS_ORDER=['HIGIENIZAR','DISPONIBILIZAR','INCOBRÁVEL NO CLIENTE','FALECIDO',ST_BASE];
+const ST_CLASS={'HIGIENIZAR':'h','DISPONIBILIZAR':'d','INCOBRÁVEL NO CLIENTE':'c','FALECIDO':'f','INCOBRÁVEL NA BASE':'b'};
+const PAPEL_LBL={admin:'Administrador',editor:'Editor',leitor:'Leitor'};
+function canonStatus(s){ const n=norm(s); const hit=STATUS_ORDER.find(x=>norm(x)===n); return hit||String(s??'').trim().toUpperCase()||'SEM STATUS'; }
+const fmtDT=iso=>{ if(!iso) return '—'; const d=new Date(iso); return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
 function fmtDoc(d){ if(!d) return '—'; if(d.length<=11){d=d.padStart(11,'0'); return d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9);} if(d.length===14) return d.slice(0,2)+'.'+d.slice(2,5)+'.'+d.slice(5,8)+'/'+d.slice(8,12)+'-'+d.slice(12); return d; }
-function mbIngest(objs,name){
+const errMsg=e=>{ const m=(e&&(e.message||e.error_description||e.msg))||String(e);
+  if(/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
+  if(/Email not confirmed/i.test(m)) return 'Este e-mail ainda não foi confirmado. Abra o link enviado por e-mail.';
+  if(/Failed to fetch|NetworkError/i.test(m)) return 'Sem conexão com o servidor. Verifique a internet e tente de novo.';
+  if(/row-level security|permission denied/i.test(m)) return 'Seu usuário não tem permissão para esta ação.';
+  if(/Password should be at least/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if(/User already registered/i.test(m)) return 'Já existe um usuário com este e-mail.';
+  return m; };
+
+let ME=null; // {id,email,nome,papel,ativo}
+const canEdit=()=>ME&&(ME.papel==='admin'||ME.papel==='editor');
+const isAdmin=()=>ME&&ME.papel==='admin';
+
+/* ---------------- Login / sessão ---------------- */
+const gate=document.getElementById('gate');
+function gateShow(view,msg){
+  gate.hidden=false; document.body.classList.add('locked');
+  gate.querySelectorAll('[data-view]').forEach(v=>v.hidden=v.dataset.view!==view);
+  const m=gate.querySelector('[data-view="'+view+'"] .g-msg'); if(m){ m.textContent=msg||''; m.hidden=!msg; }
+  const f=gate.querySelector('[data-view="'+view+'"] input'); if(f) setTimeout(()=>f.focus(),30);
+}
+function gateHide(){ gate.hidden=true; document.body.classList.remove('locked'); }
+function busy(btn,on,txt){ if(!btn) return; if(on){ btn.dataset.t=btn.textContent; btn.textContent=txt||'Aguarde…'; btn.disabled=true; } else { btn.textContent=btn.dataset.t||btn.textContent; btn.disabled=false; } }
+let APP_STARTED=false, RECOVERY=false;
+async function afterLogin(session){
+  if(!session){ ME=null; renderUser(); gateShow('login'); return; }
+  if(RECOVERY){ gateShow('nova'); return; }
+  const {data,error}=await SB.from('perfis').select('*').eq('id',session.user.id).maybeSingle();
+  if(error){ gateShow('login',errMsg(error)); return; }
+  if(!data||!data.ativo){ ME=null; renderUser(); document.getElementById('gPendEmail').textContent=session.user.email; gateShow('pendente'); return; }
+  ME=data; renderUser(); gateHide();
+  if(!APP_STARTED){ APP_STARTED=true; loadDefault(); mbInit(); } else mbRefresh();
+}
+function bindGate(){
+  if(!SB){ gateShow('setup'); return; }
+  document.getElementById('gLogin').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter;
+    busy(b,true,'Entrando…'); const {data,error}=await SB.auth.signInWithPassword({email:gEmail.value.trim(),password:gSenha.value}); busy(b,false);
+    if(error) return gateShow('login',errMsg(error)); gSenha.value=''; afterLogin(data.session); });
+  document.getElementById('gEsqueci').onclick=()=>{ gEmail2.value=gEmail.value; gateShow('esqueci'); };
+  document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>gateShow('login'));
+  document.getElementById('gReset').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter; busy(b,true,'Enviando…');
+    const {error}=await SB.auth.resetPasswordForEmail(gEmail2.value.trim(),{redirectTo:location.origin+location.pathname}); busy(b,false);
+    gateShow('esqueci', error?errMsg(error):'Se o e-mail estiver cadastrado, você vai receber um link para criar uma nova senha.'); });
+  document.getElementById('gNova').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter;
+    if(gNova1.value.length<8) return gateShow('nova','Use pelo menos 8 caracteres.');
+    if(gNova1.value!==gNova2.value) return gateShow('nova','As duas senhas não são iguais.');
+    busy(b,true,'Salvando…'); const {error}=await SB.auth.updateUser({password:gNova1.value}); busy(b,false);
+    if(error) return gateShow('nova',errMsg(error));
+    RECOVERY=false; gNova1.value=gNova2.value=''; try{history.replaceState(null,'',location.pathname);}catch(_){}
+    const {data}=await SB.auth.getSession(); afterLogin(data.session); toast('Senha alterada.'); });
+  document.getElementById('gSairPend').onclick=()=>SB.auth.signOut();
+  SB.auth.onAuthStateChange((ev,session)=>{
+    if(ev==='PASSWORD_RECOVERY'){ RECOVERY=true; gateShow('nova'); return; }
+    if(ev==='SIGNED_OUT'){ ME=null; renderUser(); gateShow('login'); closeDetail(); closeModal('userModal'); closeModal('pwdModal'); }
+  });
+  SB.auth.getSession().then(({data})=>afterLogin(data.session));
+}
+
+/* ---------------- Menu do usuário ---------------- */
+function renderUser(){
+  const b=document.getElementById('userBtn'); if(!b) return;
+  b.hidden=!ME; if(!ME) return;
+  document.getElementById('userNm').textContent=ME.nome||ME.email;
+  document.getElementById('userPp').textContent=PAPEL_LBL[ME.papel]||ME.papel;
+  document.getElementById('umUsers').hidden=!isAdmin();
+  document.getElementById('btnUp').disabled=SCREEN==='mb'&&!canEdit();
+}
+(function(){
+  const b=document.getElementById('userBtn'), m=document.getElementById('userMenu');
+  const close=()=>{ m.hidden=true; b.setAttribute('aria-expanded','false'); };
+  b.onclick=e=>{ e.stopPropagation(); m.hidden=!m.hidden; b.setAttribute('aria-expanded',!m.hidden); };
+  document.addEventListener('click',e=>{ if(!e.target.closest('.user-wrap')) close(); });
+  document.getElementById('umSair').onclick=async()=>{ close(); await SB.auth.signOut(); };
+  document.getElementById('umSenha').onclick=()=>{ close(); openModal('pwdModal'); };
+  document.getElementById('umUsers').onclick=()=>{ close(); openUsers(); };
+})();
+function openModal(id){ const m=document.getElementById(id); m.hidden=false; document.body.style.overflow='hidden'; const f=m.querySelector('input,select,button'); if(f) setTimeout(()=>f.focus(),30); }
+function closeModal(id){ const m=document.getElementById(id); if(m&&!m.hidden){ m.hidden=true; if(document.getElementById('mbModal').hidden) document.body.style.overflow=''; } }
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
+['userModal','pwdModal'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) closeModal(id); }));
+document.getElementById('pwdForm').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter, msg=document.getElementById('pwdMsg');
+  const a=document.getElementById('pwd1').value, c=document.getElementById('pwd2').value;
+  if(a.length<8){ msg.textContent='Use pelo menos 8 caracteres.'; return; } if(a!==c){ msg.textContent='As duas senhas não são iguais.'; return; }
+  busy(b,true,'Salvando…'); const {error}=await SB.auth.updateUser({password:a}); busy(b,false);
+  if(error){ msg.textContent=errMsg(error); return; } msg.textContent=''; e.target.reset(); closeModal('pwdModal'); toast('Senha alterada.'); });
+
+/* ---------------- Usuários (admin) ---------------- */
+async function openUsers(){ openModal('userModal'); await loadUsers(); }
+async function loadUsers(){
+  const box=document.getElementById('usersList'); box.innerHTML='<p class="mb-hint">Carregando…</p>';
+  const {data,error}=await SB.from('perfis').select('*').order('criado_em');
+  if(error){ box.innerHTML='<p class="f-err" style="margin:14px">'+esc(errMsg(error))+'</p>'; return; }
+  box.innerHTML='<table class="dt"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Acesso</th><th>Desde</th></tr></thead><tbody>'+data.map(u=>{
+    const me=u.id===ME.id;
+    return '<tr data-uid="'+u.id+'"><td>'+esc(u.nome||'—')+(me?' <small>(você)</small>':'')+'</td><td class="lc">'+esc(u.email||'')+'</td><td><select class="stsel" data-f="papel"'+(me?' disabled':'')+' aria-label="Papel">'+
+      ['admin','editor','leitor'].map(p=>'<option value="'+p+'"'+(u.papel===p?' selected':'')+'>'+PAPEL_LBL[p]+'</option>').join('')+'</select></td><td><label class="sw-l"><input type="checkbox" data-f="ativo"'+(u.ativo?' checked':'')+(me?' disabled':'')+'> '+(u.ativo?'Liberado':'Aguardando')+'</label></td><td>'+fmtDT(u.criado_em).split(' ')[0]+'</td></tr>';
+  }).join('')+'</tbody></table>';
+}
+document.getElementById('usersList').addEventListener('change',async e=>{
+  const el=e.target.closest('[data-f]'); if(!el) return; const uid=el.closest('tr').dataset.uid;
+  const patch=el.dataset.f==='ativo'?{ativo:el.checked}:{papel:el.value};
+  const {error}=await SB.from('perfis').update(patch).eq('id',uid);
+  if(error){ toast(errMsg(error)); } else toast('Usuário atualizado.');
+  loadUsers();
+});
+document.getElementById('newUserForm').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter, msg=document.getElementById('nuMsg');
+  const nome=nuNome.value.trim(), email=nuEmail.value.trim(), senha=nuSenha.value, papel=nuPapel.value;
+  if(senha.length<8){ msg.textContent='A senha provisória precisa ter pelo menos 8 caracteres.'; return; }
+  busy(b,true,'Criando…'); msg.textContent='';
+  // cliente separado: cria o usuário sem trocar a sessão do administrador
+  const tmp=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,storageKey:'dash-signup-tmp'}});
+  const {data,error}=await tmp.auth.signUp({email,password:senha,options:{data:{nome}}});
+  if(error){ busy(b,false); msg.textContent=errMsg(error); return; }
+  const uid=data.user&&data.user.id;
+  if(uid){ const {error:e2}=await SB.from('perfis').update({papel,ativo:true,nome}).eq('id',uid); if(e2) msg.textContent=errMsg(e2); }
+  busy(b,false); e.target.reset(); toast('Usuário '+email+' criado'+(data.session?'':' · se a confirmação de e-mail estiver ligada no Supabase, ele precisa confirmar antes de entrar')+'.');
+  loadUsers();
+});
+
+/* ---------------- Dados da tela ---------------- */
+const FM={cliente:new Set(),ano:new Set(),carga:new Set()};
+const MBLABEL={cliente:'Cliente',ano:'Ano gerador',carga:'Data de carga'};
+let OPC=null, RES=[], RCPF=[], LOG=[];
+const arr=s=>s.size?[...s]:null;
+const filt=()=>({p_clientes:arr(FM.cliente),p_anos:arr(FM.ano),p_cargas:FM.carga.size?[...FM.carga].map(Number):null});
+const cargaLbl=id=>{ const c=OPC&&OPC.cargas.find(x=>String(x.id)===String(id)); return c?fmtDT(c.criado_em):'—'; };
+const sortAno=(a,b)=>(a==='SEM ANO')-(b==='SEM ANO')||String(a).localeCompare(String(b));
+const stSort=(a,b)=>{const ia=STATUS_ORDER.indexOf(a),ib=STATUS_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);};
+function q(query,fn){ // aplica os filtros laterais numa consulta de registros_v
+  if(FM.cliente.size) query=query.in('cliente',[...FM.cliente]);
+  if(FM.ano.size) query=query.in('ano',[...FM.ano]);
+  if(FM.carga.size) query=query.in('carga_id',[...FM.carga].map(Number));
+  return fn?fn(query):query;
+}
+let refreshT=null, REFRESHING=false;
+function mbRefreshSoon(ms){ clearTimeout(refreshT); refreshT=setTimeout(mbRefresh,ms||600); }
+async function mbRefresh(){
+  if(!SB||!ME) return; REFRESHING=true;
+  try{
+    const f=filt();
+    const [a,b,c,d]=await Promise.all([SB.rpc('resumo',f),SB.rpc('resumo_cpfs',f),SB.rpc('opcoes_filtro',f),
+      SB.from('alteracoes').select('id,quando,usuario,usuario_nome,tipo,cpf,cliente,ano,de,para,linhas,escopo,desfeita').order('id',{ascending:false}).limit(80)]);
+    for(const r of [a,b,c,d]) if(r.error) throw r.error;
+    RES=a.data; RCPF=b.data; OPC=c.data; LOG=d.data;
+    mbRender();
+  }catch(e){ showMsg('Manutenção de base: '+errMsg(e)); }
+  REFRESHING=false; mbMeta();
+}
+function mbMeta(){
+  if(!OPC){ setMetaMB('Conectando ao banco…'); return; }
+  const last=OPC.cargas[0];
+  const tot=RES.filter(r=>r.nivel===3).reduce((s,r)=>s+Number(r.qtd),0);
+  setMetaMB(int.format(tot)+' registros · '+OPC.cargas.length+' carga(s)'+(last?' · última em <b>'+fmtDT(last.criado_em)+'</b> por '+esc(last.criado_por_nome||'—'):'')+' · <span class="live" title="Atualiza sozinho quando alguém altera">ao vivo</span>');
+}
+async function mbInit(){
+  mbMount(); mbMeta(); await mbRefresh(); subscribeLive();
+}
+function subscribeLive(){
+  try{
+    SB.channel('alteracoes-feed').on('postgres_changes',{event:'INSERT',schema:'public',table:'alteracoes'},p=>{
+      const a=p.new||{};
+      if(a.usuario!==ME.id){ toast((a.usuario_nome||'Alguém')+': '+descAlt(a)); if(!document.getElementById('mbModal').hidden) refreshLoadedStatus(); }
+      mbRefreshSoon(700);
+    }).subscribe();
+  }catch(e){}
+}
+function descAlt(a){
+  if(a.tipo==='carga') return 'carregou '+a.para+' ('+int.format(a.linhas)+' linhas)';
+  if(a.tipo==='remocao_carga') return 'removeu a carga '+a.de+' ('+int.format(a.linhas)+' linhas)';
+  if(a.tipo==='desfazer') return 'desfez uma alteração ('+int.format(a.linhas)+' linhas)';
+  return (a.de||'')+' → '+a.para+' em '+int.format(a.linhas)+' linha(s)'+(a.escopo==='cpf'?' (CPF inteiro)':'');
+}
+
+/* ---------------- Carga de planilha ---------------- */
+function hashRows(rows){ let h=2166136261; for(const r of rows){ const s=r.cpf+'|'+r.nome+'|'+r.uf+'|'+r.cliente+'|'+r.ano+'|'+r.st0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} } return (h>>>0).toString(16)+':'+rows.length; }
+function mbParse(objs){
   if(!objs.length) throw new Error('O arquivo não tem linhas de dados.');
   const headers=Object.keys(objs[0]), map={};
   for(const [k,alts] of Object.entries(MBCOLS)){ const h=headers.find(h=>alts.includes(norm(h))); if(h) map[k]=h; }
@@ -851,140 +1136,269 @@ function mbIngest(objs,name){
   if(miss.length) throw new Error('Manutenção de base: não encontrei as colunas '+miss.map(k=>({cliente:'“Cliente”',ano:'“Ano Gerador”',status:'“Status”'})[k]).join(', ')+'. Colunas lidas: '+headers.join(' | '));
   const rows=[];
   for(const o of objs){
-    const cli=String(o[map.cliente]??'').trim().toUpperCase(), st=String(o[map.status]??'').trim().toUpperCase();
-    if(!cli&&!st) continue;
+    const cli=String(o[map.cliente]??'').trim().toUpperCase(), stRaw=String(o[map.status]??'').trim();
+    if(!cli&&!stRaw) continue;
     const n=parseNum(o[map.ano]);
     rows.push({cpf:map.cpf?String(o[map.cpf]??'').replace(/\D/g,''):'', nome:map.nome?String(o[map.nome]??'').trim():'', uf:map.uf?String(o[map.uf]??'').trim().toUpperCase():'',
-      cliente:cli||'—', ano:n?String(Math.round(n)):'SEM ANO', status:st||'SEM STATUS'});
+      cliente:cli||'—', ano:n?String(Math.round(n)):'SEM ANO', st0:canonStatus(stRaw)});
   }
   if(!rows.length) throw new Error('Nenhuma linha válida na base de manutenção.');
-  MBD={rows, hasCpf:!!map.cpf}; MBSRC=name; FM.cliente.clear(); FM.ano.clear();
-  setMetaMB('Fonte: <b>'+esc(name)+'</b> · '+int.format(rows.length)+' registros · '+[...new Set(rows.map(r=>r.cliente))].length+' clientes');
-  mbMount(); mbRender();
+  return rows;
+}
+function progress(txt,pct){
+  let el=document.getElementById('upProg');
+  if(txt===null){ if(el) el.hidden=true; return; }
+  el.hidden=false; el.querySelector('.pt').textContent=txt; el.querySelector('.pb i').style.width=Math.round(pct*100)+'%';
 }
 async function mbLoadFile(file){
-  showMsg(''); setMetaMB('Lendo <b>'+esc(file.name)+'</b>…');
-  try{ const buf=await file.arrayBuffer(); mbIngest(parseBuffer(buf,file.name,WANT_MB),file.name); }
-  catch(e){ showMsg(e.message); setMetaMB(MBD?'Fonte: <b>'+esc(MBSRC)+'</b>':'Nenhuma base carregada.'); }
+  showMsg('');
+  if(!canEdit()){ showMsg('Seu usuário é Leitor: apenas Editores e Administradores carregam planilhas.'); return; }
+  let carga=null;
+  try{
+    progress('Lendo '+file.name+'…',0.02);
+    const buf=await file.arrayBuffer(); const rows=mbParse(parseBuffer(buf,file.name,WANT_MB)); const hash=hashRows(rows);
+    progress('Registrando a carga…',0.05);
+    const ins=await SB.from('cargas').insert({arquivo:file.name,hash}).select('id').single();
+    if(ins.error){
+      if(ins.error.code==='23505'){ const {data}=await SB.from('cargas').select('arquivo,criado_em,criado_por_nome,concluida').eq('hash',hash).maybeSingle();
+        progress(null); showMsg(data?(data.concluida?'Este arquivo já foi carregado em '+fmtDT(data.criado_em)+' por '+(data.criado_por_nome||'—')+' ('+data.arquivo+'). Nada foi adicionado.':'Este arquivo está sendo carregado por '+(data.criado_por_nome||'outra pessoa')+' agora, ou uma carga anterior dele falhou. Peça a um administrador para verificar.'):'Este arquivo já foi carregado.',true); return; }
+      throw ins.error;
+    }
+    carga=ins.data.id;
+    const B=1000;
+    for(let i=0;i<rows.length;i+=B){
+      const chunk=rows.slice(i,i+B).map(r=>({carga_id:carga,cpf:r.cpf,nome:r.nome,uf:r.uf,cliente:r.cliente,ano:r.ano,status_original:r.st0,status:r.st0}));
+      const {error}=await SB.from('registros').insert(chunk,{returning:'minimal'});
+      if(error) throw error;
+      progress('Enviando linhas: '+int.format(Math.min(i+B,rows.length))+' de '+int.format(rows.length),0.05+0.9*Math.min(i+B,rows.length)/rows.length);
+    }
+    progress('Finalizando…',0.97);
+    const fin=await SB.rpc('finalizar_carga',{p_carga:carga}); if(fin.error) throw fin.error;
+    progress(null);
+    toast('Carga adicionada: '+int.format(fin.data.linhas)+' linhas de '+file.name+(fin.data.bloqueadas?' · '+int.format(fin.data.bloqueadas)+' entraram como INCOBRÁVEL NA BASE (CPF já bloqueado)':''));
+    mbRefresh();
+  }catch(e){
+    progress(null);
+    if(carga) await SB.from('cargas').delete().eq('id',carga); // desfaz a carga incompleta
+    showMsg('A carga não foi concluída e nada foi gravado: '+errMsg(e));
+  }
 }
-async function mbLoadDefault(){
-  try{ const r=await fetch(MB_FILE,{cache:'no-store'}); if(!r.ok) throw 0; const buf=await r.arrayBuffer(); mbIngest(parseBuffer(buf,MB_FILE,WANT_MB),MB_FILE); }
-  catch(e){ if(e&&e.message&&SCREEN==='mb') showMsg(e.message); setMetaMB('Nenhuma base carregada.');
-    document.getElementById('appMB').innerHTML='<div class="empty"><h2>Carregue a base de manutenção</h2><p>Use <b>Carregar planilha</b> com esta tela aberta, ou arraste o arquivo para a página.<br>Colunas esperadas: <code>Cpf</code>, <code>Nome</code>, <code>UF Principal</code>, <code>Cliente</code>, <code>Ano Gerador</code>, <code>Status</code>.<br>Para abrir já com dados, coloque um <code>'+MB_FILE+'</code> na mesma pasta do <code>index.html</code>.</p></div>'; }
-}
-const mbPass=(r,skip)=>{ for(const k in FM){ if(k===skip||!FM[k].size) continue; if(!FM[k].has(r[k])) return false; } return true; };
-const sortAno=(a,b)=>(a==='SEM ANO')-(b==='SEM ANO')||a.localeCompare(b);
+
+/* ---------------- Tela ---------------- */
 function mbMount(){
   const el=document.getElementById('appMB');
   el.innerHTML='<div class="main"><aside class="side" aria-label="Filtros"><div class="side-h">Filtros</div><div class="slicers">'+
-    ['cliente','ano'].map(k=>'<details class="slicer" data-mkey="'+k+'"><summary><span class="sn">'+MBLABEL[k]+'</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr">Limpar seleção</button></details>').join('')+
-    '</div></aside><div class="content"><div class="chips" id="mbChips"></div><div class="kpis mbk" id="mbKpis"></div><div class="mb-tables" id="mbTables"></div></div></div>';
-  el.querySelectorAll('.slicer .clr').forEach(b=>b.onclick=()=>{FM[b.closest('.slicer').dataset.mkey].clear(); mbRender();});
+    ['cliente','ano','carga'].map(k=>'<details class="slicer" data-mkey="'+k+'"><summary><span class="sn">'+MBLABEL[k]+'</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr">Limpar seleção</button></details>').join('')+
+    '</div></aside><div class="content"><div class="mb-bar"><div class="chips" id="mbChips"></div><div class="mb-bar-a"><button type="button" class="theme-btn" id="mbExpAll">Exportar base completa</button></div></div>'+
+    '<div class="prog" id="upProg" hidden><span class="pt"></span><span class="pb"><i></i></span></div>'+
+    '<div class="kpis mbk" id="mbKpis"></div><div class="mb-tables" id="mbTables"><p class="mb-hint">Carregando…</p></div>'+
+    '<div class="mb-hist"><section class="panel mb-panel"><div class="ttl">Histórico de cargas</div><div id="mbCargas"></div></section><section class="panel mb-panel"><div class="ttl">Histórico de alterações</div><div id="mbLog"></div></section></div></div></div>';
+  el.querySelectorAll('.slicer .clr').forEach(b=>b.onclick=()=>{FM[b.closest('.slicer').dataset.mkey].clear(); mbRefresh();});
   document.getElementById('mbTables').addEventListener('click',e=>{ const b=e.target.closest('.cb'); if(b) openDetail({kind:b.dataset.k,s:b.dataset.s||'',c:b.dataset.c||'',a:b.dataset.a||''}); });
+  document.getElementById('mbExpAll').onclick=exportBase;
+  document.getElementById('mbCargas').addEventListener('click',async e=>{ const b=e.target.closest('[data-rm]'); if(!b) return;
+    if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirmar remoção'; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=''; b.textContent='Remover'; } },4000); return; }
+    b.disabled=true; const {data,error}=await SB.rpc('remover_carga',{p_carga:+b.dataset.rm});
+    if(error) toast(errMsg(error)); else { FM.carga.delete(b.dataset.rm); toast('Carga removida: '+int.format(data.linhas)+' linhas.'); } mbRefresh(); });
+  document.getElementById('mbLog').addEventListener('click',async e=>{ const b=e.target.closest('[data-undo]'); if(!b) return;
+    b.disabled=true; const {error}=await SB.rpc('desfazer_alteracao',{p_alt:+b.dataset.undo}); if(error) toast(errMsg(error)); else toast('Alteração desfeita.'); mbRefresh(); });
 }
-function mbToggle(k,v){ FM[k].has(v)?FM[k].delete(v):FM[k].add(v); mbRender(); }
+function mbToggle(k,v){ FM[k].has(v)?FM[k].delete(v):FM[k].add(v); mbRefresh(); }
 function mbRender(){
-  if(!MBD) return;
-  const all=MBD.rows, rs=all.filter(r=>mbPass(r));
-  // filtros
-  const opts={cliente:[...new Set(all.map(r=>r.cliente))].sort(), ano:[...new Set(all.map(r=>r.ano))].sort(sortAno)};
+  if(!OPC) return;
+  if(!document.getElementById('mbTables')) mbMount();
+  document.getElementById('btnUp').disabled=SCREEN==='mb'&&!canEdit();
+  const opts={cliente:OPC.clientes, ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
+  const avail={cliente:new Set(OPC.cli_disp), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
   document.querySelectorAll('#appMB .slicer').forEach(el=>{
-    const k=el.dataset.mkey, avail=new Set(all.filter(r=>mbPass(r,k)).map(r=>r[k]));
+    const k=el.dataset.mkey;
     const cnt=el.querySelector('.cnt'); cnt.textContent=FM[k].size?FM[k].size+' sel.':'Todos'; cnt.classList.toggle('on',FM[k].size>0);
     el.querySelector('.clr').hidden=!FM[k].size;
-    el.querySelector('.opts').innerHTML=opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail.has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(v)+'</button>').join('');
+    el.querySelector('.opts').innerHTML=opts[k].length?opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail[k].has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(k==='carga'?cargaLbl(v):v)+'</button>').join(''):'<span class="mb-hint">—</span>';
     el.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>mbToggle(k,b.dataset.v));
   });
-  // chips
   const ch=document.getElementById('mbChips'), parts=[];
-  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(v)+' ✕</button>');
-  ch.innerHTML=parts.length?parts.join('')+'<button type="button" class="btn ghost" id="mbClearAll" style="padding:4px 10px;font-size:12px">Limpar filtros</button>':'Dica: clique em qualquer número das tabelas para abrir o analítico com o detalhe.';
-  ch.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{FM[b.dataset.k].delete(b.dataset.v); mbRender();});
-  const ca=document.getElementById('mbClearAll'); if(ca) ca.onclick=()=>{FM.cliente.clear();FM.ano.clear();mbRender();};
-  // status, clientes, anos
-  const sts=[...new Set(rs.map(r=>r.status))].sort((a,b)=>{const ia=STATUS_ORDER.indexOf(a),ib=STATUS_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);});
-  const clis=[...new Set(rs.map(r=>r.cliente))].sort(), anos=[...new Set(rs.map(r=>r.ano))].sort(sortAno);
-  const cpfs=new Set(rs.map(r=>r.cpf).filter(Boolean));
-  // KPIs
-  const K=[['Total de registros',int.format(rs.length),clis.length+' clientes · '+anos.length+' anos']];
-  sts.forEach(s=>{const n=rs.filter(r=>r.status===s).length; K.push([s,int.format(n),(rs.length?pct(n/rs.length):'0%')+' da base']);});
-  if(MBD.hasCpf) K.push(['CPFs únicos',int.format(cpfs.size),cpfs.size?(rs.length/cpfs.size).toLocaleString('pt-BR',{maximumFractionDigits:1})+' registros por CPF':'']);
-  document.getElementById('mbKpis').innerHTML=K.map(k=>'<div class="kpi"><div class="k">'+esc(k[0])+'</div><div class="v">'+k[1]+'</div><div class="s">'+esc(k[2])+'</div></div>').join('');
-  // tabelas
-  let html='';
-  sts.forEach(s=>{ html+=pivot(s, 'Visão quantidade', rs.filter(r=>r.status===s), clis, anos, 'q', r=>1); });
-  if(MBD.hasCpf) html+=pivot('Quantidade de CPFs','CPFs únicos por cliente e ano gerador (todos os status)', rs, clis, anos, 'cpf', null);
-  document.getElementById('mbTables').innerHTML=html||'<div class="empty"><h2>Sem dados</h2><p>Nenhum registro com os filtros atuais.</p></div>';
+  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(k==='carga'?cargaLbl(v):v)+' ✕</button>');
+  ch.innerHTML=parts.length?parts.join('')+'<button type="button" class="btn ghost" id="mbClearAll" style="padding:4px 10px;font-size:12px">Limpar filtros</button>':(canEdit()?'Dica: clique num número para abrir o detalhe e alterar o status das linhas.':'Dica: clique num número para abrir o detalhe. Seu acesso é de consulta.');
+  ch.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{FM[b.dataset.k].delete(b.dataset.v); mbRefresh();});
+  const ca=document.getElementById('mbClearAll'); if(ca) ca.onclick=()=>{Object.values(FM).forEach(s=>s.clear());mbRefresh();};
+
+  const tot3=RES.filter(r=>r.nivel===3);
+  const total=tot3.reduce((s,r)=>s+Number(r.qtd),0);
+  if(!OPC.cargas.length){
+    document.getElementById('mbKpis').innerHTML='';
+    document.getElementById('mbTables').innerHTML='<div class="empty"><h2>Nenhuma carga ainda</h2><p>'+(canEdit()?'Use <b>Carregar planilha</b> com esta tela aberta. Cada arquivo é somado à base com a data da carga.<br>Colunas esperadas: <code>Cpf</code>, <code>Nome</code>, <code>UF Principal</code>, <code>Cliente</code>, <code>Ano Gerador</code>, <code>Status</code>.':'Quando um editor carregar a primeira planilha, os dados aparecem aqui.')+'</p></div>';
+  } else {
+    const sts=tot3.map(r=>r.status).sort(stSort);
+    const clis=[...new Set(RES.filter(r=>r.nivel===1).map(r=>r.cliente))].sort(), anos=[...new Set(RES.filter(r=>r.nivel===2).map(r=>r.ano))].sort(sortAno);
+    const cpfTot=(RCPF.find(r=>r.nivel===3)||{cpfs:0}).cpfs;
+    const K=[['Total de registros',int.format(total),clis.length+' clientes · '+anos.length+' anos','']];
+    tot3.slice().sort((a,b)=>stSort(a.status,b.status)).forEach(r=>K.push([r.status,int.format(r.qtd),(total?pct(r.qtd/total):'0%')+' da base',ST_CLASS[r.status]||'']));
+    K.push(['CPFs únicos',int.format(cpfTot),OPC.bloqueados?int.format(OPC.bloqueados)+' CPF(s) incobrável(is) na base':'nenhum CPF bloqueado','']);
+    document.getElementById('mbKpis').innerHTML=K.map(k=>'<div class="kpi'+(k[3]?' st-'+k[3]:'')+'"><div class="k">'+esc(k[0])+'</div><div class="v">'+k[1]+'</div><div class="s">'+esc(k[2])+'</div></div>').join('');
+    let html='';
+    sts.forEach(s=>{ html+=pivot(s,canEdit()?'Visão quantidade · clique para ver e editar':'Visão quantidade · clique para ver o detalhe', RES.filter(r=>r.status===s).map(r=>({cliente:r.cliente,ano:r.ano,nivel:r.nivel,v:Number(r.qtd)})), clis, anos, 'q'); });
+    html+=pivot('Quantidade de CPFs','CPFs únicos por cliente e ano gerador (todos os status)', RCPF.map(r=>({cliente:r.cliente,ano:r.ano,nivel:r.nivel,v:Number(r.cpfs)})), clis, anos, 'cpf');
+    document.getElementById('mbTables').innerHTML=html;
+  }
+  document.getElementById('mbCargas').innerHTML=OPC.cargas.length?'<table class="dt"><thead><tr><th>Data da carga</th><th>Arquivo</th><th>Por</th><th class="n">Linhas</th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
+    OPC.cargas.map(c=>'<tr><td>'+fmtDT(c.criado_em)+'</td><td class="wrap">'+esc(c.arquivo)+'</td><td>'+esc(c.criado_por_nome||'—')+'</td><td class="n">'+int.format(c.linhas)+'</td>'+(isAdmin()?'<td class="n"><button type="button" class="lnk" data-rm="'+c.id+'">Remover</button></td>':'')+'</tr>').join('')+'</tbody></table>'
+    :'<p class="mb-hint" style="padding:6px 4px">Nenhuma carga.</p>';
+  document.getElementById('mbLog').innerHTML=LOG.length?'<table class="dt"><thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th class="n">Linhas</th>'+(canEdit()?'<th></th>':'')+'</tr></thead><tbody>'+
+    LOG.map(l=>{ const und=canEdit()&&(l.tipo==='status'||l.tipo==='lote')&&!l.desfeita;
+      return '<tr'+(l.desfeita?' class="undone"':'')+'><td>'+fmtDT(l.quando)+'</td><td>'+esc(l.usuario_nome||'—')+'</td><td class="wrap">'+
+        (l.tipo==='status'||l.tipo==='lote'?(l.cpf?fmtDoc(l.cpf)+' · ':'')+(l.cliente?esc(l.cliente)+(l.ano?' '+esc(l.ano):'')+' · ':'')+esc(l.de||'')+' → <b>'+esc(l.para)+'</b>'+(l.escopo==='cpf'?'<small>aplicado ao CPF inteiro</small>':l.escopo==='lote'?'<small>em lote</small>':'')+(l.desfeita?'<small>desfeita</small>':''):esc(descAlt(l)))+
+        '</td><td class="n">'+int.format(l.linhas)+'</td>'+(canEdit()?'<td class="n">'+(und?'<button type="button" class="lnk" data-undo="'+l.id+'">Desfazer</button>':'')+'</td>':'')+'</tr>'; }).join('')+'</tbody></table>'
+    :'<p class="mb-hint" style="padding:6px 4px">Nenhuma alteração ainda.</p>';
 }
-function pivot(title,sub,rows,clis,anos,kind,_){
-  const isCpf=kind==='cpf', cell=new Map(), rowT=new Map(), colT=new Map(), all=new Set();
-  const add=(m,k,r)=>{ if(isCpf){ let s=m.get(k); if(!s) m.set(k,s=new Set()); if(r.cpf) s.add(r.cpf); } else m.set(k,(m.get(k)||0)+1); };
-  rows.forEach(r=>{ add(cell,r.cliente+'|'+r.ano,r); add(rowT,r.cliente,r); add(colT,r.ano,r); if(isCpf){ if(r.cpf) all.add(r.cpf);} });
-  const val=(m,k)=>{ const v=m.get(k); return isCpf?(v?v.size:0):(v||0); };
-  let mx=1; clis.forEach(c=>anos.forEach(a=>{mx=Math.max(mx,val(cell,c+'|'+a));}));
-  const s=isCpf?'':title, tot=isCpf?all.size:rows.length;
-  const btn=(v,c,a,heat)=>v?'<button type="button" class="cb" data-k="'+kind+'" data-s="'+esc(s)+'" data-c="'+esc(c)+'" data-a="'+esc(a)+'"'+(heat?' style="--h:'+(v/mx).toFixed(3)+'"':'')+' title="Abrir analítico">'+int.format(v)+'</button>':'';
-  const td=(v,c,a,heat,cls)=>'<td'+(cls?' class="'+cls+'"':'')+(v?'':' class="z"')+'>'+(v?btn(v,c,a,heat):'–')+'</td>';
-  let h='<section class="panel mb-panel"><div class="ttl">'+esc(title)+'</div><div class="mb-sub">'+esc(sub)+' · '+int.format(tot)+(isCpf?' CPFs':' registros')+'</div><div class="tw"><table class="pv"><thead><tr><th>Cliente</th>'+anos.map(a=>'<th>'+esc(a)+'</th>').join('')+'<th>Geral</th></tr></thead><tbody>';
-  clis.forEach(c=>{ const rt=val(rowT,c); if(!rt) return; h+='<tr><th>'+esc(c)+'</th>'+anos.map(a=>td(val(cell,c+'|'+a),c,a,true)).join('')+td(rt,c,'',false,'g')+'</tr>'; });
-  h+='</tbody><tfoot><tr><th>Total</th>'+anos.map(a=>td(val(colT,a),'',a,false)).join('')+td(tot,'','',false)+'</tr></tfoot></table></div></section>';
+function pivot(title,sub,cells,clis,anos,kind){
+  const isCpf=kind==='cpf', cell=new Map(), rowT=new Map(), colT=new Map(); let tot=0;
+  cells.forEach(r=>{ if(r.nivel===0) cell.set(r.cliente+'|'+r.ano,r.v); else if(r.nivel===1) rowT.set(r.cliente,r.v); else if(r.nivel===2) colT.set(r.ano,r.v); else tot=r.v; });
+  let mx=1; cell.forEach(v=>mx=Math.max(mx,v));
+  const s=isCpf?'':title;
+  const btn=(v,c,a,heat)=>'<button type="button" class="cb" data-k="'+kind+'" data-s="'+esc(s)+'" data-c="'+esc(c)+'" data-a="'+esc(a)+'"'+(heat?' style="--h:'+(v/mx).toFixed(3)+'"':'')+' title="Abrir analítico">'+int.format(v)+'</button>';
+  const td=(v,c,a,heat,cls)=>'<td class="'+(v?(cls||''):'z')+'">'+(v?btn(v,c,a,heat):'–')+'</td>';
+  const cls=ST_CLASS[title]?' st-'+ST_CLASS[title]:'';
+  let h='<section class="panel mb-panel'+cls+'"><div class="ttl">'+esc(title)+'</div><div class="mb-sub">'+esc(sub)+' · '+int.format(tot)+(isCpf?' CPFs':' registros')+'</div><div class="tw"><table class="pv"><thead><tr><th>Cliente</th>'+anos.map(a=>'<th>'+esc(a)+'</th>').join('')+'<th>Geral</th></tr></thead><tbody>';
+  clis.forEach(c=>{ const rt=rowT.get(c)||0; if(!rt) return; h+='<tr><th>'+esc(c)+'</th>'+anos.map(a=>td(cell.get(c+'|'+a)||0,c,a,true)).join('')+td(rt,c,'',false,'g')+'</tr>'; });
+  h+='</tbody><tfoot><tr><th>Total</th>'+anos.map(a=>td(colT.get(a)||0,'',a,false)).join('')+td(tot,'','',false)+'</tr></tfoot></table></div></section>';
   return h;
 }
-let DET={list:[],kind:'q',shown:0,q:''};
-function openDetail(sel){
-  DET_SEL=sel;
-  const rs=MBD.rows.filter(r=>mbPass(r)&&(!sel.s||r.status===sel.s)&&(!sel.c||r.cliente===sel.c)&&(!sel.a||r.ano===sel.a));
+
+/* ---------------- Analítico (detalhe) ---------------- */
+const PAGE=300, COLS_DET='id,cpf,nome,uf,cliente,ano,status,status_original,carga_em,alterado_em,alterado_por_nome';
+let DET={sel:null,rows:[],total:0,q:'',edit:false,kind:'q'}, DET_SEL=null;
+function cleanQ(s){ return String(s||'').trim().replace(/[^\p{L}\p{N} .\-]/gu,'').slice(0,60); }
+function detQuery(cols,opts){
+  const sel=DET.sel; let qq=SB.from('registros_v').select(cols,opts);
+  if(sel.s) qq=qq.eq('status',sel.s); if(sel.c) qq=qq.eq('cliente',sel.c); if(sel.a) qq=qq.eq('ano',sel.a);
+  qq=q(qq);
+  const t=cleanQ(DET.q);
+  if(t){ const d=t.replace(/\D/g,''); qq = d&&d.length>=3&&/^[\d.\-\s]+$/.test(t) ? qq.like('cpf','%'+d+'%') : qq.or('nome.ilike.*'+t.replace(/[.,]/g,' ')+'*'+(t.length===2?',uf.eq.'+t.toUpperCase():'')+',status.ilike.*'+t.replace(/[.,]/g,' ')+'*'); }
+  return qq;
+}
+async function openDetail(sel){
+  DET_SEL=sel; DET={sel,rows:[],total:0,q:'',edit:sel.kind==='q'&&canEdit(),kind:sel.kind};
   const parts=[sel.kind==='cpf'?'Quantidade de CPFs':(sel.s||'Todos os status'), sel.c?'Cliente '+sel.c:'Todos os clientes', sel.a?'Ano gerador '+sel.a:'Todos os anos'];
-  let list;
-  if(sel.kind==='cpf'){
-    const m=new Map(); rs.forEach(r=>{ if(!r.cpf) return; let d=m.get(r.cpf); if(!d) m.set(r.cpf,d={cpf:r.cpf,nome:r.nome,n:0,st:new Set(),uf:new Set()}); d.n++; d.st.add(r.status); if(r.uf) d.uf.add(r.uf); });
-    list=[...m.values()].sort((a,b)=>b.n-a.n).map(d=>({cpf:d.cpf,nome:d.nome,n:d.n,status:[...d.st].join(', '),uf:[...d.uf].join(', ')}));
-  } else list=rs;
-  const ufc=new Map(); rs.forEach(r=>{ if(r.uf) ufc.set(r.uf,(ufc.get(r.uf)||0)+1); });
-  const topUf=[...ufc].sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]+' '+int.format(x[1])).join(' · ');
   document.getElementById('mbDlgT').textContent=parts.join(' · ');
-  document.getElementById('mbDlgSub').textContent=int.format(rs.length)+' registros'+(sel.kind==='cpf'?' · '+int.format(list.length)+' CPFs únicos':'')+(topUf?' · Principais UFs: '+topUf:'');
-  DET={list,kind:sel.kind,shown:0,q:''};
+  document.getElementById('mbDlgSub').textContent='Carregando…';
+  document.getElementById('mbBulk').hidden=!DET.edit; document.getElementById('mbBulkSel').value=''; resetBulkBtn();
   const si=document.getElementById('mbSearch'); si.value='';
-  drawDetail(true);
+  document.getElementById('mbList').innerHTML='';
   const m=document.getElementById('mbModal'); m.hidden=false; document.body.style.overflow='hidden'; si.focus();
+  await loadDetail(true);
 }
-function detFiltered(){ const q=DET.q.trim().toUpperCase(), qd=q.replace(/\D/g,''); if(!q) return DET.list;
-  return DET.list.filter(r=>(qd&&r.cpf.includes(qd))||(r.nome||'').toUpperCase().includes(q)||(r.uf||'').includes(q)); }
+let detSeq=0;
+async function loadDetail(reset){
+  const my=++detSeq; const from=reset?0:DET.rows.length;
+  try{
+    if(DET.kind==='cpf'){
+      const f=filt(); const {data,error}=await SB.rpc('detalhe_cpfs',{p_cliente:DET.sel.c||null,p_ano:DET.sel.a||null,p_clientes:f.p_clientes,p_anos:f.p_anos,p_cargas:f.p_cargas,p_busca:cleanQ(DET.q)||null,p_limite:PAGE,p_offset:from});
+      if(error) throw error; if(my!==detSeq) return;
+      DET.rows=reset?data:DET.rows.concat(data); DET.total=data.length?Number(data[0].total):(reset?0:DET.total);
+    } else {
+      const {data,error,count}=await detQuery(COLS_DET,{count:'exact'}).order('id').range(from,from+PAGE-1);
+      if(error) throw error; if(my!==detSeq) return;
+      DET.rows=reset?data:DET.rows.concat(data); DET.total=count??DET.rows.length;
+    }
+  }catch(e){ document.getElementById('mbList').innerHTML='<p class="f-err" style="margin:14px">'+esc(errMsg(e))+'</p>'; return; }
+  drawDetail(reset);
+}
+function stOptions(r){ const o=[]; if(r.status_original&&!EDIT_OPTS.includes(r.status_original)) o.push(r.status_original); EDIT_OPTS.forEach(x=>o.push(x)); if(!o.includes(r.status)) o.unshift(r.status); return o; }
 function drawDetail(reset){
-  const L=detFiltered(); if(reset) DET.shown=0; DET.shown=Math.min(L.length,Math.max(DET.shown,300));
-  const cpf=DET.kind==='cpf';
-  const head=cpf?'<tr><th>CPF</th><th>Nome</th><th class="n">Registros</th><th>Status</th><th>UF principal</th></tr>':'<tr><th>CPF</th><th>Nome</th><th>UF principal</th><th>Cliente</th><th>Ano gerador</th><th>Status</th></tr>';
-  const body=L.slice(0,DET.shown).map(r=>cpf?'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td class="n">'+int.format(r.n)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.uf||'—')+'</td></tr>'
-    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td>'+esc(r.status)+'</td></tr>').join('');
-  document.getElementById('mbList').innerHTML='<table class="dt"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>'+(L.length>DET.shown?'<button type="button" class="btn ghost mb-more" id="mbMore">Mostrar mais ('+int.format(L.length-DET.shown)+' restantes)</button>':'');
-  document.getElementById('mbCount').textContent=int.format(L.length)+(L.length===DET.list.length?'':' de '+int.format(DET.list.length))+' linhas';
-  const mo=document.getElementById('mbMore'); if(mo) mo.onclick=()=>{DET.shown+=300; drawDetail(false);};
+  const cpf=DET.kind==='cpf', L=DET.rows;
+  document.getElementById('mbDlgSub').textContent=int.format(DET.total)+(cpf?' CPFs':' registros')+(DET.edit?' · Status editável: a alteração é gravada na hora para todos':(DET.kind==='q'?' · Somente consulta':''));
+  const head=cpf?'<tr><th>CPF</th><th>Nome</th><th class="n">Registros</th><th>Status</th><th>UF principal</th></tr>'
+    :'<tr><th>CPF</th><th>Nome</th><th>UF</th><th>Cliente</th><th>Ano</th><th>Carga</th><th>Status</th></tr>';
+  const stCell=r=>DET.edit?'<select class="stsel st-'+(ST_CLASS[r.status]||'x')+'" data-id="'+r.id+'" aria-label="Status do registro">'+stOptions(r).map(o=>'<option'+(o===r.status?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>'+(r.alterado_em?'<small class="edt">'+esc(r.alterado_por_nome||'')+' · '+fmtDT(r.alterado_em)+'</small>':'')
+    :'<span class="stt st-'+(ST_CLASS[r.status]||'x')+'">'+esc(r.status)+'</span>'+(r.alterado_em?'<small class="edt">'+esc(r.alterado_por_nome||'')+' · '+fmtDT(r.alterado_em)+'</small>':'');
+  const body=L.map(r=>cpf?'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td class="n">'+int.format(r.registros)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.ufs||'—')+'</td></tr>'
+    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td>'+fmtDT(r.carga_em).split(' ')[0]+'</td><td>'+stCell(r)+'</td></tr>').join('');
+  const lst=document.getElementById('mbList'), sc=lst.scrollTop;
+  lst.innerHTML=(L.length?'<table class="dt dte"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>':'<p class="mb-hint" style="margin:16px">Nenhuma linha encontrada.</p>')+
+    (DET.total>L.length?'<button type="button" class="btn ghost mb-more" id="mbMore">Mostrar mais ('+int.format(DET.total-L.length)+' restantes)</button>':'');
+  if(!reset) lst.scrollTop=sc;
+  const changed=DET.sel&&DET.sel.s?L.filter(r=>r.status&&r.status!==DET.sel.s).length:0;
+  document.getElementById('mbCount').textContent=int.format(L.length)+' de '+int.format(DET.total)+' linhas'+(changed?' · '+int.format(changed)+' já saíram de '+DET.sel.s:'');
+  document.getElementById('mbBulkN').textContent=int.format(DET.total);
+  const mo=document.getElementById('mbMore'); if(mo) mo.onclick=()=>{ mo.disabled=true; loadDetail(false); };
 }
-function closeDetail(){ document.getElementById('mbModal').hidden=true; document.body.style.overflow=''; }
-document.getElementById('mbSearch').addEventListener('input',e=>{DET.q=e.target.value; drawDetail(true);});
+async function refreshLoadedStatus(){
+  if(DET.kind!=='q'||!DET.rows.length) return;
+  const ids=DET.rows.map(r=>r.id), byId=new Map(DET.rows.map(r=>[r.id,r]));
+  for(let i=0;i<ids.length;i+=200){
+    const {data}=await SB.from('registros_v').select('id,status,alterado_em,alterado_por_nome').in('id',ids.slice(i,i+200));
+    (data||[]).forEach(d=>Object.assign(byId.get(d.id)||{},d));
+  }
+  drawDetail(false);
+}
+let UNDO_ID=null;
+async function applyStatus(ids,to,lote){
+  const {data,error}=await SB.rpc('alterar_status',{p_ids:ids,p_para:to,p_lote:!!lote});
+  if(error){ toast(errMsg(error)); await refreshLoadedStatus(); return; }
+  UNDO_ID=data.alteracao||null;
+  let msg=data.linhas?(int.format(data.linhas)+' linha(s) alteradas para '+to):'Nada mudou: as linhas já estavam como '+to;
+  if(data.escopo==='cpf'&&data.bloqueados) msg='CPF marcado como INCOBRÁVEL NA BASE em '+int.format(data.linhas)+' linha(s), inclusive em outras cargas e clientes';
+  if(data.liberados) msg+=' · CPF liberado: as demais linhas dele voltaram ao status anterior';
+  toast(msg,!!UNDO_ID);
+  await refreshLoadedStatus(); mbRefreshSoon(150);
+}
+document.getElementById('mbList').addEventListener('change',e=>{ const s=e.target.closest('.stsel'); if(!s) return;
+  s.disabled=true; applyStatus([+s.dataset.id],s.value,false); });
+function resetBulkBtn(){ const b=document.getElementById('mbBulkGo'); b.dataset.armed=''; b.textContent='Aplicar'; b.disabled=false; }
+document.getElementById('mbBulkSel').onchange=resetBulkBtn;
+document.getElementById('mbBulkGo').onclick=async()=>{
+  const to=document.getElementById('mbBulkSel').value, b=document.getElementById('mbBulkGo'); if(!to||!DET.total) return;
+  if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirmar ('+int.format(DET.total)+')'; return; }
+  b.disabled=true; b.textContent='Aplicando…';
+  try{ const ids=[]; for(let i=0;i<DET.total;i+=1000){ const {data,error}=await detQuery('id').order('id').range(i,i+999); if(error) throw error; data.forEach(r=>ids.push(r.id)); if(data.length<1000) break; }
+    await applyStatus(ids,to,true);
+  }catch(e){ toast(errMsg(e)); }
+  resetBulkBtn();
+};
+function closeDetail(){ const m=document.getElementById('mbModal'); if(m.hidden) return; m.hidden=true; document.body.style.overflow=''; }
+let searchT=null;
+document.getElementById('mbSearch').addEventListener('input',e=>{ DET.q=e.target.value; resetBulkBtn(); clearTimeout(searchT); searchT=setTimeout(()=>loadDetail(true),300); });
 document.getElementById('mbClose').onclick=closeDetail;
 document.getElementById('mbModal').addEventListener('click',e=>{ if(e.target.id==='mbModal') closeDetail(); });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!document.getElementById('mbModal').hidden) closeDetail(); });
-let DET_SEL=null;
-document.getElementById('mbCopy').onclick=()=>{
-  const L=detFiltered(), cpf=DET.kind==='cpf';
-  const head=cpf?['CPF','NOME','REGISTROS','STATUS','UF PRINCIPAL']:['CPF','NOME','UF PRINCIPAL','CLIENTE','ANO GERADOR','STATUS'];
-  const rows=L.map(r=>cpf?[fmtDoc(r.cpf),r.nome,r.n,r.status,r.uf]:[fmtDoc(r.cpf),r.nome,r.uf,r.cliente,r.ano==='SEM ANO'?r.ano:+r.ano,r.status]);
+document.addEventListener('keydown',e=>{ if(e.key!=='Escape') return; if(!document.getElementById('mbModal').hidden) closeDetail(); else { closeModal('userModal'); closeModal('pwdModal'); } });
+
+/* ---------------- Exportar ---------------- */
+let toastT=null;
+function toast(t,undo){
+  let el=document.getElementById('toast');
+  if(!el){ el=document.createElement('div'); el.id='toast'; el.className='toast'; el.setAttribute('role','status'); document.body.appendChild(el); }
+  el.innerHTML='<span>'+esc(t)+'</span>'+(undo?'<button type="button" id="toastUndo">Desfazer</button>':'');
+  el.hidden=false; const u=document.getElementById('toastUndo');
+  if(u) u.onclick=async()=>{ el.hidden=true; if(!UNDO_ID) return; const {error}=await SB.rpc('desfazer_alteracao',{p_alt:UNDO_ID}); UNDO_ID=null; toast(error?errMsg(error):'Alteração desfeita.'); await refreshLoadedStatus(); mbRefresh(); };
+  clearTimeout(toastT); toastT=setTimeout(()=>el.hidden=true, undo?10000:6000);
+}
+const slugF=x=>String(x).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
+function xlsxDownload(head,rows,sheet,name){
   const ws=XLSX.utils.aoa_to_sheet([head,...rows]);
   ws['!cols']=head.map((h,c)=>({wch:Math.min(40,Math.max(h.length,...rows.slice(0,500).map(r=>String(r[c]??'').length))+2)}));
   ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:head.length-1}})};
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Analitico');
-  const sel=DET_SEL||{}, slug=x=>String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
-  const name=['MANUTENCAO', cpf?'CPFS':(sel.s||'TODOS'), sel.c||'TODOS_CLIENTES', sel.a||'TODOS_ANOS'].map(slug).join('_')+'.xlsx';
-  const b=document.getElementById('mbCopy');
-  try{ XLSX.writeFile(wb,name); b.lastChild.textContent='Exportado ✓'; }
-  catch(e){ b.lastChild.textContent='Não foi possível exportar'; }
-  setTimeout(()=>b.lastChild.textContent='Exportar',1800);
-};
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,sheet); XLSX.writeFile(wb,name);
+}
+const HEAD_OUT=['CPF','NOME','UF PRINCIPAL','CLIENTE','ANO GERADOR','STATUS ORIGINAL','STATUS ATUAL','DATA DA CARGA','ALTERADO EM','ALTERADO POR'];
+const rowOut=r=>[fmtDoc(r.cpf),r.nome,r.uf,r.cliente,r.ano==='SEM ANO'?r.ano:+r.ano,r.status_original,r.status,fmtDT(r.carga_em),r.alterado_em?fmtDT(r.alterado_em):'',r.alterado_por_nome||''];
+async function fetchAll(mk,btn,lbl){ const out=[]; for(let i=0;;i+=1000){ const {data,error}=await mk().order('id').range(i,i+999); if(error) throw error; out.push(...data); btn.lastChild.textContent=lbl+' ('+int.format(out.length)+')'; if(data.length<1000) break; } return out; }
+async function withBtn(btn,label,fn){ const t=btn.lastChild; btn.disabled=true; try{ await fn(); t.textContent=label==='Exportar'?'Exportado ✓':'Exportada ✓'; }catch(e){ t.textContent='Erro ao exportar'; toast(errMsg(e)); } btn.disabled=false; setTimeout(()=>t.textContent=label,1800); }
+document.getElementById('mbCopy').onclick=()=>{ const b=document.getElementById('mbCopy');
+  withBtn(b,'Exportar',async()=>{ const sel=DET.sel||{}, cpf=DET.kind==='cpf';
+    let head,rows;
+    if(cpf){ const all=[]; for(let i=0;;i+=1000){ const f=filt(); const {data,error}=await SB.rpc('detalhe_cpfs',{p_cliente:sel.c||null,p_ano:sel.a||null,p_clientes:f.p_clientes,p_anos:f.p_anos,p_cargas:f.p_cargas,p_busca:cleanQ(DET.q)||null,p_limite:1000,p_offset:i}); if(error) throw error; all.push(...data); if(data.length<1000) break; }
+      head=['CPF','NOME','REGISTROS','STATUS','UF PRINCIPAL']; rows=all.map(r=>[fmtDoc(r.cpf),r.nome,Number(r.registros),r.status,r.ufs]); }
+    else { const all=await fetchAll(()=>detQuery(COLS_DET),b,'Exportando'); head=HEAD_OUT; rows=all.map(rowOut); }
+    xlsxDownload(head,rows,'Analitico',['MANUTENCAO',cpf?'CPFS':(sel.s||'TODOS'),sel.c||'TODOS_CLIENTES',sel.a||'TODOS_ANOS'].map(slugF).join('_')+'.xlsx');
+  }); };
+function exportBase(){ const b=document.getElementById('mbExpAll');
+  withBtn(b,'Exportar base completa',async()=>{ const all=await fetchAll(()=>q(SB.from('registros_v').select(COLS_DET)),b,'Exportando');
+    const d=new Date(), stamp=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+    xlsxDownload(HEAD_OUT,all.map(rowOut),'Base','MANUTENCAO_BASE_'+stamp+'.xlsx'); }); }
 
 /* Troca de tela */
-const FOOT={fat:'Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.',mb:'Manutenção de base: aceita CSV ou XLSX com Cpf, Nome, UF Principal, Cliente, Ano Gerador e Status. Clique nos números para ver o detalhe.'};
+const FOOT={fat:'Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.',mb:'Manutenção de base: cada CSV/XLSX carregado é somado ao histórico com a data da carga. Dados e alterações ficam no banco (Supabase) e valem para todos os usuários.'};
 function setScreen(sc,save){
   SCREEN=sc==='mb'?'mb':'fat';
   document.getElementById('app').hidden=SCREEN!=='fat'; document.getElementById('appMB').hidden=SCREEN!=='mb';
@@ -994,15 +1408,14 @@ function setScreen(sc,save){
   document.querySelector('footer span').textContent=FOOT[SCREEN];
   showMsg('');
   if(SCREEN==='fat') Object.values(CH).forEach(c=>c&&c.resize());
+  renderUser();
   if(save){ try{localStorage.setItem('dash-tela',SCREEN);}catch(e){} try{history.replaceState(null,'','#'+(SCREEN==='mb'?'manutencao':'faturamento'));}catch(e){} }
 }
 document.querySelectorAll('.tabs .tab').forEach(t=>t.onclick=()=>setScreen(t.dataset.screen,true));
 (function(){ let sc=null; const hsh=(location.hash||'').slice(1);
   if(hsh==='manutencao') sc='mb'; else if(hsh==='faturamento') sc='fat'; else { try{sc=localStorage.getItem('dash-tela');}catch(e){} }
   setScreen(sc||'fat',false); })();
-mbLoadDefault();
-
-loadDefault();
+bindGate();
 </script>
 
 </body>
