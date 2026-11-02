@@ -218,6 +218,9 @@ table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numer
 .vf input{font:500 12.5px var(--body);background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0;text-transform:none}
 .vf input:focus{outline:2px solid var(--accent);outline-offset:0}
 .vf .theme-btn{justify-content:center;padding:6px 10px;font-size:12px}
+.slicer[data-mkey="situacao"] .opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.slicer[data-mkey="situacao"] .opts button{justify-content:center;text-align:center;padding:7px 4px;font-weight:700}
+.slicer[data-mkey="situacao"] .opts button:nth-child(n+3){grid-column:1/-1}
 .sit{font-size:11px;font-weight:700;color:var(--muted)}.sit.ok{color:var(--ok)}
 .mb-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .mb-bar .chips{flex:1 1 300px}
@@ -1229,7 +1232,8 @@ function mbRender(){
   if(!OPC) return;
   if(!document.getElementById('mbTables')) mbMount();
   document.getElementById('btnUp').disabled=SCREEN==='mb'&&!canEdit();
-  const opts={cliente:OPC.clientes, situacao:OPC.situacoes||[], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
+  const sitExtra=(OPC.situacoes||[]).filter(v=>v!=='COM PGTO'&&v!=='SEM PGTO');
+  const opts={cliente:OPC.clientes, situacao:['COM PGTO','SEM PGTO',...sitExtra], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
   const avail={cliente:new Set(OPC.cli_disp), situacao:new Set(OPC.sit_disp||[]), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
   document.querySelectorAll('#appMB .slicer').forEach(el=>{
     const k=el.dataset.mkey;
@@ -1240,11 +1244,11 @@ function mbRender(){
       return; }
     const cnt=el.querySelector('.cnt'); cnt.textContent=FM[k].size?FM[k].size+' sel.':'Todos'; cnt.classList.toggle('on',FM[k].size>0);
     el.querySelector('.clr').hidden=!FM[k].size;
-    el.querySelector('.opts').innerHTML=opts[k].length?opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail[k].has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(k==='carga'?cargaLbl(v):v)+'</button>').join(''):'<span class="mb-hint">—</span>';
+    el.querySelector('.opts').innerHTML=opts[k].length?opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail[k].has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(k==='carga'?cargaLbl(v):(v===''?'NÃO INFORMADA':v))+'</button>').join(''):'<span class="mb-hint">—</span>';
     el.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>mbToggle(k,b.dataset.v));
   });
   const ch=document.getElementById('mbChips'), parts=[];
-  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(k==='carga'?cargaLbl(v):v)+' ✕</button>');
+  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(k==='carga'?cargaLbl(v):(v===''?'NÃO INFORMADA':v))+' ✕</button>');
   if(VF.min!=null||VF.max!=null) parts.splice(Math.min(parts.length,FM.cliente.size+FM.situacao.size),0,'<button type="button" class="chip" data-k="valor" data-v="">Valor: '+esc(vfLbl())+' ✕</button>');
   ch.innerHTML=parts.length?parts.join('')+'<button type="button" class="btn ghost" id="mbClearAll" style="padding:4px 10px;font-size:12px">Limpar filtros</button>':(canEdit()?'Dica: clique num número para abrir o detalhe e alterar o status das linhas.':'Dica: clique num número para abrir o detalhe. Seu acesso é de consulta.');
   ch.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ if(b.dataset.k==='valor'){ VF.min=VF.max=null; } else FM[b.dataset.k].delete(b.dataset.v); mbRefresh();});
@@ -1342,7 +1346,7 @@ function drawDetail(reset){
   const stCell=r=>DET.edit?'<select class="stsel st-'+(ST_CLASS[r.status]||'x')+'" data-id="'+r.id+'" aria-label="Status do registro">'+stOptions(r).map(o=>'<option'+(o===r.status?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>'+(r.alterado_em?'<small class="edt">'+esc(r.alterado_por_nome||'')+' · '+fmtDT(r.alterado_em)+'</small>':'')
     :'<span class="stt st-'+(ST_CLASS[r.status]||'x')+'">'+esc(r.status)+'</span>'+(r.alterado_em?'<small class="edt">'+esc(r.alterado_por_nome||'')+' · '+fmtDT(r.alterado_em)+'</small>':'');
   const body=L.map(r=>cpf?'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td class="n">'+int.format(r.registros)+'</td><td class="n">'+vv(r.valor)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.situacoes||'—')+'</td><td>'+esc(r.ufs||'—')+'</td></tr>'
-    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td><span class="sit'+(r.situacao==='COM PGTO'?' ok':'')+'">'+esc(r.situacao||'—')+'</span></td><td class="n">'+vv(r.valor)+'</td><td>'+fmtDT(r.carga_em).split(' ')[0]+'</td><td>'+stCell(r)+'</td></tr>').join('');
+    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td><span class="sit'+(r.situacao==='COM PGTO'?' ok':'')+'">'+esc(r.situacao||'NÃO INFORMADA')+'</span></td><td class="n">'+vv(r.valor)+'</td><td>'+fmtDT(r.carga_em).split(' ')[0]+'</td><td>'+stCell(r)+'</td></tr>').join('');
   const lst=document.getElementById('mbList'), sc=lst.scrollTop;
   lst.innerHTML=(L.length?'<table class="dt dte"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>':'<p class="mb-hint" style="margin:16px">Nenhuma linha encontrada.</p>')+
     (DET.total>L.length?'<button type="button" class="btn ghost mb-more" id="mbMore">Mostrar mais ('+int.format(DET.total-L.length)+' restantes)</button>':'');
