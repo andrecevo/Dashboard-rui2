@@ -220,7 +220,6 @@ table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numer
 .vf .theme-btn{justify-content:center;padding:6px 10px;font-size:12px}
 .slicer[data-mkey="situacao"] .opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .slicer[data-mkey="situacao"] .opts button{justify-content:center;text-align:center;padding:7px 4px;font-weight:700}
-.slicer[data-mkey="situacao"] .opts button:nth-child(n+3){grid-column:1/-1}
 .sit{font-size:11px;font-weight:700;color:var(--muted)}.sit.ok{color:var(--ok)}
 .mb-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .mb-bar .chips{flex:1 1 300px}
@@ -958,7 +957,11 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePal(); });
 const CFG=window.DASH_CONFIG||{};
 const SB=(window.supabase&&CFG.supabaseUrl&&CFG.supabaseAnonKey)?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 const MBCOLS={cpf:['cpf','cpfcnpj','documento','cnpj'],nome:['nome','nomecliente','razaosocial'],uf:['ufprincipal','uf'],cliente:['cliente'],ano:['anogerador','ano'],status:['status','acao','statusatual'],situacao:['situacao','situacaopagamento','situacaopgto','pagamento','pgto','compgtosempgto'],valor:['valor','valortotal','valordivida','valoraberto','saldo']};
-function canonSit(v){ const n=norm(v); if(!n) return 'NÃO INFORMADA'; if(/^com(pgto|pagto|pagamento|pg|pagt)?$/.test(n)||n.startsWith('compg')||n.startsWith('compag')) return 'COM PGTO'; if(/^sem(pgto|pagto|pagamento|pg|pagt)?$/.test(n)||n.startsWith('sempg')||n.startsWith('sempag')) return 'SEM PGTO'; return String(v).trim().toUpperCase(); }
+function canonSit(v){ const n=norm(v); if(!n) return 'NÃO INFORMADA';
+  if((n==='n'||/^(sem|nao|emaberto|aberto|inadimp|pendente|devedor)/.test(n))&&!/^naoinform/.test(n)) return 'SEM PGTO';
+  if(n==='s'||/^(com|pag|pg|sim|quit|liquid|recebid)/.test(n)) return 'COM PGTO';
+  return String(v).trim().toUpperCase(); }
+const sitRaw=()=>{ if(!FM.situacao.size) return null; const r=(OPC&&OPC.situacoes||[]).filter(v=>FM.situacao.has(canonSit(v))); return r.length?r:['\u0000sem-correspondencia']; };
 const WANT_MB=hs=>hs.some(h=>MBCOLS.status.includes(h))&&hs.some(h=>MBCOLS.cliente.includes(h));
 const ST_BASE='INCOBRÁVEL NA BASE';
 const EDIT_OPTS=['DISPONIBILIZAR','INCOBRÁVEL NO CLIENTE','FALECIDO',ST_BASE];
@@ -1092,10 +1095,10 @@ document.getElementById('newUserForm').addEventListener('submit',async e=>{ e.pr
 /* ---------------- Dados da tela ---------------- */
 const FM={cliente:new Set(),situacao:new Set(),ano:new Set(),carga:new Set()};
 const VF={min:null,max:null};
-const MBLABEL={cliente:'Cliente',situacao:'Com pgto / Sem pgto',valor:'Faixa de valor',ano:'Ano gerador',carga:'Data de carga'};
+const MBLABEL={cliente:'Cliente',situacao:'Situação financ.',valor:'Faixa de valor',ano:'Ano gerador',carga:'Data de carga'};
 let OPC=null, RES=[], RCPF=[], LOG=[];
 const arr=s=>s.size?[...s]:null;
-const filt=()=>({p_clientes:arr(FM.cliente),p_anos:arr(FM.ano),p_cargas:FM.carga.size?[...FM.carga].map(Number):null,p_situacoes:arr(FM.situacao),p_vmin:VF.min,p_vmax:VF.max});
+const filt=()=>({p_clientes:arr(FM.cliente),p_anos:arr(FM.ano),p_cargas:FM.carga.size?[...FM.carga].map(Number):null,p_situacoes:sitRaw(),p_vmin:VF.min,p_vmax:VF.max});
 const vfLbl=()=>VF.min!=null&&VF.max!=null?brl2.format(VF.min)+' a '+brl2.format(VF.max):VF.min!=null?'a partir de '+brl2.format(VF.min):'até '+brl2.format(VF.max);
 const cargaLbl=id=>{ const c=OPC&&OPC.cargas.find(x=>String(x.id)===String(id)); return c?fmtDT(c.criado_em):'—'; };
 const sortAno=(a,b)=>(a==='SEM ANO')-(b==='SEM ANO')||String(a).localeCompare(String(b));
@@ -1104,7 +1107,7 @@ function q(query,fn){ // aplica os filtros laterais numa consulta de registros_v
   if(FM.cliente.size) query=query.in('cliente',[...FM.cliente]);
   if(FM.ano.size) query=query.in('ano',[...FM.ano]);
   if(FM.carga.size) query=query.in('carga_id',[...FM.carga].map(Number));
-  if(FM.situacao.size) query=query.in('situacao',[...FM.situacao]);
+  if(FM.situacao.size) query=query.in('situacao',sitRaw());
   if(VF.min!=null) query=query.gte('valor',VF.min);
   if(VF.max!=null) query=query.lte('valor',VF.max);
   return fn?fn(query):query;
@@ -1239,9 +1242,8 @@ function mbRender(){
   if(!OPC) return;
   if(!document.getElementById('mbTables')) mbMount();
   document.getElementById('btnUp').disabled=SCREEN==='mb'&&!canEdit();
-  const sitExtra=(OPC.situacoes||[]).filter(v=>v!=='COM PGTO'&&v!=='SEM PGTO');
-  const opts={cliente:OPC.clientes, situacao:['COM PGTO','SEM PGTO',...sitExtra], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
-  const avail={cliente:new Set(OPC.cli_disp), situacao:new Set(OPC.sit_disp||[]), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
+  const opts={cliente:OPC.clientes, situacao:['COM PGTO','SEM PGTO'], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
+  const avail={cliente:new Set(OPC.cli_disp), situacao:new Set((OPC.sit_disp||[]).map(canonSit)), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
   document.querySelectorAll('#appMB .slicer').forEach(el=>{
     const k=el.dataset.mkey;
     if(k==='valor'){ const on=VF.min!=null||VF.max!=null; const cnt=el.querySelector('.cnt'); cnt.textContent=on?'Ativo':'Todos'; cnt.classList.toggle('on',on); el.querySelector('.clr').hidden=!on;
@@ -1353,7 +1355,7 @@ function drawDetail(reset){
   const stCell=r=>DET.edit?'<select class="stsel st-'+(ST_CLASS[r.status]||'x')+'" data-id="'+r.id+'" aria-label="Status do registro">'+stOptions(r).map(o=>'<option'+(o===r.status?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>'+(r.alterado_em?'<small class="edt">'+esc(r.alterado_por_nome||'')+' · '+fmtDT(r.alterado_em)+'</small>':'')
     :'<span class="stt st-'+(ST_CLASS[r.status]||'x')+'">'+esc(r.status)+'</span>'+(r.alterado_em?'<small class="edt">'+esc(r.alterado_por_nome||'')+' · '+fmtDT(r.alterado_em)+'</small>':'');
   const body=L.map(r=>cpf?'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td class="n">'+int.format(r.registros)+'</td><td class="n">'+vv(r.valor)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.situacoes||'—')+'</td><td>'+esc(r.ufs||'—')+'</td></tr>'
-    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td><span class="sit'+(r.situacao==='COM PGTO'?' ok':'')+'">'+esc(r.situacao||'NÃO INFORMADA')+'</span></td><td class="n">'+vv(r.valor)+'</td><td>'+fmtDT(r.carga_em).split(' ')[0]+'</td><td>'+stCell(r)+'</td></tr>').join('');
+    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td><span class="sit'+(canonSit(r.situacao)==='COM PGTO'?' ok':'')+'">'+esc(canonSit(r.situacao))+'</span></td><td class="n">'+vv(r.valor)+'</td><td>'+fmtDT(r.carga_em).split(' ')[0]+'</td><td>'+stCell(r)+'</td></tr>').join('');
   const lst=document.getElementById('mbList'), sc=lst.scrollTop;
   lst.innerHTML=(L.length?'<table class="dt dte"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>':'<p class="mb-hint" style="margin:16px">Nenhuma linha encontrada.</p>')+
     (DET.total>L.length?'<button type="button" class="btn ghost mb-more" id="mbMore">Mostrar mais ('+int.format(DET.total-L.length)+' restantes)</button>':'');
@@ -1421,7 +1423,7 @@ function xlsxDownload(head,rows,sheet,name){
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,sheet); XLSX.writeFile(wb,name);
 }
 const HEAD_OUT=['CPF','NOME','UF PRINCIPAL','CLIENTE','ANO GERADOR','SITUAÇÃO','VALOR','STATUS ORIGINAL','STATUS ATUAL','DATA DA CARGA','ALTERADO EM','ALTERADO POR'];
-const rowOut=r=>[fmtDoc(r.cpf),r.nome,r.uf,r.cliente,r.ano==='SEM ANO'?r.ano:+r.ano,r.situacao,r.valor==null?'':Number(r.valor),r.status_original,r.status,fmtDT(r.carga_em),r.alterado_em?fmtDT(r.alterado_em):'',r.alterado_por_nome||''];
+const rowOut=r=>[fmtDoc(r.cpf),r.nome,r.uf,r.cliente,r.ano==='SEM ANO'?r.ano:+r.ano,canonSit(r.situacao),r.valor==null?'':Number(r.valor),r.status_original,r.status,fmtDT(r.carga_em),r.alterado_em?fmtDT(r.alterado_em):'',r.alterado_por_nome||''];
 async function fetchAll(mk,btn,lbl){ const out=[]; for(let i=0;;i+=1000){ const {data,error}=await mk().order('id').range(i,i+999); if(error) throw error; out.push(...data); btn.lastChild.textContent=lbl+' ('+int.format(out.length)+')'; if(data.length<1000) break; } return out; }
 async function withBtn(btn,label,fn){ const t=btn.lastChild; btn.disabled=true; try{ await fn(); t.textContent=label==='Exportar'?'Exportado ✓':'Exportada ✓'; }catch(e){ t.textContent='Erro ao exportar'; toast(errMsg(e)); } btn.disabled=false; setTimeout(()=>t.textContent=label,1800); }
 document.getElementById('mbCopy').onclick=()=>{ const b=document.getElementById('mbCopy');
