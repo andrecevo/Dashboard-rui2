@@ -218,6 +218,8 @@ table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numer
 .vf input{font:500 12.5px var(--body);background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0;text-transform:none}
 .vf input:focus{outline:2px solid var(--accent);outline-offset:0}
 .vf .theme-btn{justify-content:center;padding:6px 10px;font-size:12px}
+.slicer[data-mkey="uf"] .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.slicer[data-mkey="uf"] .opts button{justify-content:center;text-align:center;padding:6px 2px}
 .slicer[data-mkey="situacao"] .opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .slicer[data-mkey="situacao"] .opts button{justify-content:center;text-align:center;padding:7px 4px;font-weight:700}
 .sit{font-size:11px;font-weight:700;color:var(--muted)}.sit.ok{color:var(--ok)}
@@ -1120,18 +1122,19 @@ document.getElementById('newUserForm').addEventListener('submit',async e=>{ e.pr
 });
 
 /* ---------------- Dados da tela ---------------- */
-const FM={cliente:new Set(),situacao:new Set(),ano:new Set(),carga:new Set()};
+const FM={cliente:new Set(),uf:new Set(),situacao:new Set(),ano:new Set(),carga:new Set()};
 const VF={min:null,max:null};
-const MBLABEL={cliente:'Cliente',situacao:'Situação financ.',valor:'Faixa de valor',ano:'Ano gerador',carga:'Data de carga'};
+const MBLABEL={cliente:'Cliente',uf:'UF',situacao:'Situação financ.',valor:'Faixa de valor',ano:'Ano gerador',carga:'Data de carga'};
 let OPC=null, RES=[], RCPF=[], LOG=[];
 const arr=s=>s.size?[...s]:null;
-const filt=()=>({p_clientes:arr(FM.cliente),p_anos:arr(FM.ano),p_cargas:FM.carga.size?[...FM.carga].map(Number):null,p_situacoes:sitRaw(),p_vmin:VF.min,p_vmax:VF.max});
+const filt=()=>({p_clientes:arr(FM.cliente),p_anos:arr(FM.ano),p_cargas:FM.carga.size?[...FM.carga].map(Number):null,p_situacoes:sitRaw(),p_vmin:VF.min,p_vmax:VF.max,p_ufs:arr(FM.uf)});
 const vfLbl=()=>VF.min!=null&&VF.max!=null?brl2.format(VF.min)+' a '+brl2.format(VF.max):VF.min!=null?'a partir de '+brl2.format(VF.min):'até '+brl2.format(VF.max);
 const cargaLbl=id=>{ const c=OPC&&OPC.cargas.find(x=>String(x.id)===String(id)); return c?fmtDT(c.criado_em):'—'; };
 const sortAno=(a,b)=>(a==='SEM ANO')-(b==='SEM ANO')||String(a).localeCompare(String(b));
 const stSort=(a,b)=>{const ia=STATUS_ORDER.indexOf(a),ib=STATUS_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);};
 function q(query,fn){ // aplica os filtros laterais numa consulta de registros_v
   if(FM.cliente.size) query=query.in('cliente',[...FM.cliente]);
+  if(FM.uf.size) query=query.in('uf',[...FM.uf]);
   if(FM.ano.size) query=query.in('ano',[...FM.ano]);
   if(FM.carga.size) query=query.in('carga_id',[...FM.carga].map(Number));
   if(FM.situacao.size) query=query.in('situacao',sitRaw());
@@ -1241,7 +1244,7 @@ async function mbLoadFile(file){
 function mbMount(){
   const el=document.getElementById('appMB');
   el.innerHTML='<div class="main"><aside class="side" aria-label="Filtros"><div class="side-h">Filtros</div><div class="slicers">'+
-    ['cliente','situacao','valor','ano','carga'].map(k=>'<details class="slicer" data-mkey="'+k+'"><summary><span class="sn">'+MBLABEL[k]+'</span><span class="cnt"></span></summary>'+
+    ['cliente','uf','situacao','valor','ano','carga'].map(k=>'<details class="slicer" data-mkey="'+k+'"><summary><span class="sn">'+MBLABEL[k]+'</span><span class="cnt"></span></summary>'+
       (k==='valor'?'<form class="vf" id="vfForm"><label>Mínimo (R$)<input id="vfMin" inputmode="decimal" autocomplete="off"></label><label>Máximo (R$)<input id="vfMax" inputmode="decimal" autocomplete="off"></label><button type="submit" class="theme-btn">Aplicar</button><span class="f-err" id="vfErr"></span></form>':'<div class="opts"></div>')+
       '<button type="button" class="clr">Limpar seleção</button></details>').join('')+
     '</div></aside><div class="content"><div class="mb-bar"><div class="chips" id="mbChips"></div><div class="mb-bar-a"><button type="button" class="theme-btn" id="mbExpAll">Exportar base completa</button></div></div>'+
@@ -1269,8 +1272,8 @@ function mbRender(){
   if(!OPC) return;
   if(!document.getElementById('mbTables')) mbMount();
   document.getElementById('btnUp').disabled=SCREEN==='mb'&&!canEdit();
-  const opts={cliente:OPC.clientes, situacao:['COM PGTO','SEM PGTO'], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
-  const avail={cliente:new Set(OPC.cli_disp), situacao:new Set((OPC.sit_disp||[]).map(canonSit)), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
+  const opts={cliente:OPC.clientes, uf:OPC.ufs||[], situacao:['COM PGTO','SEM PGTO'], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
+  const avail={cliente:new Set(OPC.cli_disp), uf:new Set(OPC.uf_disp||[]), situacao:new Set((OPC.sit_disp||[]).map(canonSit)), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
   document.querySelectorAll('#appMB .slicer').forEach(el=>{
     const k=el.dataset.mkey;
     if(k==='valor'){ const on=VF.min!=null||VF.max!=null; const cnt=el.querySelector('.cnt'); cnt.textContent=on?'Ativo':'Todos'; cnt.classList.toggle('on',on); el.querySelector('.clr').hidden=!on;
@@ -1280,12 +1283,12 @@ function mbRender(){
       return; }
     const cnt=el.querySelector('.cnt'); cnt.textContent=FM[k].size?FM[k].size+' sel.':'Todos'; cnt.classList.toggle('on',FM[k].size>0);
     el.querySelector('.clr').hidden=!FM[k].size;
-    el.querySelector('.opts').innerHTML=opts[k].length?opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail[k].has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(k==='carga'?cargaLbl(v):(v===''?'NÃO INFORMADA':v))+'</button>').join(''):'<span class="mb-hint">—</span>';
+    el.querySelector('.opts').innerHTML=opts[k].length?opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail[k].has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(k==='carga'?cargaLbl(v):(v===''?(k==='uf'?'SEM UF':'NÃO INFORMADA'):v))+'</button>').join(''):'<span class="mb-hint">—</span>';
     el.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>mbToggle(k,b.dataset.v));
   });
   const ch=document.getElementById('mbChips'), parts=[];
-  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(k==='carga'?cargaLbl(v):(v===''?'NÃO INFORMADA':v))+' ✕</button>');
-  if(VF.min!=null||VF.max!=null) parts.splice(Math.min(parts.length,FM.cliente.size+FM.situacao.size),0,'<button type="button" class="chip" data-k="valor" data-v="">Valor: '+esc(vfLbl())+' ✕</button>');
+  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(k==='carga'?cargaLbl(v):(v===''?(k==='uf'?'SEM UF':'NÃO INFORMADA'):v))+' ✕</button>');
+  if(VF.min!=null||VF.max!=null) parts.splice(Math.min(parts.length,FM.cliente.size+FM.uf.size+FM.situacao.size),0,'<button type="button" class="chip" data-k="valor" data-v="">Valor: '+esc(vfLbl())+' ✕</button>');
   ch.innerHTML=parts.length?parts.join('')+'<button type="button" class="btn ghost" id="mbClearAll" style="padding:4px 10px;font-size:12px">Limpar filtros</button>':(canEdit()?'Dica: clique num número para abrir o detalhe e alterar o status das linhas.':'Dica: clique num número para abrir o detalhe. Seu acesso é de consulta.');
   ch.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ if(b.dataset.k==='valor'){ VF.min=VF.max=null; } else FM[b.dataset.k].delete(b.dataset.v); mbRefresh();});
   const ca=document.getElementById('mbClearAll'); if(ca) ca.onclick=()=>{Object.values(FM).forEach(s=>s.clear()); VF.min=VF.max=null; mbRefresh();};
