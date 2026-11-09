@@ -218,8 +218,9 @@ table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numer
 .vf input{font:500 12.5px var(--body);background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0;text-transform:none}
 .vf input:focus{outline:2px solid var(--accent);outline-offset:0}
 .vf .theme-btn{justify-content:center;padding:6px 10px;font-size:12px}
-.slicer[data-mkey="uf"] .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
-.slicer[data-mkey="uf"] .opts button{justify-content:center;text-align:center;padding:6px 2px}
+.slicer[data-mkey="uf"] .opts,.slicer[data-mkey="qtd"] .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.slicer[data-mkey="qtd"] .opts button:last-child:nth-child(4n+1){grid-column:span 2}
+.slicer[data-mkey="uf"] .opts button,.slicer[data-mkey="qtd"] .opts button{justify-content:center;text-align:center;padding:6px 2px}
 .slicer[data-mkey="situacao"] .opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .slicer[data-mkey="situacao"] .opts button{justify-content:center;text-align:center;padding:7px 4px;font-weight:700}
 .sit{font-size:11px;font-weight:700;color:var(--muted)}.sit.ok{color:var(--ok)}
@@ -985,7 +986,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePal(); });
 /* =================== MANUTENÇÃO DE BASE · SUPABASE (multiusuário) =================== */
 const CFG=window.DASH_CONFIG||{};
 const SB=(window.supabase&&CFG.supabaseUrl&&CFG.supabaseAnonKey)?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
-const MBCOLS={cpf:['cpf','cpfcnpj','documento','cnpj'],nome:['nome','nomecliente','razaosocial'],uf:['ufprincipal','uf'],cliente:['cliente'],ano:['anogerador','ano'],status:['status','acao','statusatual'],situacao:['situacao','situacaopagamento','situacaopgto','pagamento','pgto','compgtosempgto'],valor:['valor','valortotal','valordivida','valoraberto','saldo']};
+const MBCOLS={cpf:['cpf','cpfcnpj','documento','cnpj'],nome:['nome','nomecliente','razaosocial'],uf:['ufprincipal','uf'],cliente:['cliente'],ano:['anogerador','ano'],status:['status','acao','statusatual'],situacao:['situacao','situacaopagamento','situacaopgto','pagamento','pgto','compgtosempgto'],valor:['valor','valortotal','valordivida','valoraberto','saldo'],qtd:['quantidadedepagamentos','quantidadepagamentos','quantidadedepagamento','quantidadepagamento','qtdpagamentos','qtdpagamento','qtddepagamentos','qtdpgto','qtdpgtos','qtdepgto','qtdepagamentos','numerodepagamentos','numeropagamentos','pagamentos']};
 function canonSit(v){ const n=norm(v); if(!n) return 'NÃO INFORMADA';
   if((n==='n'||/^(sem|nao|emaberto|aberto|inadimp|pendente|devedor)/.test(n))&&!/^naoinform/.test(n)) return 'SEM PGTO';
   if(n==='s'||/^(com|pag|pg|sim|quit|liquid|recebid)/.test(n)) return 'COM PGTO';
@@ -1122,12 +1123,12 @@ document.getElementById('newUserForm').addEventListener('submit',async e=>{ e.pr
 });
 
 /* ---------------- Dados da tela ---------------- */
-const FM={cliente:new Set(),uf:new Set(),situacao:new Set(),ano:new Set(),carga:new Set()};
+const FM={cliente:new Set(),uf:new Set(),situacao:new Set(),qtd:new Set(),ano:new Set(),carga:new Set()};
 const VF={min:null,max:null};
-const MBLABEL={cliente:'Cliente',uf:'UF',situacao:'Situação financ.',valor:'Faixa de valor',ano:'Ano gerador',carga:'Data de carga'};
+const MBLABEL={cliente:'Cliente',uf:'UF',situacao:'Situação financ.',valor:'Faixa de valor',qtd:'Qtd. pgto',ano:'Ano gerador',carga:'Data de carga'};
 let OPC=null, RES=[], RCPF=[], LOG=[];
 const arr=s=>s.size?[...s]:null;
-const filt=()=>({p_clientes:arr(FM.cliente),p_anos:arr(FM.ano),p_cargas:FM.carga.size?[...FM.carga].map(Number):null,p_situacoes:sitRaw(),p_vmin:VF.min,p_vmax:VF.max,p_ufs:arr(FM.uf)});
+const filt=()=>({p_clientes:arr(FM.cliente),p_anos:arr(FM.ano),p_cargas:FM.carga.size?[...FM.carga].map(Number):null,p_situacoes:sitRaw(),p_vmin:VF.min,p_vmax:VF.max,p_ufs:arr(FM.uf),p_qtds:FM.qtd.size?[...FM.qtd].map(Number):null});
 const vfLbl=()=>VF.min!=null&&VF.max!=null?brl2.format(VF.min)+' a '+brl2.format(VF.max):VF.min!=null?'a partir de '+brl2.format(VF.min):'até '+brl2.format(VF.max);
 const cargaLbl=id=>{ const c=OPC&&OPC.cargas.find(x=>String(x.id)===String(id)); return c?fmtDT(c.criado_em):'—'; };
 const sortAno=(a,b)=>(a==='SEM ANO')-(b==='SEM ANO')||String(a).localeCompare(String(b));
@@ -1135,6 +1136,7 @@ const stSort=(a,b)=>{const ia=STATUS_ORDER.indexOf(a),ib=STATUS_ORDER.indexOf(b)
 function q(query,fn){ // aplica os filtros laterais numa consulta de registros_v
   if(FM.cliente.size) query=query.in('cliente',[...FM.cliente]);
   if(FM.uf.size) query=query.in('uf',[...FM.uf]);
+  if(FM.qtd.size) query=query.in('qtd_k',[...FM.qtd].map(Number));
   if(FM.ano.size) query=query.in('ano',[...FM.ano]);
   if(FM.carga.size) query=query.in('carga_id',[...FM.carga].map(Number));
   if(FM.situacao.size) query=query.in('situacao',sitRaw());
@@ -1182,7 +1184,7 @@ function descAlt(a){
 }
 
 /* ---------------- Carga de planilha ---------------- */
-function hashRows(rows){ let h=2166136261; for(const r of rows){ const s=r.cpf+'|'+r.nome+'|'+r.uf+'|'+r.cliente+'|'+r.ano+'|'+r.st0+'|'+r.sit+'|'+r.valor; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} } return (h>>>0).toString(16)+':'+rows.length; }
+function hashRows(rows){ let h=2166136261; for(const r of rows){ const s=r.cpf+'|'+r.nome+'|'+r.uf+'|'+r.cliente+'|'+r.ano+'|'+r.st0+'|'+r.sit+'|'+r.valor+(r.qtd==null?'':'|q'+r.qtd); for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} } return (h>>>0).toString(16)+':'+rows.length; }
 function mbParse(objs){
   if(!objs.length) throw new Error('O arquivo não tem linhas de dados.');
   const headers=Object.keys(objs[0]), map={};
@@ -1196,7 +1198,7 @@ function mbParse(objs){
     const n=parseNum(o[map.ano]);
     rows.push({cpf:map.cpf?String(o[map.cpf]??'').replace(/\D/g,''):'', nome:map.nome?String(o[map.nome]??'').trim():'', uf:map.uf?String(o[map.uf]??'').trim().toUpperCase():'',
       cliente:cli||'—', ano:n?String(Math.round(n)):'SEM ANO', st0:canonStatus(stRaw),
-      sit:map.situacao?canonSit(o[map.situacao]):'NÃO INFORMADA', valor:map.valor?(v=>v==null?null:Math.round(v*100)/100)(parseNum(o[map.valor])):null});
+      sit:map.situacao?canonSit(o[map.situacao]):'NÃO INFORMADA', qtd:map.qtd?(v=>v==null?null:Math.max(0,Math.round(v)))(parseNum(o[map.qtd])):null, valor:map.valor?(v=>v==null?null:Math.round(v*100)/100)(parseNum(o[map.valor])):null});
   }
   if(!rows.length) throw new Error('Nenhuma linha válida na base de manutenção.');
   return rows;
@@ -1223,7 +1225,7 @@ async function mbLoadFile(file){
     carga=ins.data.id;
     const B=1000;
     for(let i=0;i<rows.length;i+=B){
-      const chunk=rows.slice(i,i+B).map(r=>({carga_id:carga,cpf:r.cpf,nome:r.nome,uf:r.uf,cliente:r.cliente,ano:r.ano,status_original:r.st0,status:r.st0,situacao:r.sit,valor:r.valor}));
+      const chunk=rows.slice(i,i+B).map(r=>({carga_id:carga,cpf:r.cpf,nome:r.nome,uf:r.uf,cliente:r.cliente,ano:r.ano,status_original:r.st0,status:r.st0,situacao:r.sit,valor:r.valor,qtd_pgto:r.qtd}));
       const {error}=await SB.from('registros').insert(chunk,{returning:'minimal'});
       if(error) throw error;
       progress('Enviando linhas: '+int.format(Math.min(i+B,rows.length))+' de '+int.format(rows.length),0.05+0.9*Math.min(i+B,rows.length)/rows.length);
@@ -1244,7 +1246,7 @@ async function mbLoadFile(file){
 function mbMount(){
   const el=document.getElementById('appMB');
   el.innerHTML='<div class="main"><aside class="side" aria-label="Filtros"><div class="side-h">Filtros</div><div class="slicers">'+
-    ['cliente','uf','situacao','valor','ano','carga'].map(k=>'<details class="slicer" data-mkey="'+k+'"><summary><span class="sn">'+MBLABEL[k]+'</span><span class="cnt"></span></summary>'+
+    ['cliente','uf','situacao','valor','qtd','ano','carga'].map(k=>'<details class="slicer" data-mkey="'+k+'"><summary><span class="sn">'+MBLABEL[k]+'</span><span class="cnt"></span></summary>'+
       (k==='valor'?'<form class="vf" id="vfForm"><label>Mínimo (R$)<input id="vfMin" inputmode="decimal" autocomplete="off"></label><label>Máximo (R$)<input id="vfMax" inputmode="decimal" autocomplete="off"></label><button type="submit" class="theme-btn">Aplicar</button><span class="f-err" id="vfErr"></span></form>':'<div class="opts"></div>')+
       '<button type="button" class="clr">Limpar seleção</button></details>').join('')+
     '</div></aside><div class="content"><div class="mb-bar"><div class="chips" id="mbChips"></div><div class="mb-bar-a"><button type="button" class="theme-btn" id="mbExpAll">Exportar base completa</button></div></div>'+
@@ -1267,13 +1269,14 @@ function mbMount(){
   document.getElementById('mbLog').addEventListener('click',async e=>{ const b=e.target.closest('[data-undo]'); if(!b) return;
     b.disabled=true; const {error}=await SB.rpc('desfazer_alteracao',{p_alt:+b.dataset.undo}); if(error) toast(errMsg(error)); else toast('Alteração desfeita.'); mbRefresh(); });
 }
+function mbOptLbl(k,v){ if(k==='carga') return cargaLbl(v); if(k==='qtd') return v==='-1'?'Sem info':v; return v===''?(k==='uf'?'SEM UF':'NÃO INFORMADA'):v; }
 function mbToggle(k,v){ FM[k].has(v)?FM[k].delete(v):FM[k].add(v); mbRefresh(); }
 function mbRender(){
   if(!OPC) return;
   if(!document.getElementById('mbTables')) mbMount();
   document.getElementById('btnUp').disabled=SCREEN==='mb'&&!canEdit();
-  const opts={cliente:OPC.clientes, uf:OPC.ufs||[], situacao:['COM PGTO','SEM PGTO'], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
-  const avail={cliente:new Set(OPC.cli_disp), uf:new Set(OPC.uf_disp||[]), situacao:new Set((OPC.sit_disp||[]).map(canonSit)), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
+  const opts={cliente:OPC.clientes, uf:OPC.ufs||[], qtd:(OPC.qtds||[]).map(String).sort((a,b)=>(a==='-1')-(b==='-1')||a-b), situacao:['COM PGTO','SEM PGTO'], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
+  const avail={cliente:new Set(OPC.cli_disp), uf:new Set(OPC.uf_disp||[]), qtd:new Set((OPC.qtd_disp||[]).map(String)), situacao:new Set((OPC.sit_disp||[]).map(canonSit)), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
   document.querySelectorAll('#appMB .slicer').forEach(el=>{
     const k=el.dataset.mkey;
     if(k==='valor'){ const on=VF.min!=null||VF.max!=null; const cnt=el.querySelector('.cnt'); cnt.textContent=on?'Ativo':'Todos'; cnt.classList.toggle('on',on); el.querySelector('.clr').hidden=!on;
@@ -1283,11 +1286,11 @@ function mbRender(){
       return; }
     const cnt=el.querySelector('.cnt'); cnt.textContent=FM[k].size?FM[k].size+' sel.':'Todos'; cnt.classList.toggle('on',FM[k].size>0);
     el.querySelector('.clr').hidden=!FM[k].size;
-    el.querySelector('.opts').innerHTML=opts[k].length?opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail[k].has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(k==='carga'?cargaLbl(v):(v===''?(k==='uf'?'SEM UF':'NÃO INFORMADA'):v))+'</button>').join(''):'<span class="mb-hint">—</span>';
+    el.querySelector('.opts').innerHTML=opts[k].length?opts[k].map(v=>'<button type="button" class="'+(FM[k].has(v)?'on ':'')+(avail[k].has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(mbOptLbl(k,v))+'</button>').join(''):'<span class="mb-hint">—</span>';
     el.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>mbToggle(k,b.dataset.v));
   });
   const ch=document.getElementById('mbChips'), parts=[];
-  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(k==='carga'?cargaLbl(v):(v===''?(k==='uf'?'SEM UF':'NÃO INFORMADA'):v))+' ✕</button>');
+  for(const k in FM) for(const v of FM[k]) parts.push('<button type="button" class="chip" data-k="'+k+'" data-v="'+esc(v)+'">'+MBLABEL[k]+': '+esc(mbOptLbl(k,v))+' ✕</button>');
   if(VF.min!=null||VF.max!=null) parts.splice(Math.min(parts.length,FM.cliente.size+FM.uf.size+FM.situacao.size),0,'<button type="button" class="chip" data-k="valor" data-v="">Valor: '+esc(vfLbl())+' ✕</button>');
   ch.innerHTML=parts.length?parts.join('')+'<button type="button" class="btn ghost" id="mbClearAll" style="padding:4px 10px;font-size:12px">Limpar filtros</button>':(canEdit()?'Dica: clique num número para abrir o detalhe e alterar o status das linhas.':'Dica: clique num número para abrir o detalhe. Seu acesso é de consulta.');
   ch.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ if(b.dataset.k==='valor'){ VF.min=VF.max=null; } else FM[b.dataset.k].delete(b.dataset.v); mbRefresh();});
@@ -1337,7 +1340,7 @@ function pivot(title,sub,cells,clis,anos,kind){
 }
 
 /* ---------------- Analítico (detalhe) ---------------- */
-const PAGE=300, COLS_DET='id,cpf,nome,uf,cliente,ano,situacao,valor,status,status_original,carga_em,alterado_em,alterado_por_nome';
+const PAGE=300, COLS_DET='id,cpf,nome,uf,cliente,ano,situacao,valor,qtd_pgto,status,status_original,carga_em,alterado_em,alterado_por_nome';
 let DET={sel:null,rows:[],total:0,q:'',edit:false,kind:'q'}, DET_SEL=null;
 function cleanQ(s){ return String(s||'').trim().replace(/[^\p{L}\p{N} .\-]/gu,'').slice(0,60); }
 function detQuery(cols,opts){
@@ -1380,12 +1383,12 @@ function drawDetail(reset){
   const cpf=DET.kind==='cpf', L=DET.rows;
   document.getElementById('mbDlgSub').textContent=int.format(DET.total)+(cpf?' CPFs':' registros')+(DET.edit?' · Status editável: a alteração é gravada na hora para todos':(DET.kind==='q'?' · Somente consulta':''));
   const head=cpf?'<tr><th>CPF</th><th>Nome</th><th class="n">Registros</th><th class="n">Valor</th><th>Status</th><th>Situação</th><th>UF principal</th></tr>'
-    :'<tr><th>CPF</th><th>Nome</th><th>UF</th><th>Cliente</th><th>Ano</th><th>Situação</th><th class="n">Valor</th><th>Carga</th><th>Status</th></tr>';
+    :'<tr><th>CPF</th><th>Nome</th><th>UF</th><th>Cliente</th><th>Ano</th><th>Situação</th><th class="n">Valor</th><th class="n" title="Quantidade de pagamentos">Pgtos</th><th>Carga</th><th>Status</th></tr>';
   const vv=v=>v==null?'—':brl2.format(v);
   const stCell=r=>DET.edit?'<select class="stsel st-'+(ST_CLASS[r.status]||'x')+'" data-id="'+r.id+'" aria-label="Status do registro">'+stOptions(r).map(o=>'<option'+(o===r.status?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>'+(r.alterado_em?'<small class="edt">'+esc(r.alterado_por_nome||'')+' · '+fmtDT(r.alterado_em)+'</small>':'')
     :'<span class="stt st-'+(ST_CLASS[r.status]||'x')+'">'+esc(r.status)+'</span>'+(r.alterado_em?'<small class="edt">'+esc(r.alterado_por_nome||'')+' · '+fmtDT(r.alterado_em)+'</small>':'');
   const body=L.map(r=>cpf?'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td class="n">'+int.format(r.registros)+'</td><td class="n">'+vv(r.valor)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.situacoes||'—')+'</td><td>'+esc(r.ufs||'—')+'</td></tr>'
-    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td><span class="sit'+(canonSit(r.situacao)==='COM PGTO'?' ok':'')+'">'+esc(canonSit(r.situacao))+'</span></td><td class="n">'+vv(r.valor)+'</td><td>'+fmtDT(r.carga_em).split(' ')[0]+'</td><td>'+stCell(r)+'</td></tr>').join('');
+    :'<tr><td>'+fmtDoc(r.cpf)+'</td><td>'+esc(r.nome||'—')+'</td><td>'+esc(r.uf||'—')+'</td><td>'+esc(r.cliente)+'</td><td>'+esc(r.ano)+'</td><td><span class="sit'+(canonSit(r.situacao)==='COM PGTO'?' ok':'')+'">'+esc(canonSit(r.situacao))+'</span></td><td class="n">'+vv(r.valor)+'</td><td class="n">'+(r.qtd_pgto==null?'—':int.format(r.qtd_pgto))+'</td><td>'+fmtDT(r.carga_em).split(' ')[0]+'</td><td>'+stCell(r)+'</td></tr>').join('');
   const lst=document.getElementById('mbList'), sc=lst.scrollTop;
   lst.innerHTML=(L.length?'<table class="dt dte"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>':'<p class="mb-hint" style="margin:16px">Nenhuma linha encontrada.</p>')+
     (DET.total>L.length?'<button type="button" class="btn ghost mb-more" id="mbMore">Mostrar mais ('+int.format(DET.total-L.length)+' restantes)</button>':'');
@@ -1452,8 +1455,8 @@ function xlsxDownload(head,rows,sheet,name){
   ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:head.length-1}})};
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,sheet); XLSX.writeFile(wb,name);
 }
-const HEAD_OUT=['CPF','NOME','UF PRINCIPAL','CLIENTE','ANO GERADOR','SITUAÇÃO','VALOR','STATUS ORIGINAL','STATUS ATUAL','DATA DA CARGA','ALTERADO EM','ALTERADO POR'];
-const rowOut=r=>[fmtDoc(r.cpf),r.nome,r.uf,r.cliente,r.ano==='SEM ANO'?r.ano:+r.ano,canonSit(r.situacao),r.valor==null?'':Number(r.valor),r.status_original,r.status,fmtDT(r.carga_em),r.alterado_em?fmtDT(r.alterado_em):'',r.alterado_por_nome||''];
+const HEAD_OUT=['CPF','NOME','UF PRINCIPAL','CLIENTE','ANO GERADOR','SITUAÇÃO','VALOR','QTD. PGTO','STATUS ORIGINAL','STATUS ATUAL','DATA DA CARGA','ALTERADO EM','ALTERADO POR'];
+const rowOut=r=>[fmtDoc(r.cpf),r.nome,r.uf,r.cliente,r.ano==='SEM ANO'?r.ano:+r.ano,canonSit(r.situacao),r.valor==null?'':Number(r.valor),r.qtd_pgto==null?'':r.qtd_pgto,r.status_original,r.status,fmtDT(r.carga_em),r.alterado_em?fmtDT(r.alterado_em):'',r.alterado_por_nome||''];
 async function fetchAll(mk,btn,lbl){ const out=[]; for(let i=0;;i+=1000){ const {data,error}=await mk().order('id').range(i,i+999); if(error) throw error; out.push(...data); btn.lastChild.textContent=lbl+' ('+int.format(out.length)+')'; if(data.length<1000) break; } return out; }
 async function withBtn(btn,label,fn){ const t=btn.lastChild; btn.disabled=true; try{ await fn(); t.textContent=label==='Exportar'?'Exportado ✓':'Exportada ✓'; }catch(e){ t.textContent='Erro ao exportar'; toast(errMsg(e)); } btn.disabled=false; setTimeout(()=>t.textContent=label,1800); }
 document.getElementById('mbCopy').onclick=()=>{ const b=document.getElementById('mbCopy');
