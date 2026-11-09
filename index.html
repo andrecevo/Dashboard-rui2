@@ -340,12 +340,14 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
     <button type="button" class="tab" role="tab" data-screen="mb" aria-selected="false">Manutenção de base</button>
   </nav>
   <div id="msg"></div>
+  <div class="prog" id="fatProg" hidden style="margin-bottom:12px"><span class="pt"></span><span class="pb"><i></i></span></div>
   <div id="app"><div class="loading">Carregando dados…</div></div>
   <div id="appMB" hidden><div class="loading">Carregando base…</div></div>
-  <footer><div class="foot-btns" id="footBtns" hidden><button type="button" class="btn ghost sm" id="btnHistLog">Histórico de alterações</button><button type="button" class="btn ghost sm" id="btnHistCarga">Histórico de cargas</button></div><span id="footTxt">Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.</span><span id="foot"></span></footer>
+  <footer><div class="foot-btns" id="footBtnsFat"><button type="button" class="btn ghost sm" id="btnHistFat">Histórico de cargas</button></div><div class="foot-btns" id="footBtns" hidden><button type="button" class="btn ghost sm" id="btnHistLog">Histórico de alterações</button><button type="button" class="btn ghost sm" id="btnHistCarga">Histórico de cargas</button></div><span id="footTxt">Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.</span><span id="foot"></span></footer>
 </div>
 <div class="tip" id="tip" hidden></div>
 <div class="mb-modal" id="histLogModal" hidden><div class="mb-dlg" role="dialog" aria-modal="true" aria-labelledby="hlT"><div class="mb-dh"><div class="mb-dht"><h3 id="hlT">Histórico de alterações</h3><div class="mb-dsub">Últimas 80 alterações · quem, quando, de → para</div></div><button type="button" class="mb-x" data-close="histLogModal" aria-label="Fechar">✕</button></div><div class="hist-body" id="mbLog"></div></div></div>
+<div class="mb-modal" id="fatHistModal" hidden><div class="mb-dlg" role="dialog" aria-modal="true" aria-labelledby="fhT"><div class="mb-dh"><div class="mb-dht"><h3 id="fhT">Histórico de cargas · Faturamento</h3><div class="mb-dsub" id="fatHistSub">Planilhas salvas · clique em Abrir para ver no painel</div></div><button type="button" class="mb-x" data-close="fatHistModal" aria-label="Fechar">✕</button></div><div class="hist-body" id="fatCargas"></div></div></div>
 <div class="mb-modal" id="histCargaModal" hidden><div class="mb-dlg" role="dialog" aria-modal="true" aria-labelledby="hcT"><div class="mb-dh"><div class="mb-dht"><h3 id="hcT">Histórico de cargas</h3><div class="mb-dsub">Planilhas carregadas na base</div></div><button type="button" class="mb-x" data-close="histCargaModal" aria-label="Fechar">✕</button></div><div class="hist-body" id="mbCargas"></div></div></div>
 <div class="mb-modal" id="mbModal" hidden><div class="mb-dlg" role="dialog" aria-modal="true" aria-labelledby="mbDlgT"><div class="mb-dh"><div class="mb-dht"><h3 id="mbDlgT"></h3><div class="mb-dsub" id="mbDlgSub"></div></div><button type="button" class="mb-x" id="mbClose" aria-label="Fechar">✕</button></div><div class="mb-tools"><input type="search" id="mbSearch" placeholder="Buscar CPF, nome ou UF" aria-label="Buscar no detalhe"><span id="mbCount" class="mb-count"></span><span id="mbBulk" class="mb-bulk" hidden>Alterar as <b id="mbBulkN"></b> linhas para <select id="mbBulkSel" aria-label="Novo status em lote"><option value="">escolha…</option><option>DISPONIBILIZAR</option><option>INCOBRÁVEL NO CLIENTE</option><option>FALECIDO</option><option>INCOBRÁVEL NA BASE</option></select><button type="button" class="theme-btn" id="mbBulkGo">Aplicar</button></span><button type="button" class="btn" id="mbCopy"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>Exportar</button></div><div class="mb-list" id="mbList"></div></div></div>
 <div class="gate" id="gate">
@@ -569,10 +571,13 @@ async function loadFile(file){
   showMsg(''); setMeta('Lendo <b>'+esc(file.name)+'</b>…');
   try{
     const buf=await file.arrayBuffer();
-    ingest(parseBuffer(buf,file.name,WANT_FAT), file.name);
+    const objs=parseBuffer(buf,file.name,WANT_FAT);
+    FAT_INFO=null; ingest(objs, file.name); fatHistRender();
+    fatSave(objs, file.name);
   }catch(e){ showMsg(e.message); setMeta(DATA?metaTxt():'Nenhum dado carregado.'); }
 }
 async function loadDefault(){
+  if(SB&&ME){ try{ await fatHistLoad(); if(FATC.length){ await fatOpen(FATC[0].id); return; } }catch(e){ fatProg(null); showMsg('Não consegui abrir a última carga do histórico: '+errMsg(e)); } }
   try{
     const r=await fetch(DEFAULT_FILE,{cache:'no-store'});
     if(!r.ok) throw 0;
@@ -584,6 +589,78 @@ async function loadDefault(){
     document.getElementById('app').innerHTML='<div class="empty"><h2>Carregue a planilha de cobranças</h2><p>Use o botão <b>Carregar planilha</b> ou arraste um arquivo <code>.csv</code> / <code>.xlsx</code> para esta página.<br>Para abrir já com dados, coloque um <code>'+DEFAULT_FILE+'</code> na mesma pasta do <code>index.html</code>.</p></div>';
   }
 }
+
+/* ---------- Histórico de cargas do Faturamento (Supabase) ---------- */
+let FATC=[], FAT_INFO=null; const FAT_B=1000, FAT_GRP=5;
+function fatProg(txt,pct){ const el=document.getElementById('fatProg'); if(txt===null){ el.hidden=true; return; } el.hidden=false; el.querySelector('.pt').textContent=txt; el.querySelector('.pb i').style.width=Math.round((pct||0)*100)+'%'; }
+function fatSerialize(objs){ const cols=[], seen=new Set(); for(const o of objs) for(const k in o) if(!seen.has(k)){ seen.add(k); cols.push(k); }
+  const rows=objs.map(o=>cols.map(k=>{ const v=o[k]; if(v instanceof Date) return {d:[v.getFullYear(),v.getMonth()+1,v.getDate()]}; return v===undefined||v===null?'':v; }));
+  return {cols,rows}; }
+function fatDeserialize(cols,rows){ return rows.map(r=>{ const o={}; cols.forEach((k,i)=>{ const v=r[i]; o[k]=(v&&typeof v==='object'&&Array.isArray(v.d))?new Date(v.d[0],v.d[1]-1,v.d[2],12):(v??''); }); return o; }); }
+async function fatSave(objs,name){
+  if(!SB||!ME) return;
+  if(!canEdit()){ showMsg('Planilha aberta só nesta tela: seu acesso é de Leitor, então ela não foi salva no histórico.', true); return; }
+  const {cols,rows}=fatSerialize(objs);
+  let h=2166136261; for(const r of rows){ const t=JSON.stringify(r); for(let i=0;i<t.length;i++){ h^=t.charCodeAt(i); h=Math.imul(h,16777619); } }
+  const hash='f'+(h>>>0).toString(16)+'-'+rows.length+'-'+cols.length; let id=null;
+  try{
+    fatProg('Salvando '+name+' no histórico…',0.02);
+    const ins=await SB.from('fat_cargas').insert({arquivo:name,hash,colunas:cols}).select('id,arquivo,linhas,criado_em,criado_por_nome').single();
+    if(ins.error){
+      if(ins.error.code==='23505'){ const {data}=await SB.from('fat_cargas').select('id,arquivo,linhas,criado_em,criado_por_nome,concluida').eq('hash',hash).maybeSingle(); fatProg(null);
+        if(data&&data.concluida){ FAT_INFO=data; setMeta(metaTxt()); bindDateMode(); fatHistRender(); toast('Este arquivo já estava no histórico (carregado em '+fmtDT(data.criado_em)+'). Nada foi duplicado.'); }
+        else toast('Este arquivo está sendo salvo por outra pessoa neste momento.');
+        return; }
+      throw ins.error; }
+    id=ins.data.id;
+    const nb=Math.ceil(rows.length/FAT_B);
+    for(let b=0;b<nb;b+=FAT_GRP){ const chunk=[];
+      for(let q=b;q<Math.min(b+FAT_GRP,nb);q++) chunk.push({carga_id:id,seq:q,dados:rows.slice(q*FAT_B,(q+1)*FAT_B)});
+      const {error}=await SB.from('fat_blocos').insert(chunk); if(error) throw error;
+      fatProg('Salvando no histórico: '+int.format(Math.min((b+FAT_GRP)*FAT_B,rows.length))+' de '+int.format(rows.length)+' linhas',0.05+0.9*Math.min(b+FAT_GRP,nb)/nb); }
+    const fin=await SB.rpc('finalizar_carga_fat',{p_carga:id}); if(fin.error) throw fin.error;
+    fatProg(null); if(SRC===name){ FAT_INFO=ins.data; setMeta(metaTxt()); bindDateMode(); }
+    toast('Planilha salva no histórico: '+int.format(fin.data.linhas)+' linhas.');
+    fatHistLoad().catch(()=>{});
+  }catch(e){ fatProg(null); if(id) await SB.from('fat_cargas').delete().eq('id',id);
+    showMsg('A planilha está na tela, mas não foi salva no histórico: '+errMsg(e)); }
+}
+async function fatHistLoad(){
+  const {data,error}=await SB.from('fat_cargas').select('id,arquivo,linhas,colunas,criado_em,criado_por_nome').eq('concluida',true).order('id',{ascending:false});
+  if(error) throw error; FATC=data||[]; fatHistRender(); return FATC;
+}
+function fatHistRender(){
+  const el=document.getElementById('fatCargas'); if(!el) return;
+  el.innerHTML=FATC.length?'<table class="dt"><thead><tr><th>Data da carga</th><th>Arquivo</th><th>Por</th><th class="n">Linhas</th><th></th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
+    FATC.map(c=>{ const on=FAT_INFO&&FAT_INFO.id===c.id; return '<tr><td>'+fmtDT(c.criado_em)+'</td><td class="wrap">'+esc(c.arquivo)+'</td><td>'+esc(c.criado_por_nome||'—')+'</td><td class="n">'+int.format(c.linhas)+'</td><td class="n">'+(on?'<span class="mb-hint">Aberta</span>':'<button type="button" class="lnk" data-open="'+c.id+'">Abrir</button>')+'</td>'+(isAdmin()?'<td class="n"><button type="button" class="lnk" data-frm="'+c.id+'">Remover</button></td>':'')+'</tr>'; }).join('')+'</tbody></table>'
+    :'<p class="mb-hint" style="padding:6px 4px">Nenhuma carga salva ainda. Use “Carregar planilha” nesta tela.</p>';
+  document.getElementById('fatHistSub').textContent=FATC.length?int.format(FATC.length)+' planilha(s) salva(s) · clique em Abrir para ver no painel':'Planilhas salvas · clique em Abrir para ver no painel';
+}
+async function fatOpen(id){
+  let c=FATC.find(x=>x.id===id);
+  if(!c){ const r=await SB.from('fat_cargas').select('id,arquivo,linhas,colunas,criado_em,criado_por_nome').eq('id',id).single(); if(r.error) throw r.error; c=r.data; }
+  setMeta('Abrindo <b>'+esc(c.arquivo)+'</b>…'); fatProg('Abrindo '+c.arquivo+'…',0.02);
+  const rows=[];
+  for(let from=0;;from+=FAT_GRP){
+    const {data,error}=await SB.from('fat_blocos').select('seq,dados').eq('carga_id',id).order('seq').range(from,from+FAT_GRP-1);
+    if(error){ fatProg(null); throw error; }
+    for(const b of data) for(const r of b.dados) rows.push(r);
+    fatProg('Abrindo '+c.arquivo+': '+int.format(rows.length)+' de '+int.format(c.linhas)+' linhas',Math.min(1,rows.length/(c.linhas||1)));
+    if(data.length<FAT_GRP) break; }
+  fatProg(null); FAT_INFO=c; showMsg('');
+  ingest(fatDeserialize(c.colunas,rows), c.arquivo); fatHistRender();
+}
+document.getElementById('fatCargas').addEventListener('click',async e=>{
+  const o=e.target.closest('[data-open]');
+  if(o){ o.disabled=true; closeModal('fatHistModal'); try{ await fatOpen(+o.dataset.open); }catch(err){ showMsg('Não consegui abrir a carga: '+errMsg(err)); if(DATA){ setMeta(metaTxt()); bindDateMode(); } } return; }
+  const b=e.target.closest('[data-frm]'); if(!b) return;
+  if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirmar remoção'; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=''; b.textContent='Remover'; } },4000); return; }
+  b.disabled=true; const id=+b.dataset.frm; const {data,error}=await SB.rpc('remover_carga_fat',{p_carga:id});
+  if(error){ toast(errMsg(error)); b.disabled=false; return; }
+  toast('Carga removida do histórico: '+int.format(data.linhas)+' linhas.');
+  if(FAT_INFO&&FAT_INFO.id===id){ FAT_INFO=null; if(DATA){ setMeta(metaTxt()); bindDateMode(); } }
+  fatHistLoad().catch(err=>toast(errMsg(err)));
+});
 
 /* ---------- Estado ---------- */
 let DATA=null, SRC='', CH={};
@@ -607,7 +684,7 @@ try{ const dm=localStorage.getItem('dash-datas'); if(dm==='auto'||dm==='dmy'||dm
 function metaTxt(){
   const ys=[...new Set(DATA.rows.map(r=>r.y))].sort();
   const det=(!DATE_EVID.br&&!DATE_EVID.us&&DATE_MODE==='auto')?'datas do Excel':DATE_MDY?'mm/dd/aaaa (EUA)':'dd/mm/aaaa (BR)';
-  return 'Fonte: <b>'+esc(SRC)+'</b> · '+DATA.rows.length.toLocaleString('pt-BR')+' cobranças · vencimentos de '+ys[0]+' a '+ys[ys.length-1]+
+  return 'Fonte: <b>'+esc(SRC)+'</b>'+(FAT_INFO?' (histórico: '+esc(fmtDT(FAT_INFO.criado_em))+(FAT_INFO.criado_por_nome?' por '+esc(FAT_INFO.criado_por_nome):'')+')':'')+' · '+DATA.rows.length.toLocaleString('pt-BR')+' cobranças · vencimentos de '+ys[0]+' a '+ys[ys.length-1]+
     ' · <label class="dfmt">Datas do arquivo: <select id="dateMode"><option value="auto"'+(DATE_MODE==='auto'?' selected':'')+'>Automático ('+det+')</option><option value="mdy"'+(DATE_MODE==='mdy'?' selected':'')+'>mm/dd/aaaa (EUA)</option><option value="dmy"'+(DATE_MODE==='dmy'?' selected':'')+'>dd/mm/aaaa (BR)</option></select></label>';
 }
 const pass=(r,skip)=>{ for(const k in F){ if(k===skip||!F[k].size) continue;
@@ -1054,7 +1131,7 @@ function bindGate(){
   document.getElementById('gSairPend').onclick=()=>SB.auth.signOut();
   SB.auth.onAuthStateChange((ev,session)=>{
     if(ev==='PASSWORD_RECOVERY'){ RECOVERY=true; gateShow('nova'); return; }
-    if(ev==='SIGNED_OUT'){ ME=null; renderUser(); gateShow('login'); closeDetail(); ['userModal','pwdModal','histLogModal','histCargaModal'].forEach(closeModal); }
+    if(ev==='SIGNED_OUT'){ ME=null; renderUser(); gateShow('login'); closeDetail(); ['userModal','pwdModal','histLogModal','histCargaModal','fatHistModal'].forEach(closeModal); }
   });
   SB.auth.getSession().then(({data})=>afterLogin(data.session));
 }
@@ -1082,7 +1159,8 @@ function closeModal(id){ const m=document.getElementById(id); if(m&&!m.hidden){ 
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
 document.getElementById('btnHistLog').onclick=()=>openModal('histLogModal');
 document.getElementById('btnHistCarga').onclick=()=>openModal('histCargaModal');
-['userModal','pwdModal','histLogModal','histCargaModal'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) closeModal(id); }));
+document.getElementById('btnHistFat').onclick=()=>{ openModal('fatHistModal'); if(!SB||!ME){ document.getElementById('fatCargas').innerHTML='<p class="mb-hint" style="padding:6px 4px">Entre com seu usuário para ver o histórico.</p>'; return; } fatHistLoad().catch(e=>{ document.getElementById('fatCargas').innerHTML='<p class="mb-hint" style="padding:6px 4px">'+esc(errMsg(e))+'</p>'; }); };
+['userModal','pwdModal','histLogModal','histCargaModal','fatHistModal'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) closeModal(id); }));
 document.getElementById('pwdForm').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter, msg=document.getElementById('pwdMsg');
   const a=document.getElementById('pwd1').value, c=document.getElementById('pwd2').value;
   if(a.length<8){ msg.textContent='Use pelo menos 8 caracteres.'; return; } if(a!==c){ msg.textContent='As duas senhas não são iguais.'; return; }
@@ -1436,7 +1514,7 @@ let searchT=null;
 document.getElementById('mbSearch').addEventListener('input',e=>{ DET.q=e.target.value; resetBulkBtn(); clearTimeout(searchT); searchT=setTimeout(()=>loadDetail(true),300); });
 document.getElementById('mbClose').onclick=closeDetail;
 document.getElementById('mbModal').addEventListener('click',e=>{ if(e.target.id==='mbModal') closeDetail(); });
-document.addEventListener('keydown',e=>{ if(e.key!=='Escape') return; if(!document.getElementById('mbModal').hidden) closeDetail(); else { ['userModal','pwdModal','histLogModal','histCargaModal'].forEach(closeModal); } });
+document.addEventListener('keydown',e=>{ if(e.key!=='Escape') return; if(!document.getElementById('mbModal').hidden) closeDetail(); else { ['userModal','pwdModal','histLogModal','histCargaModal','fatHistModal'].forEach(closeModal); } });
 
 /* ---------------- Exportar ---------------- */
 let toastT=null;
@@ -1480,7 +1558,7 @@ function setScreen(sc,save){
   document.querySelectorAll('.tabs .tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.screen===SCREEN));
   document.getElementById('pageTtl').textContent=SCREEN==='mb'?'Manutenção de Base':'Dashboard de Faturamento';
   document.getElementById('meta').innerHTML=META[SCREEN]; if(SCREEN==='fat') bindDateMode();
-  document.getElementById('footTxt').textContent=FOOT[SCREEN]; document.getElementById('footBtns').hidden=SCREEN!=='mb';
+  document.getElementById('footTxt').textContent=FOOT[SCREEN]; document.getElementById('footBtns').hidden=SCREEN!=='mb'; document.getElementById('footBtnsFat').hidden=SCREEN!=='fat';
   showMsg('');
   if(SCREEN==='fat') Object.values(CH).forEach(c=>c&&c.resize());
   renderUser();
