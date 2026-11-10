@@ -577,7 +577,11 @@ async function loadFile(file){
   }catch(e){ showMsg(e.message); setMeta(DATA?metaTxt():'Nenhum dado carregado.'); }
 }
 async function loadDefault(){
-  if(SB&&ME){ try{ await fatHistLoad(); if(FATC.length){ await fatOpen(FATC[0].id); return; } }catch(e){ fatProg(null); showMsg('Não consegui abrir a última carga do histórico: '+errMsg(e)); } }
+  if(SB&&ME){
+    try{ await fatHistLoad(); if(FATC.length){ await fatOpen(FATC[0].id); return; } }
+    catch(e){ fatProg(null); showMsg('Não consegui abrir a última carga do histórico: '+errMsg(e)); }
+    fatEmpty(); return; // logado: o painel mostra só o que está no histórico
+  }
   try{
     const r=await fetch(DEFAULT_FILE,{cache:'no-store'});
     if(!r.ok) throw 0;
@@ -591,6 +595,12 @@ async function loadDefault(){
 }
 
 /* ---------- Histórico de cargas do Faturamento (Supabase) ---------- */
+function fatEmpty(){
+  Object.values(CH).forEach(c=>c&&c.destroy()); CH={};
+  DATA=null; LAST=null; SRC=''; FAT_INFO=null; Object.values(F).forEach(s=>s.clear());
+  setMeta('Nenhum dado carregado.');
+  document.getElementById('app').innerHTML='<div class="empty"><h2>Nenhuma carga no histórico</h2><p>Use o botão <b>Carregar planilha</b> ou arraste um arquivo <code>.csv</code> / <code>.xlsx</code> para esta página.<br>A planilha fica salva no <b>Histórico de cargas</b> (rodapé) e abre automaticamente da próxima vez.</p></div>';
+}
 let FATC=[], FAT_INFO=null; const FAT_B=1000, FAT_GRP=5;
 function fatProg(txt,pct){ const el=document.getElementById('fatProg'); if(txt===null){ el.hidden=true; return; } el.hidden=false; el.querySelector('.pt').textContent=txt; el.querySelector('.pb i').style.width=Math.round((pct||0)*100)+'%'; }
 function fatSerialize(objs){ const cols=[], seen=new Set(); for(const o of objs) for(const k in o) if(!seen.has(k)){ seen.add(k); cols.push(k); }
@@ -658,8 +668,12 @@ document.getElementById('fatCargas').addEventListener('click',async e=>{
   b.disabled=true; const id=+b.dataset.frm; const {data,error}=await SB.rpc('remover_carga_fat',{p_carga:id});
   if(error){ toast(errMsg(error)); b.disabled=false; return; }
   toast('Carga removida do histórico: '+int.format(data.linhas)+' linhas.');
-  if(FAT_INFO&&FAT_INFO.id===id){ FAT_INFO=null; if(DATA){ setMeta(metaTxt()); bindDateMode(); } }
-  fatHistLoad().catch(err=>toast(errMsg(err)));
+  const eraAberta=FAT_INFO&&FAT_INFO.id===id;
+  try{ await fatHistLoad(); }catch(err){ toast(errMsg(err)); }
+  if(eraAberta){
+    if(FATC.length){ try{ await fatOpen(FATC[0].id); toast('Carga removida. Abrindo a mais recente: '+FATC[0].arquivo+'.'); }catch(err){ fatEmpty(); showMsg('Não consegui abrir a próxima carga: '+errMsg(err)); } }
+    else fatEmpty();
+  }
 });
 
 /* ---------- Estado ---------- */
