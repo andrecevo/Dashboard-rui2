@@ -600,6 +600,7 @@ function parseBuffer(buf,name,want){
   return parseCSVText(decode(buf));
 }
 async function loadFile(file){
+  if(ME&&!canEdit()){ showMsg('Seu usuário é Leitor: pode consultar e exportar, mas não carregar planilhas.'); return; }
   showMsg(''); setMeta('Lendo <b>'+esc(file.name)+'</b>…');
   try{
     const buf=await file.arrayBuffer();
@@ -631,7 +632,7 @@ function fatEmpty(){
   Object.values(CH).forEach(c=>c&&c.destroy()); CH={};
   DATA=null; LAST=null; SRC=''; FAT_INFO=null; Object.values(F).forEach(s=>s.clear());
   setMeta('Nenhum dado carregado.');
-  document.getElementById('app').innerHTML='<div class="empty"><h2>Nenhuma carga no histórico</h2><p>Use o botão <b>Carregar planilha</b> ou arraste um arquivo <code>.csv</code> / <code>.xlsx</code> para esta página.<br>A planilha fica salva no <b>Histórico de cargas</b> (rodapé) e abre automaticamente da próxima vez.</p></div>';
+  document.getElementById('app').innerHTML='<div class="empty"><h2>Nenhuma carga no histórico</h2>'+(canEdit()?'<p>Use o botão <b>Carregar planilha</b> ou arraste um arquivo <code>.csv</code> / <code>.xlsx</code> para esta página.<br>A planilha fica salva no <b>Histórico de cargas</b> (rodapé) e abre automaticamente da próxima vez.</p>':'<p>Ainda não há planilhas de faturamento. Assim que um Editor ou Administrador carregar uma, ela aparece aqui.</p>')+'</div>';
 }
 let FATC=[], FAT_INFO=null; const FAT_B=1000, FAT_GRP=5;
 function fatProg(txt,pct){ const el=document.getElementById('fatProg'); if(txt===null){ el.hidden=true; return; } el.hidden=false; el.querySelector('.pt').textContent=txt; el.querySelector('.pb i').style.width=Math.round((pct||0)*100)+'%'; }
@@ -675,7 +676,7 @@ function fatHistRender(){
   const el=document.getElementById('fatCargas'); if(!el) return;
   el.innerHTML=FATC.length?'<table class="dt"><thead><tr><th>Data da carga</th><th>Arquivo</th><th>Por</th><th class="n">Linhas</th><th></th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
     FATC.map(c=>{ const on=FAT_INFO&&FAT_INFO.id===c.id; return '<tr><td>'+fmtDT(c.criado_em)+'</td><td class="wrap">'+esc(c.arquivo)+'</td><td>'+esc(c.criado_por_nome||'—')+'</td><td class="n">'+int.format(c.linhas)+'</td><td class="n">'+(on?'<span class="mb-hint">Aberta</span>':'<button type="button" class="lnk" data-open="'+c.id+'">Abrir</button>')+'</td>'+(isAdmin()?'<td class="n"><button type="button" class="lnk" data-frm="'+c.id+'">Remover</button></td>':'')+'</tr>'; }).join('')+'</tbody></table>'
-    :'<p class="mb-hint" style="padding:6px 4px">Nenhuma carga salva ainda. Use “Carregar planilha” nesta tela.</p>';
+    :'<p class="mb-hint" style="padding:6px 4px">Nenhuma carga salva ainda.'+(canEdit()?' Use “Carregar planilha” nesta tela.':'')+'</p>';
   document.getElementById('fatHistSub').textContent=FATC.length?int.format(FATC.length)+' planilha(s) salva(s) · clique em Abrir para ver no painel':'Planilhas salvas · clique em Abrir para ver no painel';
 }
 async function fatOpen(id){
@@ -695,7 +696,7 @@ async function fatOpen(id){
 document.getElementById('fatCargas').addEventListener('click',async e=>{
   const o=e.target.closest('[data-open]');
   if(o){ o.disabled=true; closeModal('fatHistModal'); try{ await fatOpen(+o.dataset.open); }catch(err){ showMsg('Não consegui abrir a carga: '+errMsg(err)); if(DATA){ setMeta(metaTxt()); bindDateMode(); } } return; }
-  const b=e.target.closest('[data-frm]'); if(!b) return;
+  const b=e.target.closest('[data-frm]'); if(!b||!isAdmin()) return;
   if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirmar remoção'; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=''; b.textContent='Remover'; } },4000); return; }
   b.disabled=true; const id=+b.dataset.frm; const {data,error}=await SB.rpc('remover_carga_fat',{p_carga:id});
   if(error){ toast(errMsg(error)); b.disabled=false; return; }
@@ -1138,13 +1139,14 @@ function renderChips(){
 
 /* ---------- Upload / drag-and-drop ---------- */
 const fileIn=document.getElementById('file');
-document.getElementById('btnUp').onclick=()=>fileIn.click();
-fileIn.onchange=()=>{ const f=fileIn.files[0]; if(f) (SCREEN==='mb'?mbLoadFile:loadFile)(f); fileIn.value=''; };
+const podeCarregar=()=>{ if(canEdit()) return true; showMsg('Seu usuário é Leitor: pode consultar e exportar, mas não carregar planilhas.'); return false; };
+document.getElementById('btnUp').onclick=()=>{ if(podeCarregar()) fileIn.click(); };
+fileIn.onchange=()=>{ const f=fileIn.files[0]; if(f&&podeCarregar()) (SCREEN==='mb'?mbLoadFile:loadFile)(f); fileIn.value=''; };
 const drop=document.getElementById('drop'); let dc=0;
-addEventListener('dragenter',e=>{if([...e.dataTransfer.types].includes('Files')){dc++;drop.hidden=false;}});
+addEventListener('dragenter',e=>{if(canEdit()&&[...e.dataTransfer.types].includes('Files')){dc++;drop.hidden=false;}});
 addEventListener('dragleave',()=>{if(--dc<=0){dc=0;drop.hidden=true;}});
 addEventListener('dragover',e=>e.preventDefault());
-addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f) (SCREEN==='mb'?mbLoadFile:loadFile)(f);});
+addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f&&podeCarregar()) (SCREEN==='mb'?mbLoadFile:loadFile)(f);});
 
 /* Tema claro/escuro */
 const ICON_SUN='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
@@ -1206,7 +1208,7 @@ function applyTelas(){
   const nav=document.querySelector('.tabs'); if(nav) nav.hidden=!(vis.fat&&vis.mb);
   const none=!vis.fat&&!vis.mb;
   document.getElementById('semTela').hidden=!none;
-  document.getElementById('btnUp').hidden=none;
+  document.getElementById('btnUp').hidden=none||!canEdit();
   if(none){ document.getElementById('app').hidden=true; document.getElementById('appMB').hidden=true; document.getElementById('footBtns').hidden=true; document.getElementById('footBtnsFat').hidden=true; setMetaTxtNone(); return; }
   if(!vis[SCREEN]) setScreen(vis.fat?'fat':'mb',false); else setScreen(SCREEN,false);
 }
@@ -1281,7 +1283,7 @@ function renderUser(){
   document.getElementById('userNm').textContent=ME.nome||ME.email;
   document.getElementById('userPp').textContent=PAPEL_LBL[ME.papel]||ME.papel;
   document.getElementById('umUsers').hidden=!isAdmin();
-  document.getElementById('btnUp').disabled=SCREEN==='mb'&&!canEdit();
+  document.getElementById('btnUp').hidden=!canEdit(); document.getElementById('btnUp').disabled=!canEdit();
 }
 (function(){
   const b=document.getElementById('userBtn'), m=document.getElementById('userMenu');
@@ -1499,7 +1501,7 @@ function mbToggle(k,v){ FM[k].has(v)?FM[k].delete(v):FM[k].add(v); mbRefresh(); 
 function mbRender(){
   if(!OPC) return;
   if(!document.getElementById('mbTables')) mbMount();
-  document.getElementById('btnUp').disabled=SCREEN==='mb'&&!canEdit();
+  document.getElementById('btnUp').hidden=!canEdit(); document.getElementById('btnUp').disabled=!canEdit();
   const opts={cliente:OPC.clientes, uf:OPC.ufs||[], qtd:(OPC.qtds||[]).map(String).sort((a,b)=>(a==='-1')-(b==='-1')||a-b), situacao:['COM PGTO','SEM PGTO'], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
   const avail={cliente:new Set(OPC.cli_disp), uf:new Set(OPC.uf_disp||[]), qtd:new Set((OPC.qtd_disp||[]).map(String)), situacao:new Set((OPC.sit_disp||[]).map(canonSit)), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
   document.querySelectorAll('#appMB .slicer').forEach(el=>{
