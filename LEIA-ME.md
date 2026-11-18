@@ -8,9 +8,9 @@ Site estático (GitHub Pages) com login e banco de dados no **Supabase**.
 |---|---|
 | `index.html` | O dashboard (as duas telas, login e gestão de usuários) |
 | `config.js` | URL e chave pública do seu projeto Supabase — **você preenche** |
-| `schema.sql` | Estrutura do banco: tabelas, regras de acesso e regras de negócio. **Não precisa ir para o GitHub** — é só colado no Supabase (passo 2) |
-| `dados.csv` | Base de exemplo da tela Faturamento (abre automaticamente) |
-| `manutencao.csv` | Base de exemplo para a primeira carga da Manutenção de Base |
+| `supabase/schema.sql` | Estrutura do banco: tabelas, regras de acesso e regras de negócio |
+| `dados.csv` | Base de exemplo da tela Faturamento. **Não suba para o GitHub**: arquivos do repositório ficam públicos, sem login |
+| `manutencao.csv` | Base de exemplo para testar a Manutenção de Base. **Também não suba para o GitHub** |
 
 ## Passo a passo (uma vez só)
 
@@ -21,7 +21,7 @@ Site estático (GitHub Pages) com login e banco de dados no **Supabase**.
 
 ### 2. Criar a estrutura do banco
 1. No projeto: **SQL Editor → New query**.
-2. Abra o `schema.sql` no Bloco de Notas, copie tudo (Ctrl+A, Ctrl+C), cole no editor do Supabase e clique **Run**.
+2. Cole todo o conteúdo de `supabase/schema.sql` e clique **Run**.
 3. Deve aparecer "Success". Pode rodar de novo no futuro sem perder dados.
 
 ### 3. Ajustar o login
@@ -37,42 +37,22 @@ Em **Authentication → URL Configuration**:
 Em **Authentication → Users → Add user → Create new user**: e-mail e senha, marque **Auto Confirm User**.
 O **primeiro usuário criado vira Administrador automaticamente**. Os próximos você cria pelo próprio dashboard.
 
-### 5. Ligar o site ao banco (arquivo `config.js`)
+### 5. Ligar o site ao banco
+Em **Settings → API**, copie:
+- **Project URL**
+- **anon public** (chave pública)
 
-**5.1 Pegar a URL do projeto**
-1. No Supabase, abra o seu projeto.
-2. Menu da esquerda, lá embaixo: ícone de engrenagem **Project Settings**.
-3. Clique em **Data API** (em versões antigas do painel o nome é **API**).
-4. Copie o campo **Project URL** (algo como `https://abcdefghijklmno.supabase.co`).
-
-**5.2 Pegar a chave pública**
-1. Ainda em **Project Settings**, clique em **API Keys**.
-2. Se aparecerem as abas **"API Keys"** e **"Legacy API Keys"**, abra **Legacy API Keys** e copie a chave **anon / public** (um texto longo que começa com `eyJ`).
-3. Se o seu painel só mostrar a chave **Publishable** (`sb_publishable_...`), use essa.
-4. **Não copie** a chave **service_role** nem a **Secret** (`sb_secret_...`): elas dão acesso total ao banco e não podem ir para o site.
-
-**5.3 Colar no `config.js`**
-Abra o `config.js` (no Bloco de Notas, ou no GitHub: arquivo → ícone de lápis ✏️ → editar → **Commit changes**) e deixe assim, trocando pelos seus valores:
+Cole no `config.js`:
 ```js
 window.DASH_CONFIG = {
-  supabaseUrl: 'https://abcdefghijklmno.supabase.co',
-  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.....'
+  supabaseUrl: 'https://xxxxxxxx.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOi...'
 };
 ```
-Cuidados:
-- Os valores ficam **entre aspas simples** `'...'`.
-- Mantenha a **vírgula** depois da URL.
-- A URL vai **sem barra no final** e sem `/rest/v1`.
-- A chave é longa: copie **inteira**, sem espaços nem quebras de linha.
-
-**5.4 Conferir**
-Abra o site (no GitHub Pages pode levar 1–2 minutos para atualizar; use **Ctrl+F5**):
-- Apareceu a tela **ENTRAR** → está ligado.
-- Apareceu **CONFIGURAÇÃO PENDENTE** → o `config.js` não foi lido ou está em branco (confira o nome do arquivo e se ele está na mesma pasta do `index.html`).
-- Entrou mas aparece erro de permissão → o `schema.sql` (passo 2) não foi executado.
+⚠️ **Nunca** use a chave `service_role` no site.
 
 ### 6. Subir no GitHub
-Suba para o repositório, na raiz (mesma pasta): `index.html`, `config.js`, `dados.csv` e, se quiser, o `manutencao.csv` e este `LEIA-ME.md`. O `schema.sql` não precisa ir. Depois acesse o site e entre com o administrador.
+Suba para o repositório, na raiz (mesma pasta), **apenas** `index.html` e `config.js` (e, se quiser, este `LEIA-ME.md`). Planilhas (`.csv`/`.xlsx`) nunca vão para o GitHub: tudo que está no repositório pode ser baixado por qualquer pessoa, sem login. Os dados entram pelo botão **Carregar planilha**, já logado. O `schema.sql` não precisa ir. Depois acesse o site e entre com o administrador.
 
 ## Papéis de usuário
 
@@ -84,6 +64,14 @@ Suba para o repositório, na raiz (mesma pasta): `index.html`, `config.js`, `dad
 
 Usuários: menu com seu nome (topo) → **Usuários e acessos**.
 
+### Telas liberadas por usuário
+Na coluna **Telas** de “Usuários e acessos”, marque o que cada pessoa pode ver: **Faturamento** e/ou **Manutenção de base**.
+- A aba de uma tela não liberada some, e o banco também recusa os dados dessa tela para essa pessoa.
+- O papel continua valendo dentro da tela (ex.: Editor só no Faturamento carrega planilhas de Faturamento, mas não vê a Manutenção de Base).
+- Administrador vê todas as telas, sempre.
+- Usuário sem nenhuma tela marcada vê só um aviso para pedir liberação.
+- Mudanças valem no próximo acesso da pessoa (ou ao recarregar a página).
+
 ## Regras da Manutenção de Base (ficam no banco)
 - Cada planilha carregada **soma** à base e recebe a data da carga. O mesmo arquivo não entra duas vezes.
 - Se o envio falhar no meio, a carga é desfeita inteira (nada fica pela metade).
@@ -94,6 +82,8 @@ Usuários: menu com seu nome (topo) → **Usuários e acessos**.
 - Telas abertas por outras pessoas atualizam sozinhas quando alguém altera algo.
 
 ## Observações
-- A tela **Faturamento** continua lendo o CSV/XLSX no navegador (não grava no banco).
+- Tela **Faturamento**: cada planilha carregada por Editor ou Administrador fica salva no **Histórico de cargas** (botão no rodapé). Ao entrar, o painel abre a carga mais recente. Pelo histórico dá para reabrir uma carga antiga ou, se for Administrador, removê-la. Planilhas carregadas por Leitor aparecem só na tela de quem carregou.
+- Ao carregar uma planilha de Faturamento, mantenha a página aberta até a barra "Salvando no histórico" terminar.
+- **Performance de Vencimentos**: clique numa barra para abrir a tabela dia a dia do mês (previsto × pago × falta receber, em R$, quantidade e %). O botão "Exportar Excel" baixa o resumo por dia e todas as cobranças do mês. O botão "Filtrar o painel por este mês" dentro da janela aplica o filtro como antes.
 - Plano gratuito do Supabase: o projeto pausa após ~7 dias sem uso; reative no painel.
 - Backup: **Exportar base completa** gera um Excel com status original, atual, data da carga e quem alterou.
