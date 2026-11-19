@@ -225,6 +225,27 @@ table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numer
 .slicer[data-mkey="situacao"] .opts button{justify-content:center;text-align:center;padding:7px 4px;font-weight:700}
 .sit{font-size:11px;font-weight:700;color:var(--muted)}.sit.ok{color:var(--ok)}
 .mb-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#appINC{margin-top:4px}
+.inc-wrap{display:flex;flex-direction:column;gap:14px}
+.inc-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.inc-bar input[type=search]{flex:1 1 260px;min-width:0;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 12px;font:inherit}
+.inc-bar select,.inc-form select,.inc-form input,.inc-imp select{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font:inherit;min-width:0}
+.inc-acts{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.inc-form,.inc-imp{display:grid;grid-template-columns:1.1fr 1.3fr 1fr 1.4fr 1.6fr auto;gap:8px;align-items:end;background:var(--panel);border:1px solid var(--accent-lo);border-radius:10px;padding:12px}
+.inc-form label,.inc-imp label{display:flex;flex-direction:column;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);min-width:0}
+.inc-form .acts,.inc-imp .acts{display:flex;gap:6px}
+.inc-imp{grid-template-columns:2fr 1.3fr auto}
+.inc-imp p{margin:0;font-size:13px}
+.inc-tab table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12.5px}
+.inc-tab th{position:sticky;top:0;z-index:1;background:var(--panel-2);font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:8px;border-bottom:1px solid var(--line);text-align:left}
+.inc-tab td{padding:6px 8px;border-bottom:1px solid var(--line);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inc-tab td.w{white-space:normal;word-break:break-word}
+.inc-tab .n{text-align:right;font-variant-numeric:tabular-nums}
+.inc-tab tr:nth-child(even) td{background:rgba(127,127,127,.06)}
+.inc-tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid}
+.inc-tag.t-b{color:var(--bad);border-color:var(--bad)}.inc-tag.t-f{color:var(--muted);border-color:var(--muted)}.inc-tag.t-c{color:var(--warn);border-color:var(--warn)}
+.inc-more{display:flex;justify-content:center;padding:10px}
+@media (max-width:980px){.inc-form{grid-template-columns:1fr 1fr}.inc-imp{grid-template-columns:1fr}.inc-tab .hm{display:none}}
 .mb-bar .chips{flex:1 1 300px}
 .foot-btns{display:flex;flex-direction:column;align-items:stretch;gap:6px}.foot-btns .btn{justify-content:center}
 .btn.sm{font-size:12px;padding:6px 12px;text-transform:uppercase;letter-spacing:.03em}
@@ -364,12 +385,14 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
   <nav class="tabs" role="tablist" aria-label="Telas">
     <button type="button" class="tab" role="tab" data-screen="fat" aria-selected="true">Faturamento</button>
     <button type="button" class="tab" role="tab" data-screen="mb" aria-selected="false">Manutenção de base</button>
+    <button type="button" class="tab" role="tab" data-screen="inc" aria-selected="false">Incobráveis</button>
   </nav>
   <div id="msg"></div>
   <div class="empty" id="semTela" hidden><h2>Nenhuma tela liberada para o seu usuário</h2><p>Peça a um administrador para liberar o <b>Faturamento</b> ou a <b>Manutenção de base</b> em “Usuários e acessos”.</p></div>
   <div class="prog" id="fatProg" hidden style="margin-bottom:12px"><span class="pt"></span><span class="pb"><i></i></span></div>
   <div id="app"><div class="loading">Carregando dados…</div></div>
   <div id="appMB" hidden><div class="loading">Carregando base…</div></div>
+  <div id="appINC" hidden><div class="loading">Carregando incobráveis…</div></div>
   <footer><div class="foot-btns" id="footBtnsFat"><button type="button" class="btn ghost sm" id="btnHistFat">Histórico de cargas</button></div><div class="foot-btns" id="footBtns" hidden><button type="button" class="btn ghost sm" id="btnHistLog">Histórico de alterações</button><button type="button" class="btn ghost sm" id="btnHistCarga">Histórico de cargas</button></div><span id="footTxt">Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.</span><span id="foot"></span></footer>
 </div>
 <div class="tip" id="tip" hidden></div>
@@ -405,7 +428,7 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
   <form class="nu" id="newUserForm"><b>Novo usuário</b>
     <input id="nuNome" placeholder="Nome" required aria-label="Nome"><input id="nuEmail" type="email" placeholder="E-mail" required aria-label="E-mail" class="lc"><input id="nuSenha" type="password" placeholder="Senha provisória (8+)" required minlength="8" aria-label="Senha provisória" autocomplete="new-password">
     <select id="nuPapel" aria-label="Papel"><option value="leitor">Leitor</option><option value="editor">Editor</option><option value="admin">Administrador</option></select>
-    <span class="telas nu-telas"><label class="sw-l"><input type="checkbox" id="nuTelaFat" checked> Faturamento</label><label class="sw-l"><input type="checkbox" id="nuTelaMb" checked> Manutenção de base</label></span>
+    <span class="telas nu-telas"><label class="sw-l"><input type="checkbox" id="nuTelaFat" checked> Faturamento</label><label class="sw-l"><input type="checkbox" id="nuTelaMb" checked> Manutenção de base</label><label class="sw-l"><input type="checkbox" id="nuTelaInc" checked> Incobráveis</label></span>
     <button class="btn" type="submit">Criar</button><span class="f-err" id="nuMsg"></span></form>
   <div class="mb-list" id="usersList"></div></div></div>
 <div class="mb-modal" id="pwdModal" hidden><div class="mb-dlg sm" role="dialog" aria-modal="true" aria-labelledby="pwT"><div class="mb-dh"><div class="mb-dht"><h3 id="pwT">Alterar minha senha</h3></div><button type="button" class="mb-x" data-close="pwdModal" aria-label="Fechar">✕</button></div>
@@ -749,7 +772,7 @@ function cmp(v){
 }
 const pct=v=>(v*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const META={fat:'Carregando dados…',mb:'Carregando base…'};
+const META={fat:'Carregando dados…',mb:'Carregando base…',inc:'Restrições gravadas por CPF'};
 function setMeta(h){META.fat=h; if(typeof SCREEN==='undefined'||SCREEN==='fat') document.getElementById('meta').innerHTML=h}
 function setMetaMB(h){META.mb=h; if(SCREEN==='mb') document.getElementById('meta').innerHTML=h}
 let SCREEN='fat';
@@ -1141,12 +1164,12 @@ function renderChips(){
 const fileIn=document.getElementById('file');
 const podeCarregar=()=>{ if(canEdit()) return true; showMsg('Seu usuário é Leitor: pode consultar e exportar, mas não carregar planilhas.'); return false; };
 document.getElementById('btnUp').onclick=()=>{ if(podeCarregar()) fileIn.click(); };
-fileIn.onchange=()=>{ const f=fileIn.files[0]; if(f&&podeCarregar()) (SCREEN==='mb'?mbLoadFile:loadFile)(f); fileIn.value=''; };
+fileIn.onchange=()=>{ const f=fileIn.files[0]; if(f&&SCREEN!=='inc'&&podeCarregar()) (SCREEN==='mb'?mbLoadFile:loadFile)(f); fileIn.value=''; };
 const drop=document.getElementById('drop'); let dc=0;
 addEventListener('dragenter',e=>{if(canEdit()&&[...e.dataTransfer.types].includes('Files')){dc++;drop.hidden=false;}});
 addEventListener('dragleave',()=>{if(--dc<=0){dc=0;drop.hidden=true;}});
 addEventListener('dragover',e=>e.preventDefault());
-addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f&&podeCarregar()) (SCREEN==='mb'?mbLoadFile:loadFile)(f);});
+addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f&&podeCarregar()) (SCREEN==='inc'?incImportFile:SCREEN==='mb'?mbLoadFile:loadFile)(f);});
 
 /* Tema claro/escuro */
 const ICON_SUN='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
@@ -1199,18 +1222,21 @@ const EDIT_OPTS=['DISPONIBILIZAR','INCOBRÁVEL NO CLIENTE','FALECIDO',ST_BASE];
 const STATUS_ORDER=['HIGIENIZAR','DISPONIBILIZAR','INCOBRÁVEL NO CLIENTE','FALECIDO',ST_BASE];
 const ST_CLASS={'HIGIENIZAR':'h','DISPONIBILIZAR':'d','INCOBRÁVEL NO CLIENTE':'c','FALECIDO':'f','INCOBRÁVEL NA BASE':'b'};
 const PAPEL_LBL={admin:'Administrador',editor:'Editor',leitor:'Leitor'};
-const TELA_LBL={fat:'Faturamento',mb:'Manutenção de base'};
+const TELA_LBL={fat:'Faturamento',mb:'Manutenção de base',inc:'Incobráveis'};
+const TELAS=['fat','mb','inc'];
 const canSee=t=>!!ME&&(ME.papel==='admin'||(ME.telas||['fat','mb']).includes(t));
+let INC_STARTED=false;
 let FAT_STARTED=false, MB_STARTED=false;
 function applyTelas(){
-  const vis={fat:canSee('fat'),mb:canSee('mb')};
+  const vis={fat:canSee('fat'),mb:canSee('mb'),inc:canSee('inc')};
   document.querySelectorAll('.tabs .tab').forEach(t=>t.hidden=!vis[t.dataset.screen]);
-  const nav=document.querySelector('.tabs'); if(nav) nav.hidden=!(vis.fat&&vis.mb);
-  const none=!vis.fat&&!vis.mb;
+  const nv=TELAS.filter(t=>vis[t]).length;
+  const nav=document.querySelector('.tabs'); if(nav) nav.hidden=nv<2;
+  const none=nv===0;
   document.getElementById('semTela').hidden=!none;
   document.getElementById('btnUp').hidden=none||!canEdit();
-  if(none){ document.getElementById('app').hidden=true; document.getElementById('appMB').hidden=true; document.getElementById('footBtns').hidden=true; document.getElementById('footBtnsFat').hidden=true; setMetaTxtNone(); return; }
-  if(!vis[SCREEN]) setScreen(vis.fat?'fat':'mb',false); else setScreen(SCREEN,false);
+  if(none){ document.getElementById('app').hidden=true; document.getElementById('appMB').hidden=true; document.getElementById('appINC').hidden=true; document.getElementById('footBtns').hidden=true; document.getElementById('footBtnsFat').hidden=true; setMetaTxtNone(); return; }
+  if(!vis[SCREEN]) setScreen(TELAS.find(t=>vis[t]),false); else setScreen(SCREEN,false);
 }
 function setMetaTxtNone(){ document.getElementById('meta').textContent=''; document.getElementById('pageTtl').textContent='Dashboard'; }
 function canonStatus(s){ const n=norm(s); const hit=STATUS_ORDER.find(x=>norm(x)===n); return hit||String(s??'').trim().toUpperCase()||'SEM STATUS'; }
@@ -1250,6 +1276,7 @@ async function afterLogin(session){
   APP_STARTED=true; applyTelas();
   if(canSee('fat')&&!FAT_STARTED){ FAT_STARTED=true; loadDefault(); }
   if(canSee('mb')){ if(!MB_STARTED){ MB_STARTED=true; mbInit(); } else mbRefresh(); }
+  if(canSee('inc')){ if(!INC_STARTED){ INC_STARTED=true; incInit(); } else incLoad(true); }
 }
 function bindGate(){
   if(!SB){ gateShow('setup'); return; }
@@ -1283,7 +1310,7 @@ function renderUser(){
   document.getElementById('userNm').textContent=ME.nome||ME.email;
   document.getElementById('userPp').textContent=PAPEL_LBL[ME.papel]||ME.papel;
   document.getElementById('umUsers').hidden=!isAdmin();
-  document.getElementById('btnUp').hidden=!canEdit(); document.getElementById('btnUp').disabled=!canEdit();
+  document.getElementById('btnUp').hidden=!canEdit()||SCREEN==='inc'; document.getElementById('btnUp').disabled=!canEdit()||SCREEN==='inc';
 }
 (function(){
   const b=document.getElementById('userBtn'), m=document.getElementById('userMenu');
@@ -1307,11 +1334,153 @@ document.getElementById('pwdForm').addEventListener('submit',async e=>{ e.preven
   busy(b,true,'Salvando…'); const {error}=await SB.auth.updateUser({password:a}); busy(b,false);
   if(error){ msg.textContent=errMsg(error); return; } msg.textContent=''; e.target.reset(); closeModal('pwdModal'); toast('Senha alterada.'); });
 
+/* ---------------- Incobráveis: cadastro fixo de restrições ---------------- */
+const INC_TIPOS=['INCOBRÁVEL NA BASE','FALECIDO','INCOBRÁVEL NO CLIENTE'];
+const INC_DESC={'INCOBRÁVEL NA BASE':'CPF em todas as cargas e clientes','FALECIDO':'CPF em todas as cargas e clientes','INCOBRÁVEL NO CLIENTE':'CPF só no cliente indicado'};
+const incTag=t=>'<span class="inc-tag '+(t==='FALECIDO'?'t-f':t==='INCOBRÁVEL NO CLIENTE'?'t-c':'t-b')+'">'+esc(t)+'</span>';
+const INC={q:'',tipo:'',rows:[],total:0,res:{},imp:null};
+let incT=null; const incLoadSoon=()=>{ clearTimeout(incT); incT=setTimeout(()=>incLoad(true),800); };
+function incInit(){
+  const el=document.getElementById('appINC'); const ed=canEdit();
+  el.innerHTML='<div class="inc-wrap"><div class="kpis mbk" id="incKpis"></div>'+
+    '<div class="inc-bar"><input type="search" id="incQ" placeholder="Buscar CPF, nome ou cliente" aria-label="Buscar">'+
+    '<select id="incTipo" aria-label="Tipo de restrição"><option value="">Todas as restrições</option>'+INC_TIPOS.map(t=>'<option>'+t+'</option>').join('')+'</select>'+
+    '<div class="inc-acts">'+(ed?'<button type="button" class="btn sm" id="incNovo">+ Adicionar</button><button type="button" class="btn ghost sm" id="incImp">Importar planilha</button><button type="button" class="btn ghost sm" id="incModelo">Baixar modelo</button>':'')+
+    '<button type="button" class="btn ghost sm" id="incExp">Exportar Excel</button></div></div>'+
+    (ed?'<form class="inc-form" id="incForm" hidden><label>CPF<input id="ifCpf" required inputmode="numeric" autocomplete="off" placeholder="000.000.000-00"></label>'+
+      '<label>Restrição<select id="ifTipo">'+INC_TIPOS.map(t=>'<option>'+t+'</option>').join('')+'</select></label>'+
+      '<label>Cliente<input id="ifCli" list="incClis" autocomplete="off" placeholder="só para NO CLIENTE" disabled></label>'+
+      '<label>Nome<input id="ifNome" autocomplete="off" placeholder="opcional"></label>'+
+      '<label>Observação<input id="ifObs" autocomplete="off" placeholder="ex.: certidão de óbito recebida"></label>'+
+      '<div class="acts"><button type="submit" class="btn sm">Salvar</button><button type="button" class="btn ghost sm" id="ifCancel">Cancelar</button></div><datalist id="incClis"></datalist></form>'+
+      '<div class="inc-imp" id="incImpBox" hidden></div><input type="file" id="incFile" accept=".csv,.xlsx,.xls,text/csv" hidden>':'')+
+    '<div class="prog" id="incProg" hidden><span class="pt"></span><span class="pb"><i></i></span></div>'+
+    '<section class="panel"><div class="ttl">Restrições gravadas</div><div class="inc-tab" id="incTab"><p class="mb-hint">Carregando…</p></div></section></div>';
+  let qt=null;
+  document.getElementById('incQ').addEventListener('input',e=>{ clearTimeout(qt); qt=setTimeout(()=>{ INC.q=e.target.value.trim(); incLoad(true); },350); });
+  document.getElementById('incTipo').onchange=e=>{ INC.tipo=e.target.value; incLoad(true); };
+  document.getElementById('incExp').onclick=incExport;
+  if(ed){
+    const f=document.getElementById('incForm'), tp=document.getElementById('ifTipo'), cli=document.getElementById('ifCli');
+    document.getElementById('incNovo').onclick=()=>{ f.hidden=!f.hidden; document.getElementById('incImpBox').hidden=true; if(!f.hidden){ document.getElementById('incClis').innerHTML=((OPC&&OPC.clientes)||[]).map(c=>'<option value="'+esc(c)+'">').join(''); document.getElementById('ifCpf').focus(); } };
+    document.getElementById('ifCancel').onclick=()=>{ f.reset(); cli.disabled=true; f.hidden=true; };
+    tp.onchange=()=>{ cli.disabled=tp.value!=='INCOBRÁVEL NO CLIENTE'; cli.required=!cli.disabled; if(cli.disabled) cli.value=''; };
+    f.addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter;
+      const cpf=document.getElementById('ifCpf').value.replace(/\D/g,'');
+      if(cpf.length<9||cpf.length>14){ toast('CPF inválido: confira os números.'); return; }
+      if(tp.value==='INCOBRÁVEL NO CLIENTE'&&!cli.value.trim()){ toast('Informe o cliente.'); return; }
+      busy(b,true,'Salvando…');
+      const r=await incSend([{cpf,tipo:tp.value,cliente:cli.value,nome:document.getElementById('ifNome').value,obs:document.getElementById('ifObs').value}],'manual');
+      busy(b,false); if(!r) return;
+      if(!r.novos) toast('Esta restrição já estava gravada.');
+      else { UNDO_ID=r.alteracao||null; toast('Restrição gravada'+(r.linhas?' · '+int.format(r.linhas)+' linha(s) da base atual carimbadas':'')+'. As próximas cargas já entram marcadas.',!!UNDO_ID); }
+      f.reset(); cli.disabled=true; f.hidden=true; incLoad(true); if(MB_STARTED) mbRefreshSoon(200); });
+    document.getElementById('incImp').onclick=()=>document.getElementById('incFile').click();
+    document.getElementById('incFile').onchange=e=>{ const fl=e.target.files[0]; if(fl) incImportFile(fl); e.target.value=''; };
+    document.getElementById('incModelo').onclick=()=>{
+      const wb=XLSX.utils.book_new();
+      const ws=XLSX.utils.aoa_to_sheet([['CPF','NOME','TIPO','CLIENTE','OBS']]); ws['!cols']=[{wch:16},{wch:30},{wch:24},{wch:12},{wch:40}];
+      XLSX.utils.book_append_sheet(wb,ws,'Restrições');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['TIPO','O QUE FAZ','CLIENTE'],...INC_TIPOS.map(t=>[t,INC_DESC[t],t==='INCOBRÁVEL NO CLIENTE'?'obrigatório':'deixe em branco'])]),'Tipos válidos');
+      XLSX.writeFile(wb,'MODELO_INCOBRAVEIS.xlsx'); };
+  }
+  document.getElementById('incTab').addEventListener('click',async e=>{
+    if(e.target.closest('#incMais')){ incLoad(false); return; }
+    const b=e.target.closest('[data-lib]'); if(!b||!canEdit()) return;
+    if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirmar'; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=''; b.textContent='Liberar'; } },4000); return; }
+    const x=INC.rows[+b.dataset.lib]; b.disabled=true;
+    const {data,error}=await SB.rpc('liberar_restricao',{p_tipo:x.tipo,p_cpf:x.cpf,p_cliente:x.cliente||''});
+    if(error){ toast(errMsg(error)); b.disabled=false; return; }
+    UNDO_ID=data.alteracao||null;
+    toast(fmtDoc(x.cpf)+' liberado de '+x.tipo+(data.linhas?' · '+int.format(data.linhas)+' linha(s) voltaram ao status anterior':''),!!UNDO_ID);
+    incLoad(true); if(MB_STARTED) mbRefreshSoon(200); });
+  incLoad(true);
+}
+async function incSend(itens,origem){
+  const {data,error}=await SB.rpc('registrar_restricoes',{p_itens:itens,p_origem:origem});
+  if(error){ toast(errMsg(error)); return null; } return data;
+}
+async function incLoad(reset){
+  if(!SB||!ME||!document.getElementById('incTab')) return;
+  if(reset){ INC.rows=[]; INC.total=0; }
+  const [l,r]=await Promise.all([
+    SB.rpc('lista_incobraveis',{p_busca:INC.q||null,p_tipo:INC.tipo||null,p_limite:300,p_offset:INC.rows.length}),
+    reset?SB.rpc('resumo_incobraveis'):Promise.resolve({data:INC.res})]);
+  if(l.error){ document.getElementById('incTab').innerHTML='<p class="f-err" style="margin:12px">'+esc(errMsg(l.error))+'</p>'; return; }
+  INC.rows=INC.rows.concat(l.data||[]); INC.total=(l.data&&l.data[0])?+l.data[0].total:INC.rows.length; INC.res=r.data||{};
+  incRender();
+}
+function incRender(){
+  const R=INC.res||{}, tot=(R['INCOBRÁVEL NA BASE']||0)+(R['FALECIDO']||0)+(R['INCOBRÁVEL NO CLIENTE']||0);
+  const K=[['Restrições gravadas',int.format(tot),int.format(R.cpfs||0)+' CPF(s) diferentes',''],
+    ['Incobrável na base',int.format(R['INCOBRÁVEL NA BASE']||0),INC_DESC['INCOBRÁVEL NA BASE'],'b'],
+    ['Falecido',int.format(R['FALECIDO']||0),INC_DESC['FALECIDO'],'f'],
+    ['Incobrável no cliente',int.format(R['INCOBRÁVEL NO CLIENTE']||0),INC_DESC['INCOBRÁVEL NO CLIENTE'],'c']];
+  document.getElementById('incKpis').innerHTML=K.map(k=>'<div class="kpi"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div><div class="s">'+esc(k[2])+'</div></div>').join('');
+  const ed=canEdit(), tab=document.getElementById('incTab');
+  if(!INC.rows.length){ tab.innerHTML='<p class="mb-hint" style="padding:12px">'+(INC.q||INC.tipo?'Nenhuma restrição com esse filtro.':'Nenhuma restrição gravada ainda. Elas entram aqui quando alguém marca FALECIDO ou INCOBRÁVEL na Manutenção de Base'+(ed?', ou pelos botões Adicionar e Importar planilha':'')+'.')+'</p>'; return; }
+  const org={status:'Manutenção',manual:'Manual',importacao:'Importação'};
+  tab.innerHTML='<table><colgroup><col style="width:12%"><col style="width:17%"><col style="width:15%"><col style="width:7%"><col style="width:7%"><col class="hm" style="width:9%"><col class="hm" style="width:10%"><col class="hm" style="width:9%"><col style="width:'+(ed?'8':'14')+'%">'+(ed?'<col style="width:6%">':'')+'</colgroup>'+
+    '<thead><tr><th>CPF</th><th>Nome</th><th>Restrição</th><th>Cliente</th><th class="n">Linhas na base</th><th class="hm">Origem</th><th class="hm">Registrado em</th><th class="hm">Por</th><th>Obs.</th>'+(ed?'<th></th>':'')+'</tr></thead><tbody>'+
+    INC.rows.map((x,i)=>'<tr><td>'+fmtDoc(x.cpf)+'</td><td title="'+esc(x.nome||'')+'">'+esc(x.nome||'—')+'</td><td>'+incTag(x.tipo)+'</td><td>'+esc(x.cliente||'—')+'</td><td class="n">'+int.format(+x.linhas||0)+'</td>'+
+      '<td class="hm">'+esc(org[x.origem]||x.origem||'—')+'</td><td class="hm">'+fmtDT(x.criado_em)+'</td><td class="hm" title="'+esc(x.criado_por_nome||'')+'">'+esc(x.criado_por_nome||'—')+'</td><td class="w">'+esc(x.obs||'')+'</td>'+
+      (ed?'<td class="n"><button type="button" class="lnk" data-lib="'+i+'">Liberar</button></td>':'')+'</tr>').join('')+'</tbody></table>'+
+    (INC.rows.length<INC.total?'<div class="inc-more"><button type="button" class="btn ghost sm" id="incMais">Mostrar mais ('+int.format(INC.total-INC.rows.length)+' restantes)</button></div>':'');
+  setMetaINC();
+}
+function setMetaINC(){ META.inc=int.format(INC.total)+' restrição(ões)'+(INC.q||INC.tipo?' no filtro':'')+' · aplicadas automaticamente a toda carga nova da Manutenção de Base'; if(SCREEN==='inc') document.getElementById('meta').textContent=META.inc; }
+const INCCOLS={cpf:['cpf','cpfcnpj','documento','cnpj'],tipo:['tipo','restricao','tipoderestricao','tiporestricao','status','motivo'],cliente:['cliente'],nome:['nome','nomecliente'],obs:['obs','observacao','observacoes','comentario']};
+async function incImportFile(file){
+  if(!canEdit()){ showMsg('Seu usuário é Leitor: pode consultar e exportar, mas não importar restrições.'); return; }
+  const box=document.getElementById('incImpBox'); document.getElementById('incForm').hidden=true;
+  try{
+    const objs=parseBuffer(await file.arrayBuffer(),file.name,hs=>hs.some(h=>INCCOLS.cpf.includes(h)));
+    if(!objs.length) throw new Error('A planilha não tem linhas.');
+    const hs=Object.keys(objs[0]), map={};
+    for(const [k,al] of Object.entries(INCCOLS)){ const h=hs.find(h=>al.includes(norm(h))); if(h) map[k]=h; }
+    if(!map.cpf) throw new Error('Não encontrei a coluna CPF. Colunas lidas: '+hs.join(' | '));
+    const itens=objs.map(o=>({cpf:String(o[map.cpf]??'').replace(/\D/g,''),tipo:map.tipo?String(o[map.tipo]??'').trim():'',cliente:map.cliente?String(o[map.cliente]??'').trim():'',nome:map.nome?String(o[map.nome]??'').trim():'',obs:map.obs?String(o[map.obs]??'').trim():''})).filter(x=>x.cpf);
+    const semTipo=itens.filter(x=>!x.tipo).length;
+    INC.imp={itens,name:file.name};
+    box.innerHTML='<p><b>'+esc(file.name)+'</b>: '+int.format(itens.length)+' linha(s) com CPF'+(semTipo?' · '+int.format(semTipo)+' sem coluna/valor de TIPO':'')+'.</p>'+
+      '<label>Tipo para as linhas sem TIPO<select id="impTipo">'+INC_TIPOS.filter(t=>t!=='INCOBRÁVEL NO CLIENTE').map(t=>'<option>'+t+'</option>').join('')+'</select></label>'+
+      '<div class="acts"><button type="button" class="btn sm" id="impOk">Importar</button><button type="button" class="btn ghost sm" id="impNo">Cancelar</button></div>';
+    box.hidden=false;
+    document.getElementById('impNo').onclick=()=>{ box.hidden=true; INC.imp=null; };
+    document.getElementById('impOk').onclick=incImportRun;
+  }catch(e){ showMsg(e.message||String(e)); }
+}
+async function incImportRun(){
+  const box=document.getElementById('incImpBox'), def=document.getElementById('impTipo').value, it=INC.imp; if(!it) return;
+  box.hidden=true; const pr=document.getElementById('incProg'); const tot={novos:0,ja_existiam:0,invalidos:0,linhas:0};
+  const lista=it.itens.map(x=>({...x,tipo:x.tipo||def})); const B=2000;
+  try{
+    for(let i=0;i<lista.length;i+=B){
+      pr.hidden=false; pr.querySelector('.pt').textContent='Importando: '+int.format(Math.min(i+B,lista.length))+' de '+int.format(lista.length); pr.querySelector('.pb i').style.width=Math.round(100*Math.min(i+B,lista.length)/lista.length)+'%';
+      const r=await incSend(lista.slice(i,i+B),'importacao'); if(!r) throw new Error('parou na linha '+(i+1));
+      for(const k in tot) tot[k]+=r[k]||0;
+    }
+    toast('Importação concluída: '+int.format(tot.novos)+' nova(s), '+int.format(tot.ja_existiam)+' já existiam, '+int.format(tot.invalidos)+' inválida(s) · '+int.format(tot.linhas)+' linha(s) da base carimbadas.');
+  }catch(e){ showMsg('Importação interrompida: '+(e.message||e)+'. O que já entrou ficou gravado.'); }
+  pr.hidden=true; INC.imp=null; incLoad(true); if(MB_STARTED) mbRefreshSoon(200);
+}
+async function incExport(){
+  const b=document.getElementById('incExp'); busy(b,true,'Exportando…');
+  try{
+    const all=[]; for(let off=0;;off+=1000){ const {data,error}=await SB.rpc('lista_incobraveis',{p_busca:INC.q||null,p_tipo:INC.tipo||null,p_limite:1000,p_offset:off}); if(error) throw error; all.push(...data); if(data.length<1000) break; }
+    const org={status:'Manutenção',manual:'Manual',importacao:'Importação'};
+    const d=new Date(), stamp=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+    xlsxDownload(['CPF','NOME','RESTRIÇÃO','CLIENTE','LINHAS NA BASE','ORIGEM','REGISTRADO EM','POR','OBSERVAÇÃO'],
+      all.map(x=>[fmtDoc(x.cpf),x.nome||'',x.tipo,x.cliente||'',+x.linhas||0,org[x.origem]||x.origem||'',fmtDT(x.criado_em),x.criado_por_nome||'',x.obs||'']),'Incobráveis','INCOBRAVEIS_'+stamp+'.xlsx');
+  }catch(e){ toast(errMsg(e)); }
+  busy(b,false);
+}
+
 /* ---------------- Usuários (admin) ---------------- */
 function telasCell(u,me){
   if(u.papel==='admin') return '<span class="mb-hint">Todas (administrador)</span>';
   const t=u.telas||['fat','mb'];
-  return '<div class="telas">'+['fat','mb'].map(k=>'<label class="sw-l"><input type="checkbox" data-f="tela" data-t="'+k+'"'+(t.includes(k)?' checked':'')+(me?' disabled':'')+'> '+TELA_LBL[k]+'</label>').join('')+'</div>';
+  return '<div class="telas">'+TELAS.map(k=>'<label class="sw-l"><input type="checkbox" data-f="tela" data-t="'+k+'"'+(t.includes(k)?' checked':'')+(me?' disabled':'')+'> '+TELA_LBL[k]+'</label>').join('')+'</div>';
 }
 async function openUsers(){ openModal('userModal'); await loadUsers(); }
 async function loadUsers(){
@@ -1335,7 +1504,7 @@ document.getElementById('usersList').addEventListener('change',async e=>{
 });
 document.getElementById('newUserForm').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter, msg=document.getElementById('nuMsg');
   const nome=nuNome.value.trim(), email=nuEmail.value.trim(), senha=nuSenha.value, papel=nuPapel.value;
-  const telas=[nuTelaFat.checked?'fat':null,nuTelaMb.checked?'mb':null].filter(Boolean);
+  const telas=[nuTelaFat.checked?'fat':null,nuTelaMb.checked?'mb':null,nuTelaInc.checked?'inc':null].filter(Boolean);
   if(papel!=='admin'&&!telas.length){ msg.textContent='Marque pelo menos uma tela.'; return; }
   if(senha.length<8){ msg.textContent='A senha provisória precisa ter pelo menos 8 caracteres.'; return; }
   busy(b,true,'Criando…'); msg.textContent='';
@@ -1344,7 +1513,7 @@ document.getElementById('newUserForm').addEventListener('submit',async e=>{ e.pr
   const {data,error}=await tmp.auth.signUp({email,password:senha,options:{data:{nome}}});
   if(error){ busy(b,false); msg.textContent=errMsg(error); return; }
   const uid=data.user&&data.user.id;
-  if(uid){ const {error:e2}=await SB.from('perfis').update({papel,ativo:true,nome,telas:papel==='admin'?['fat','mb']:telas}).eq('id',uid); if(e2) msg.textContent=errMsg(e2); }
+  if(uid){ const {error:e2}=await SB.from('perfis').update({papel,ativo:true,nome,telas:papel==='admin'?['fat','mb','inc']:telas}).eq('id',uid); if(e2) msg.textContent=errMsg(e2); }
   busy(b,false); e.target.reset(); toast('Usuário '+email+' criado'+(data.session?'':' · se a confirmação de e-mail estiver ligada no Supabase, ele precisa confirmar antes de entrar')+'.');
   loadUsers();
 });
@@ -1399,7 +1568,7 @@ function subscribeLive(){
     SB.channel('alteracoes-feed').on('postgres_changes',{event:'INSERT',schema:'public',table:'alteracoes'},p=>{
       const a=p.new||{};
       if(a.usuario!==ME.id){ toast((a.usuario_nome||'Alguém')+': '+descAlt(a)); if(!document.getElementById('mbModal').hidden) refreshLoadedStatus(); }
-      mbRefreshSoon(700);
+      mbRefreshSoon(700); if(INC_STARTED&&(a.tipo==='restricao'||a.tipo==='liberacao'||a.tipo==='status'||a.tipo==='desfazer')) incLoadSoon();
     }).subscribe();
   }catch(e){}
 }
@@ -1407,6 +1576,8 @@ function descAlt(a){
   if(a.tipo==='carga') return 'carregou '+a.para+' ('+int.format(a.linhas)+' linhas)';
   if(a.tipo==='remocao_carga') return 'removeu a carga '+a.de+' ('+int.format(a.linhas)+' linhas)';
   if(a.tipo==='desfazer') return 'desfez uma alteração ('+int.format(a.linhas)+' linhas)';
+  if(a.tipo==='restricao') return (a.de==='importacao'?'importou restrições ':'registrou restrição ')+(a.cpf?fmtDoc(a.cpf)+' ':'')+(a.cliente?'('+a.cliente+') ':'')+'→ '+a.para+' · '+int.format(a.linhas)+' linha(s) carimbadas';
+  if(a.tipo==='liberacao') return 'liberou '+(a.cpf?fmtDoc(a.cpf)+' ':'')+(a.cliente?'('+a.cliente+') ':'')+'de '+a.de+' · '+int.format(a.linhas)+' linha(s) voltaram';
   return (a.de||'')+' → '+a.para+' em '+int.format(a.linhas)+' linha(s)'+(a.escopo==='cpf'?' (CPF inteiro)':'');
 }
 
@@ -1501,7 +1672,7 @@ function mbToggle(k,v){ FM[k].has(v)?FM[k].delete(v):FM[k].add(v); mbRefresh(); 
 function mbRender(){
   if(!OPC) return;
   if(!document.getElementById('mbTables')) mbMount();
-  document.getElementById('btnUp').hidden=!canEdit(); document.getElementById('btnUp').disabled=!canEdit();
+  document.getElementById('btnUp').hidden=!canEdit()||SCREEN==='inc'; document.getElementById('btnUp').disabled=!canEdit()||SCREEN==='inc';
   const opts={cliente:OPC.clientes, uf:OPC.ufs||[], qtd:(OPC.qtds||[]).map(String).sort((a,b)=>(a==='-1')-(b==='-1')||a-b), situacao:['COM PGTO','SEM PGTO'], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
   const avail={cliente:new Set(OPC.cli_disp), uf:new Set(OPC.uf_disp||[]), qtd:new Set((OPC.qtd_disp||[]).map(String)), situacao:new Set((OPC.sit_disp||[]).map(canonSit)), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
   document.querySelectorAll('#appMB .slicer').forEach(el=>{
@@ -1546,7 +1717,7 @@ function mbRender(){
     OPC.cargas.map(c=>'<tr><td>'+fmtDT(c.criado_em)+'</td><td class="wrap">'+esc(c.arquivo)+'</td><td>'+esc(c.criado_por_nome||'—')+'</td><td class="n">'+int.format(c.linhas)+'</td>'+(isAdmin()?'<td class="n"><button type="button" class="lnk" data-rm="'+c.id+'">Remover</button></td>':'')+'</tr>').join('')+'</tbody></table>'
     :'<p class="mb-hint" style="padding:6px 4px">Nenhuma carga.</p>';
   document.getElementById('mbLog').innerHTML=LOG.length?'<table class="dt"><thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th class="n">Linhas</th>'+(canEdit()?'<th></th>':'')+'</tr></thead><tbody>'+
-    LOG.map(l=>{ const und=canEdit()&&(l.tipo==='status'||l.tipo==='lote')&&!l.desfeita;
+    LOG.map(l=>{ const und=canEdit()&&['status','lote','restricao','liberacao'].includes(l.tipo)&&!l.desfeita;
       return '<tr'+(l.desfeita?' class="undone"':'')+'><td>'+fmtDT(l.quando)+'</td><td>'+esc(l.usuario_nome||'—')+'</td><td class="wrap">'+
         (l.tipo==='status'||l.tipo==='lote'?(l.cpf?fmtDoc(l.cpf)+' · ':'')+(l.cliente?esc(l.cliente)+(l.ano?' '+esc(l.ano):'')+' · ':'')+esc(l.de||'')+' → <b>'+esc(l.para)+'</b>'+(l.escopo==='cpf'?'<small>aplicado ao CPF inteiro</small>':l.escopo==='lote'?'<small>em lote</small>':'')+(l.desfeita?'<small>desfeita</small>':''):esc(descAlt(l)))+
         '</td><td class="n">'+int.format(l.linhas)+'</td>'+(canEdit()?'<td class="n">'+(und?'<button type="button" class="lnk" data-undo="'+l.id+'">Desfazer</button>':'')+'</td>':'')+'</tr>'; }).join('')+'</tbody></table>'
@@ -1642,6 +1813,8 @@ async function applyStatus(ids,to,lote){
   let msg=data.linhas?(int.format(data.linhas)+' linha(s) alteradas para '+to):'Nada mudou: as linhas já estavam como '+to;
   if(data.escopo==='cpf'&&data.bloqueados) msg='CPF marcado como INCOBRÁVEL NA BASE em '+int.format(data.linhas)+' linha(s), inclusive em outras cargas e clientes';
   if(data.liberados) msg+=' · CPF liberado: as demais linhas dele voltaram ao status anterior';
+  if(data.restricoes) msg+=' · gravado na aba Incobráveis: as próximas cargas já entram com '+to;
+  if(INC_STARTED) incLoad(true);
   toast(msg,!!UNDO_ID);
   await refreshLoadedStatus(); mbRefreshSoon(150);
 }
@@ -1672,7 +1845,7 @@ function toast(t,undo){
   if(!el){ el=document.createElement('div'); el.id='toast'; el.className='toast'; el.setAttribute('role','status'); document.body.appendChild(el); }
   el.innerHTML='<span>'+esc(t)+'</span>'+(undo?'<button type="button" id="toastUndo">Desfazer</button>':'');
   el.hidden=false; const u=document.getElementById('toastUndo');
-  if(u) u.onclick=async()=>{ el.hidden=true; if(!UNDO_ID) return; const {error}=await SB.rpc('desfazer_alteracao',{p_alt:UNDO_ID}); UNDO_ID=null; toast(error?errMsg(error):'Alteração desfeita.'); await refreshLoadedStatus(); mbRefresh(); };
+  if(u) u.onclick=async()=>{ el.hidden=true; if(!UNDO_ID) return; const {error}=await SB.rpc('desfazer_alteracao',{p_alt:UNDO_ID}); UNDO_ID=null; toast(error?errMsg(error):'Alteração desfeita.'); if(MB_STARTED){ await refreshLoadedStatus(); mbRefresh(); } if(INC_STARTED) incLoad(true); };
   clearTimeout(toastT); toastT=setTimeout(()=>el.hidden=true, undo?10000:6000);
 }
 const slugF=x=>String(x).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
@@ -1700,23 +1873,23 @@ function exportBase(){ const b=document.getElementById('mbExpAll');
     xlsxDownload(HEAD_OUT,all.map(rowOut),'Base','MANUTENCAO_BASE_'+stamp+'.xlsx'); }); }
 
 /* Troca de tela */
-const FOOT={fat:'Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.',mb:''};
+const FOOT={fat:'Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.',mb:'',inc:'Restrições fixas: toda base carregada na Manutenção de Base é carimbada automaticamente com elas.'};
 function setScreen(sc,save){
-  SCREEN=sc==='mb'?'mb':'fat';
-  if(ME&&!canSee(SCREEN)&&canSee(SCREEN==='mb'?'fat':'mb')) SCREEN=SCREEN==='mb'?'fat':'mb';
-  document.getElementById('app').hidden=SCREEN!=='fat'; document.getElementById('appMB').hidden=SCREEN!=='mb';
+  SCREEN=TELAS.includes(sc)?sc:'fat';
+  if(ME&&!canSee(SCREEN)){ const alt=TELAS.find(t=>canSee(t)); if(alt) SCREEN=alt; }
+  document.getElementById('app').hidden=SCREEN!=='fat'; document.getElementById('appMB').hidden=SCREEN!=='mb'; document.getElementById('appINC').hidden=SCREEN!=='inc';
   document.querySelectorAll('.tabs .tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.screen===SCREEN));
-  document.getElementById('pageTtl').textContent=SCREEN==='mb'?'Manutenção de Base':'Dashboard de Faturamento';
+  document.getElementById('pageTtl').textContent=SCREEN==='mb'?'Manutenção de Base':SCREEN==='inc'?'Incobráveis':'Dashboard de Faturamento';
   document.getElementById('meta').innerHTML=META[SCREEN]; if(SCREEN==='fat') bindDateMode();
   document.getElementById('footTxt').textContent=FOOT[SCREEN]; document.getElementById('footBtns').hidden=SCREEN!=='mb'; document.getElementById('footBtnsFat').hidden=SCREEN!=='fat';
   showMsg('');
   if(SCREEN==='fat') Object.values(CH).forEach(c=>c&&c.resize());
   renderUser();
-  if(save){ try{localStorage.setItem('dash-tela',SCREEN);}catch(e){} try{history.replaceState(null,'','#'+(SCREEN==='mb'?'manutencao':'faturamento'));}catch(e){} }
+  if(save){ try{localStorage.setItem('dash-tela',SCREEN);}catch(e){} try{history.replaceState(null,'','#'+({mb:'manutencao',inc:'incobraveis',fat:'faturamento'})[SCREEN]);}catch(e){} }
 }
 document.querySelectorAll('.tabs .tab').forEach(t=>t.onclick=()=>setScreen(t.dataset.screen,true));
 (function(){ let sc=null; const hsh=(location.hash||'').slice(1);
-  if(hsh==='manutencao') sc='mb'; else if(hsh==='faturamento') sc='fat'; else { try{sc=localStorage.getItem('dash-tela');}catch(e){} }
+  if(hsh==='manutencao') sc='mb'; else if(hsh==='faturamento') sc='fat'; else if(hsh==='incobraveis') sc='inc'; else { try{sc=localStorage.getItem('dash-tela');}catch(e){} }
   setScreen(sc||'fat',false); })();
 bindGate();
 </script>
