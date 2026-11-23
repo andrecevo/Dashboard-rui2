@@ -250,6 +250,15 @@ table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numer
 .btn.danger{border-color:var(--bad);color:var(--bad);background:transparent}.btn.danger:hover{background:rgba(239,106,90,.12)}
 .btn.sm.danger[type=submit]{background:var(--bad);color:#fff}
 .inc-del{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--bad);border-radius:10px;padding:12px}.inc-del p{margin:0;font-size:13px}
+.prem-bar{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin:4px 0 12px}.prem-bar p{margin:0;flex:1}
+.prem-form{margin-bottom:12px;background:var(--panel-2);border:1px solid var(--accent-lo);border-radius:10px;padding:12px}
+.prem-tab table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.prem-tab th{background:var(--panel-2);font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:8px;border-bottom:1px solid var(--line);text-align:left}
+.prem-tab td{padding:8px;border-bottom:1px solid var(--line);overflow:hidden;text-overflow:ellipsis}
+.prem-tab td small{display:block;color:var(--muted);font-size:10.5px}
+.prem-tab .n{text-align:right}
+.lnk.danger{color:var(--bad)}
+@media (max-width:700px){.prem-bar{flex-direction:column}}
 .inc-mot{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--accent-lo);border-radius:10px;padding:12px}
 .inc-mot .dt{width:100%;font-size:12.5px}
 .inc-mf{display:grid;grid-template-columns:1.4fr 1.4fr auto;gap:8px;align-items:end}
@@ -404,6 +413,7 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
     <button type="button" class="tab" role="tab" data-screen="fat" aria-selected="true">Faturamento</button>
     <button type="button" class="tab" role="tab" data-screen="mb" aria-selected="false">Manutenção de base</button>
     <button type="button" class="tab" role="tab" data-screen="inc" aria-selected="false">Incobráveis</button>
+    <button type="button" class="tab" role="tab" data-screen="prem" aria-selected="false" hidden>Premissas</button>
   </nav>
   <div id="msg"></div>
   <div class="empty" id="semTela" hidden><h2>Nenhuma tela liberada para o seu usuário</h2><p>Peça a um administrador para liberar o <b>Faturamento</b> ou a <b>Manutenção de base</b> em “Usuários e acessos”.</p></div>
@@ -411,6 +421,7 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
   <div id="app"><div class="loading">Carregando dados…</div></div>
   <div id="appMB" hidden><div class="loading">Carregando base…</div></div>
   <div id="appINC" hidden><div class="loading">Carregando incobráveis…</div></div>
+  <div id="appPREM" hidden><div class="loading">Carregando premissas…</div></div>
   <footer><div class="foot-btns" id="footBtnsFat"><button type="button" class="btn ghost sm" id="btnHistFat">Histórico de cargas</button></div><div class="foot-btns" id="footBtns" hidden><button type="button" class="btn ghost sm" id="btnHistLog">Histórico de alterações</button><button type="button" class="btn ghost sm" id="btnHistCarga">Histórico de cargas</button></div><span id="footTxt">Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.</span><span id="foot"></span></footer>
 </div>
 <div class="tip" id="tip" hidden></div>
@@ -790,7 +801,7 @@ function cmp(v){
 }
 const pct=v=>(v*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const META={fat:'Carregando dados…',mb:'Carregando base…',inc:'Restrições gravadas por CPF'};
+const META={fat:'Carregando dados…',mb:'Carregando base…',inc:'Restrições gravadas por CPF',prem:'Regras usadas pelo sistema · visível só para administradores'};
 function setMeta(h){META.fat=h; if(typeof SCREEN==='undefined'||SCREEN==='fat') document.getElementById('meta').innerHTML=h}
 function setMetaMB(h){META.mb=h; if(SCREEN==='mb') document.getElementById('meta').innerHTML=h}
 let SCREEN='fat';
@@ -1182,12 +1193,12 @@ function renderChips(){
 const fileIn=document.getElementById('file');
 const podeCarregar=()=>{ if(canEdit()) return true; showMsg('Seu usuário é Leitor: pode consultar e exportar, mas não carregar planilhas.'); return false; };
 document.getElementById('btnUp').onclick=()=>{ if(podeCarregar()) fileIn.click(); };
-fileIn.onchange=()=>{ const f=fileIn.files[0]; if(f&&SCREEN!=='inc'&&podeCarregar()) (SCREEN==='mb'?mbLoadFile:loadFile)(f); fileIn.value=''; };
+fileIn.onchange=()=>{ const f=fileIn.files[0]; if(f&&SCREEN!=='inc'&&SCREEN!=='prem'&&podeCarregar()) (SCREEN==='mb'?mbLoadFile:loadFile)(f); fileIn.value=''; };
 const drop=document.getElementById('drop'); let dc=0;
 addEventListener('dragenter',e=>{if(canEdit()&&[...e.dataTransfer.types].includes('Files')){dc++;drop.hidden=false;}});
 addEventListener('dragleave',()=>{if(--dc<=0){dc=0;drop.hidden=true;}});
 addEventListener('dragover',e=>e.preventDefault());
-addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f&&podeCarregar()) (SCREEN==='inc'?incImportFile:SCREEN==='mb'?mbLoadFile:loadFile)(f);});
+addEventListener('drop',e=>{e.preventDefault();dc=0;drop.hidden=true;const f=e.dataTransfer.files[0]; if(f&&SCREEN!=='prem'&&podeCarregar()) (SCREEN==='inc'?incImportFile:SCREEN==='mb'?mbLoadFile:loadFile)(f);});
 
 /* Tema claro/escuro */
 const ICON_SUN='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
@@ -1242,19 +1253,20 @@ const ST_CLASS={'HIGIENIZAR':'h','DISPONIBILIZAR':'d','INCOBRÁVEL NO CLIENTE':'
 const PAPEL_LBL={admin:'Administrador',editor:'Editor',leitor:'Leitor'};
 const TELA_LBL={fat:'Faturamento',mb:'Manutenção de base',inc:'Incobráveis'};
 const TELAS=['fat','mb','inc'];
-const canSee=t=>!!ME&&(ME.papel==='admin'||(ME.telas||['fat','mb']).includes(t));
-let INC_STARTED=false;
+const ABAS=['fat','mb','inc','prem'];
+const canSee=t=>!!ME&&(ME.papel==='admin'||(t!=='prem'&&(ME.telas||['fat','mb']).includes(t)));
+let INC_STARTED=false, PREM_STARTED=false;
 let FAT_STARTED=false, MB_STARTED=false;
 function applyTelas(){
-  const vis={fat:canSee('fat'),mb:canSee('mb'),inc:canSee('inc')};
+  const vis={fat:canSee('fat'),mb:canSee('mb'),inc:canSee('inc'),prem:canSee('prem')};
   document.querySelectorAll('.tabs .tab').forEach(t=>t.hidden=!vis[t.dataset.screen]);
-  const nv=TELAS.filter(t=>vis[t]).length;
+  const nv=ABAS.filter(t=>vis[t]).length;
   const nav=document.querySelector('.tabs'); if(nav) nav.hidden=nv<2;
   const none=nv===0;
   document.getElementById('semTela').hidden=!none;
   document.getElementById('btnUp').hidden=none||!canEdit();
-  if(none){ document.getElementById('app').hidden=true; document.getElementById('appMB').hidden=true; document.getElementById('appINC').hidden=true; document.getElementById('footBtns').hidden=true; document.getElementById('footBtnsFat').hidden=true; setMetaTxtNone(); return; }
-  if(!vis[SCREEN]) setScreen(TELAS.find(t=>vis[t]),false); else setScreen(SCREEN,false);
+  if(none){ document.getElementById('app').hidden=true; document.getElementById('appMB').hidden=true; document.getElementById('appINC').hidden=true; document.getElementById('appPREM').hidden=true; document.getElementById('footBtns').hidden=true; document.getElementById('footBtnsFat').hidden=true; setMetaTxtNone(); return; }
+  if(!vis[SCREEN]) setScreen(ABAS.find(t=>vis[t]),false); else setScreen(SCREEN,false);
 }
 function setMetaTxtNone(){ document.getElementById('meta').textContent=''; document.getElementById('pageTtl').textContent='Dashboard'; }
 function canonStatus(s){ const n=norm(s); const hit=STATUS_ORDER.find(x=>norm(x)===n); return hit||String(s??'').trim().toUpperCase()||'SEM STATUS'; }
@@ -1295,6 +1307,7 @@ async function afterLogin(session){
   if(canSee('fat')&&!FAT_STARTED){ FAT_STARTED=true; loadDefault(); }
   if(canSee('mb')){ if(!MB_STARTED){ MB_STARTED=true; mbInit(); } else mbRefresh(); }
   if(canSee('inc')){ if(!INC_STARTED){ INC_STARTED=true; incInit(); } else incLoad(true); }
+  if(canSee('prem')){ if(!PREM_STARTED){ PREM_STARTED=true; premInit(); } else premLoad(); }
 }
 function bindGate(){
   if(!SB){ gateShow('setup'); return; }
@@ -1328,7 +1341,7 @@ function renderUser(){
   document.getElementById('userNm').textContent=ME.nome||ME.email;
   document.getElementById('userPp').textContent=PAPEL_LBL[ME.papel]||ME.papel;
   document.getElementById('umUsers').hidden=!isAdmin();
-  document.getElementById('btnUp').hidden=!canEdit()||SCREEN==='inc'; document.getElementById('btnUp').disabled=!canEdit()||SCREEN==='inc';
+  document.getElementById('btnUp').hidden=!canEdit()||SCREEN==='inc'||SCREEN==='prem'; document.getElementById('btnUp').disabled=!canEdit()||SCREEN==='inc'||SCREEN==='prem';
 }
 (function(){
   const b=document.getElementById('userBtn'), m=document.getElementById('userMenu');
@@ -1395,10 +1408,9 @@ async function incInit(){
     '<div class="inc-bar"><input type="search" id="incQ" placeholder="Buscar CPF, nome ou cliente" aria-label="Buscar">'+
     '<select id="incTipo" aria-label="Motivo"></select>'+
     '<div class="inc-acts">'+(ed?'<button type="button" class="btn sm" id="incNovo">+ Adicionar</button><button type="button" class="btn ghost sm" id="incImp">Importar planilha</button><button type="button" class="btn ghost sm" id="incModelo">Baixar modelo</button>':'')+
-    (adm?'<button type="button" class="btn ghost sm" id="incMot">Motivos</button>':'')+
     '<button type="button" class="btn ghost sm" id="incExp">Exportar Excel</button>'+
     (adm?'<button type="button" class="btn ghost sm danger" id="incApagar">Apagar restrições</button>':'')+'</div></div>'+
-    (adm?'<div class="inc-mot" id="incMotBox" hidden></div><div class="inc-del" id="incDelBox" hidden></div>':'')+
+    (adm?'<div class="inc-del" id="incDelBox" hidden></div>':'')+
     (ed?'<form class="inc-form" id="incForm" hidden><div class="inc-ft" id="ifTit">Nova restrição</div><label>CPF<input id="ifCpf" required inputmode="numeric" autocomplete="off" placeholder="000.000.000-00"></label>'+
       '<label>Motivo<select id="ifTipo"></select></label>'+
       '<label>Cliente<input id="ifCli" list="incClis" autocomplete="off" placeholder="só quando o motivo é por cliente" disabled></label>'+
@@ -1414,7 +1426,6 @@ async function incInit(){
   document.getElementById('incTipo').onchange=e=>{ INC.tipo=e.target.value; incLoad(true); };
   document.getElementById('incExp').onclick=incExport;
   if(adm){ document.getElementById('incApagar').onclick=incApagarAbrir; }
-  if(adm){ document.getElementById('incMot').onclick=()=>{ const b=document.getElementById('incMotBox'); b.hidden=!b.hidden; if(!b.hidden) incMotRender(); }; }
   if(ed){
     const f=document.getElementById('incForm'), tp=document.getElementById('ifTipo'), cli=document.getElementById('ifCli');
     const syncCli=()=>{ const t=tipoDe(tp.value); cli.disabled=!t||t.abrangencia!=='cliente'; cli.required=!cli.disabled; if(cli.disabled) cli.value=''; };
@@ -1493,28 +1504,55 @@ function incFillTipos(){
   const s=document.getElementById('incTipo'); if(!s) return;
   s.innerHTML='<option value="">Todos os motivos</option>'+TIPOS.map(t=>'<option'+(t.nome===INC.tipo?' selected':'')+'>'+esc(t.nome)+'</option>').join('');
 }
-function incMotRender(){
-  const box=document.getElementById('incMotBox'); if(!box) return;
-  const R=(INC.res&&INC.res.tipos)||[];
-  box.innerHTML='<div class="inc-ft">Motivos de restrição</div>'+
-    '<table class="dt"><thead><tr><th>Motivo</th><th>Vale para</th><th class="n">Prioridade</th><th class="n">CPFs</th><th class="n">Linhas na base</th><th></th></tr></thead><tbody>'+
-    TIPOS.map(t=>{ const r=R.find(x=>x.nome===t.nome)||{}; return '<tr><td>'+incTag(t.nome)+'</td><td>'+abrTxt(t.abrangencia)+'</td><td class="n">'+t.prioridade+'</td><td class="n">'+int.format(r.qtd||0)+'</td><td class="n">'+int.format(r.linhas||0)+'</td><td class="n">'+(t.sistema?'<span class="mb-hint">padrão</span>':'<button type="button" class="lnk" data-rmt="'+esc(t.nome)+'">Remover</button>')+'</td></tr>'; }).join('')+'</tbody></table>'+
-    '<form class="inc-mf" id="incMotForm"><label>Novo motivo<input id="imNome" required maxlength="40" placeholder="ex.: PROCESSO JUDICIAL" autocomplete="off"></label>'+
-    '<label>Vale para<select id="imAbr"><option value="cpf">CPF em todas as cargas e clientes</option><option value="cliente">CPF só no cliente indicado</option></select></label>'+
-    '<div class="acts"><button type="submit" class="btn sm">Criar motivo</button></div></form>'+
-    '<p class="mb-hint">Quando o mesmo CPF tem mais de um motivo, vale o de menor número de prioridade. Motivos novos entram depois dos existentes e passam a aparecer na Manutenção de Base, na importação e aqui.</p>';
-  box.querySelector('#incMotForm').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter; busy(b,true,'Criando…');
-    const {data,error}=await SB.rpc('criar_tipo_restricao',{p_nome:document.getElementById('imNome').value,p_abrangencia:document.getElementById('imAbr').value});
+/* ---------------- Premissas (só administrador) ---------------- */
+const PREM={tipos:[],res:{}};
+function premInit(){
+  const el=document.getElementById('appPREM');
+  el.innerHTML='<div class="inc-wrap">'+
+    '<section class="panel"><div class="ttl">Motivos de incobráveis</div>'+
+    '<div class="prem-bar"><p class="mb-hint">Os motivos aparecem na aba Incobráveis, na importação, na Manutenção de Base (status das linhas, alteração em lote e quadros) e carimbam automaticamente toda carga nova. Quando o mesmo CPF tem mais de um motivo, vale o de menor número de prioridade.</p>'+
+    '<button type="button" class="btn sm" id="premNovo" title="Novo motivo">+ Novo motivo</button></div>'+
+    '<form class="inc-mf prem-form" id="premForm" hidden><label>Nome do motivo<input id="pmNome" required maxlength="40" placeholder="ex.: PROCESSO JUDICIAL" autocomplete="off"></label>'+
+    '<label>Vale para<select id="pmAbr"><option value="cpf">CPF em todas as cargas e clientes</option><option value="cliente">CPF só no cliente indicado</option></select></label>'+
+    '<div class="acts"><button type="submit" class="btn sm">Criar</button><button type="button" class="btn ghost sm" id="pmNo">Cancelar</button></div></form>'+
+    '<div class="prem-tab" id="premTab"><p class="mb-hint">Carregando…</p></div></section></div>';
+  const f=document.getElementById('premForm');
+  document.getElementById('premNovo').onclick=()=>{ f.hidden=!f.hidden; if(!f.hidden) document.getElementById('pmNome').focus(); };
+  document.getElementById('pmNo').onclick=()=>{ f.reset(); f.hidden=true; };
+  f.addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter; busy(b,true,'Criando…');
+    const {data,error}=await SB.rpc('criar_tipo_restricao',{p_nome:document.getElementById('pmNome').value,p_abrangencia:document.getElementById('pmAbr').value});
     busy(b,false); if(error){ toast(errMsg(error)); return; }
-    toast('Motivo '+data.nome+' criado.'); await incTiposRefresh(); });
-  box.querySelectorAll('[data-rmt]').forEach(b=>b.onclick=async()=>{
-    if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirmar'; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=''; b.textContent='Remover'; } },4000); return; }
+    f.reset(); f.hidden=true; toast('Motivo '+data.nome+' criado.'); await premTiposMudaram(); });
+  document.getElementById('premTab').addEventListener('click',async e=>{
+    const b=e.target.closest('[data-rmt]'); if(!b) return;
+    if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirmar'; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=''; b.textContent='Apagar'; } },4000); return; }
     b.disabled=true; const {error}=await SB.rpc('remover_tipo_restricao',{p_nome:b.dataset.rmt});
-    if(error){ toast(errMsg(error)); b.disabled=false; return; }
-    toast('Motivo '+b.dataset.rmt+' removido.'); if(INC.tipo===b.dataset.rmt) INC.tipo=''; await incTiposRefresh(); });
+    if(error){ toast(errMsg(error)); b.disabled=false; b.dataset.armed=''; b.textContent='Apagar'; return; }
+    toast('Motivo '+b.dataset.rmt+' apagado.'); if(INC.tipo===b.dataset.rmt) INC.tipo=''; await premTiposMudaram(); });
+  premLoad();
 }
-async function incTiposRefresh(){ await loadTipos(); incFillTipos(); await incLoad(true); incMotRender(); if(MB_STARTED) mbRefreshSoon(100); }
-async function incSend(itens,origem,subst){
+async function premLoad(){
+  if(!SB||!ME||!document.getElementById('premTab')) return;
+  const [t,r]=await Promise.all([SB.from('tipos_restricao').select('nome,abrangencia,prioridade,sistema,criado_em,criado_por_nome').order('prioridade'),SB.rpc('resumo_incobraveis')]);
+  if(t.error){ document.getElementById('premTab').innerHTML='<p class="f-err" style="margin:12px">'+esc(errMsg(t.error))+'</p>'; return; }
+  PREM.tipos=t.data||[]; PREM.res=r.data||{}; premRender();
+}
+function premRender(){
+  const R=(PREM.res&&PREM.res.tipos)||[];
+  document.getElementById('premTab').innerHTML='<table><colgroup><col style="width:24%"><col style="width:24%"><col style="width:9%"><col style="width:9%"><col style="width:11%"><col style="width:13%"><col style="width:10%"></colgroup>'+
+    '<thead><tr><th>Motivo</th><th>Vale para</th><th class="n">Prioridade</th><th class="n">CPFs</th><th class="n">Linhas na base</th><th>Criado</th><th></th></tr></thead><tbody>'+
+    PREM.tipos.map(t=>{ const x=R.find(y=>y.nome===t.nome)||{}, uso=(+x.qtd||0)+(+x.linhas||0);
+      const acao=t.sistema?'<span class="mb-hint" title="Base do bloqueio por CPF: não pode ser apagado">fixo</span>'
+        :uso?'<span class="mb-hint" title="Libere os CPFs na aba Incobráveis (ou use Apagar restrições com este motivo) e altere as linhas da base antes de apagar">em uso</span>'
+        :'<button type="button" class="lnk danger" data-rmt="'+esc(t.nome)+'">Apagar</button>';
+      return '<tr><td>'+incTag(t.nome)+'</td><td>'+abrTxt(t.abrangencia)+'</td><td class="n">'+t.prioridade+'</td><td class="n">'+int.format(+x.qtd||0)+'</td><td class="n">'+int.format(+x.linhas||0)+'</td>'+
+        '<td>'+(t.criado_em?fmtDT(t.criado_em).split(' ')[0]:'—')+'<small>'+esc(t.criado_por_nome||'')+'</small></td><td class="n">'+acao+'</td></tr>'; }).join('')+'</tbody></table>';
+}
+async function premTiposMudaram(){
+  await loadTipos(); await premLoad();
+  if(INC_STARTED){ incFillTipos(); incLoad(true); }
+  if(MB_STARTED) mbRefreshSoon(100);
+}async function incSend(itens,origem,subst){
   const {data,error}=await SB.rpc('registrar_restricoes',{p_itens:itens,p_origem:origem,p_substituir:!!subst});
   if(error){ toast(errMsg(error)); return null; } return data;
 }
@@ -1545,7 +1583,6 @@ function incRender(){
       (ed?'<td class="n act"><button type="button" class="lnk" data-alt="'+i+'">Alterar</button><button type="button" class="lnk" data-lib="'+i+'">Liberar</button></td>':'')+'</tr>'; }).join('')+'</tbody></table>'+
     (INC.rows.length<INC.total?'<div class="inc-more"><button type="button" class="btn ghost sm" id="incMais">Mostrar mais ('+int.format(INC.total-INC.rows.length)+' restantes)</button></div>':'');
   setMetaINC();
-  if(document.getElementById('incMotBox')&&!document.getElementById('incMotBox').hidden) incMotRender();
 }
 function setMetaINC(){ META.inc=int.format(INC.total)+' restrição(ões)'+(INC.q||INC.tipo?' no filtro':'')+' · aplicadas automaticamente a toda carga nova da Manutenção de Base'; if(SCREEN==='inc') document.getElementById('meta').textContent=META.inc; }
 const INCCOLS={cpf:['cpf','cpfcnpj','documento','cnpj'],tipo:['tipo','restricao','tipoderestricao','tiporestricao','motivo','status'],cliente:['cliente'],nome:['nome','nomecliente'],obs:['obs','observacao','observacoes','comentario']};
@@ -1824,7 +1861,7 @@ function mbToggle(k,v){ FM[k].has(v)?FM[k].delete(v):FM[k].add(v); mbRefresh(); 
 function mbRender(){
   if(!OPC) return;
   if(!document.getElementById('mbTables')) mbMount();
-  document.getElementById('btnUp').hidden=!canEdit()||SCREEN==='inc'; document.getElementById('btnUp').disabled=!canEdit()||SCREEN==='inc';
+  document.getElementById('btnUp').hidden=!canEdit()||SCREEN==='inc'||SCREEN==='prem'; document.getElementById('btnUp').disabled=!canEdit()||SCREEN==='inc'||SCREEN==='prem';
   const opts={cliente:OPC.clientes, uf:OPC.ufs||[], qtd:(OPC.qtds||[]).map(String).sort((a,b)=>(a==='-1')-(b==='-1')||a-b), situacao:['COM PGTO','SEM PGTO'], ano:[...OPC.anos].sort(sortAno), carga:OPC.cargas.map(c=>String(c.id))};
   const avail={cliente:new Set(OPC.cli_disp), uf:new Set(OPC.uf_disp||[]), qtd:new Set((OPC.qtd_disp||[]).map(String)), situacao:new Set((OPC.sit_disp||[]).map(canonSit)), ano:new Set(OPC.ano_disp), carga:new Set(opts.carga)};
   document.querySelectorAll('#appMB .slicer').forEach(el=>{
@@ -2025,23 +2062,23 @@ function exportBase(){ const b=document.getElementById('mbExpAll');
     xlsxDownload(HEAD_OUT,all.map(rowOut),'Base','MANUTENCAO_BASE_'+stamp+'.xlsx'); }); }
 
 /* Troca de tela */
-const FOOT={fat:'Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.',mb:'',inc:'Restrições fixas: toda base carregada na Manutenção de Base é carimbada automaticamente com elas.'};
+const FOOT={fat:'Aceita CSV (separador ; ou ,) e XLSX exportados do sistema. Arraste o arquivo para a página ou use “Carregar planilha”.',mb:'',inc:'Restrições fixas: toda base carregada na Manutenção de Base é carimbada automaticamente com elas.',prem:'Premissas: só administradores veem esta tela.'};
 function setScreen(sc,save){
-  SCREEN=TELAS.includes(sc)?sc:'fat';
-  if(ME&&!canSee(SCREEN)){ const alt=TELAS.find(t=>canSee(t)); if(alt) SCREEN=alt; }
-  document.getElementById('app').hidden=SCREEN!=='fat'; document.getElementById('appMB').hidden=SCREEN!=='mb'; document.getElementById('appINC').hidden=SCREEN!=='inc';
+  SCREEN=ABAS.includes(sc)?sc:'fat';
+  if(ME&&!canSee(SCREEN)){ const alt=ABAS.find(t=>canSee(t)); if(alt) SCREEN=alt; }
+  document.getElementById('app').hidden=SCREEN!=='fat'; document.getElementById('appMB').hidden=SCREEN!=='mb'; document.getElementById('appINC').hidden=SCREEN!=='inc'; document.getElementById('appPREM').hidden=SCREEN!=='prem';
   document.querySelectorAll('.tabs .tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.screen===SCREEN));
-  document.getElementById('pageTtl').textContent=SCREEN==='mb'?'Manutenção de Base':SCREEN==='inc'?'Incobráveis':'Dashboard de Faturamento';
+  document.getElementById('pageTtl').textContent=SCREEN==='mb'?'Manutenção de Base':SCREEN==='inc'?'Incobráveis':SCREEN==='prem'?'Premissas':'Dashboard de Faturamento';
   document.getElementById('meta').innerHTML=META[SCREEN]; if(SCREEN==='fat') bindDateMode();
   document.getElementById('footTxt').textContent=FOOT[SCREEN]; document.getElementById('footBtns').hidden=SCREEN!=='mb'; document.getElementById('footBtnsFat').hidden=SCREEN!=='fat';
   showMsg('');
   if(SCREEN==='fat') Object.values(CH).forEach(c=>c&&c.resize());
   renderUser();
-  if(save){ try{localStorage.setItem('dash-tela',SCREEN);}catch(e){} try{history.replaceState(null,'','#'+({mb:'manutencao',inc:'incobraveis',fat:'faturamento'})[SCREEN]);}catch(e){} }
+  if(save){ try{localStorage.setItem('dash-tela',SCREEN);}catch(e){} try{history.replaceState(null,'','#'+({mb:'manutencao',inc:'incobraveis',prem:'premissas',fat:'faturamento'})[SCREEN]);}catch(e){} }
 }
 document.querySelectorAll('.tabs .tab').forEach(t=>t.onclick=()=>setScreen(t.dataset.screen,true));
 (function(){ let sc=null; const hsh=(location.hash||'').slice(1);
-  if(hsh==='manutencao') sc='mb'; else if(hsh==='faturamento') sc='fat'; else if(hsh==='incobraveis') sc='inc'; else { try{sc=localStorage.getItem('dash-tela');}catch(e){} }
+  if(hsh==='manutencao') sc='mb'; else if(hsh==='faturamento') sc='fat'; else if(hsh==='incobraveis') sc='inc'; else if(hsh==='premissas') sc='prem'; else { try{sc=localStorage.getItem('dash-tela');}catch(e){} }
   setScreen(sc||'fat',false); })();
 bindGate();
 </script>
