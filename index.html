@@ -247,6 +247,9 @@ table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numer
 .inc-tag.t-b{color:var(--bad);border-color:var(--bad)}.inc-tag.t-f{color:var(--muted);border-color:var(--muted)}.inc-tag.t-c{color:var(--warn);border-color:var(--warn)}
 .inc-more{display:flex;justify-content:center;padding:10px}
 .inc-ft{grid-column:1/-1;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:12px;color:var(--accent-hi)}
+.btn.danger{border-color:var(--bad);color:var(--bad);background:transparent}.btn.danger:hover{background:rgba(239,106,90,.12)}
+.btn.sm.danger[type=submit]{background:var(--bad);color:#fff}
+.inc-del{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--bad);border-radius:10px;padding:12px}.inc-del p{margin:0;font-size:13px}
 .inc-mot{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--accent-lo);border-radius:10px;padding:12px}
 .inc-mot .dt{width:100%;font-size:12.5px}
 .inc-mf{display:grid;grid-template-columns:1.4fr 1.4fr auto;gap:8px;align-items:end}
@@ -1393,8 +1396,9 @@ async function incInit(){
     '<select id="incTipo" aria-label="Motivo"></select>'+
     '<div class="inc-acts">'+(ed?'<button type="button" class="btn sm" id="incNovo">+ Adicionar</button><button type="button" class="btn ghost sm" id="incImp">Importar planilha</button><button type="button" class="btn ghost sm" id="incModelo">Baixar modelo</button>':'')+
     (adm?'<button type="button" class="btn ghost sm" id="incMot">Motivos</button>':'')+
-    '<button type="button" class="btn ghost sm" id="incExp">Exportar Excel</button></div></div>'+
-    (adm?'<div class="inc-mot" id="incMotBox" hidden></div>':'')+
+    '<button type="button" class="btn ghost sm" id="incExp">Exportar Excel</button>'+
+    (adm?'<button type="button" class="btn ghost sm danger" id="incApagar">Apagar restrições</button>':'')+'</div></div>'+
+    (adm?'<div class="inc-mot" id="incMotBox" hidden></div><div class="inc-del" id="incDelBox" hidden></div>':'')+
     (ed?'<form class="inc-form" id="incForm" hidden><div class="inc-ft" id="ifTit">Nova restrição</div><label>CPF<input id="ifCpf" required inputmode="numeric" autocomplete="off" placeholder="000.000.000-00"></label>'+
       '<label>Motivo<select id="ifTipo"></select></label>'+
       '<label>Cliente<input id="ifCli" list="incClis" autocomplete="off" placeholder="só quando o motivo é por cliente" disabled></label>'+
@@ -1409,6 +1413,7 @@ async function incInit(){
   document.getElementById('incQ').addEventListener('input',e=>{ clearTimeout(qt); qt=setTimeout(()=>{ INC.q=e.target.value.trim(); incLoad(true); },350); });
   document.getElementById('incTipo').onchange=e=>{ INC.tipo=e.target.value; incLoad(true); };
   document.getElementById('incExp').onclick=incExport;
+  if(adm){ document.getElementById('incApagar').onclick=incApagarAbrir; }
   if(adm){ document.getElementById('incMot').onclick=()=>{ const b=document.getElementById('incMotBox'); b.hidden=!b.hidden; if(!b.hidden) incMotRender(); }; }
   if(ed){
     const f=document.getElementById('incForm'), tp=document.getElementById('ifTipo'), cli=document.getElementById('ifCli');
@@ -1464,6 +1469,25 @@ async function incInit(){
     toast(fmtDoc(x.cpf)+' liberado de '+x.tipo+(data.linhas?' · '+int.format(data.linhas)+' linha(s) voltaram ao status anterior':''),!!UNDO_ID);
     incLoad(true); if(MB_STARTED) mbRefreshSoon(200); });
   incLoad(true);
+}
+function incApagarAbrir(){
+  const box=document.getElementById('incDelBox'); if(!box.hidden){ box.hidden=true; return; }
+  const n=INC.total, filtro=(INC.tipo?'motivo <b>'+esc(INC.tipo)+'</b>':'<b>todos os motivos</b>')+(INC.q?' e busca <b>“'+esc(INC.q)+'”</b>':'');
+  if(!n){ toast('Não há restrições no filtro atual para apagar.'); return; }
+  box.innerHTML='<div class="inc-ft">Apagar restrições</div>'+
+    '<p>Vai apagar <b>'+int.format(n)+' restrição(ões)</b> do filtro atual ('+filtro+'). As linhas da base marcadas por elas voltam ao status anterior, e as próximas cargas deixam de ser carimbadas.</p>'+
+    '<p class="mb-hint">Para apagar só uma parte, feche, escolha o motivo ou faça uma busca e abra de novo. Dá para desfazer pelo Histórico de alterações da Manutenção de Base.</p>'+
+    '<form class="inc-mf" id="incDelForm"><label>Digite APAGAR para confirmar<input id="idConf" autocomplete="off"></label><div class="acts"><button type="submit" class="btn sm danger">Apagar '+int.format(n)+'</button><button type="button" class="btn ghost sm" id="idNo">Cancelar</button></div></form>';
+  box.hidden=false; document.getElementById('idConf').focus();
+  document.getElementById('idNo').onclick=()=>{ box.hidden=true; };
+  document.getElementById('incDelForm').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter;
+    if(document.getElementById('idConf').value.trim().toUpperCase()!=='APAGAR'){ toast('Digite APAGAR para confirmar.'); return; }
+    busy(b,true,'Apagando…');
+    const {data,error}=await SB.rpc('liberar_restricoes_lote',{p_busca:INC.q||null,p_tipo:INC.tipo||null});
+    busy(b,false); if(error){ toast(errMsg(error)); return; }
+    box.hidden=true; UNDO_ID=data.alteracao||null;
+    toast(int.format(data.apagadas)+' restrição(ões) apagada(s)'+(data.linhas?' · '+int.format(data.linhas)+' linha(s) da base voltaram ao status anterior':''),!!UNDO_ID);
+    incLoad(true); if(MB_STARTED) mbRefreshSoon(200); });
 }
 function incFillTipos(){
   const s=document.getElementById('incTipo'); if(!s) return;
