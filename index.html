@@ -125,7 +125,9 @@ details.slicer>.opts{padding:2px 10px 8px}
 .a-mes .cv{height:290px}
 
 /* KPIs */
-.kpis{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}
+#kpis .kpi .v{font-size:clamp(15px,1.3vw,24px);white-space:nowrap;letter-spacing:-.01em}
+#kpis .kpi .k{font-size:11.5px}
 .kpi{border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column}
 .kpi .k{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:var(--ink);font:700 13.5px/1.2 var(--body);text-align:center;padding:9px 8px;min-height:44px;display:flex;align-items:center;justify-content:center}
 .kpi .v{font:700 clamp(18px,1.7vw,24px) var(--body);text-align:center;padding:10px 6px 2px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
@@ -250,6 +252,25 @@ table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numer
 .btn.danger{border-color:var(--bad);color:var(--bad);background:transparent}.btn.danger:hover{background:rgba(239,106,90,.12)}
 .btn.sm.danger[type=submit]{background:var(--bad);color:#fff}
 .inc-del{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--bad);border-radius:10px;padding:12px}.inc-del p{margin:0;font-size:13px}
+.com-emp{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.com-l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.com-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.com-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent-lo);border-radius:999px;padding:3px 6px 3px 10px;font-size:12px;font-weight:700}
+.com-chip button{border:0;background:transparent;color:var(--bad);cursor:pointer;font-size:11px}
+.com-ef{display:flex;gap:6px}.com-ef input,.com-form input,.com-form select{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;font:inherit;min-width:0}
+.com-form{display:flex;flex-direction:column;gap:12px;background:var(--panel-2);border:1px solid var(--accent-lo);border-radius:10px;padding:14px;margin-bottom:12px}
+.com-form label{display:flex;flex-direction:column;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);min-width:0}
+.com-form label.sw-l{flex-direction:row;font-size:12px;text-transform:none;letter-spacing:0;color:var(--text)}
+.com-row{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:10px}
+.com-sp,.com-cl{display:flex;flex-direction:column;gap:8px}
+.com-spl{display:grid;grid-template-columns:minmax(0,1.6fr) 90px auto auto;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.com-sp-a{display:flex;gap:12px;align-items:center;font-size:12.5px;font-weight:700}.com-sp-a .ok{color:var(--ok)}.com-sp-a .bad{color:var(--warn)}
+.com-cli{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
+.com-form .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.prem-tab td.act .lnk{display:block;margin-left:auto}
+.prem-tab td.w{white-space:normal;word-break:break-word}
+.prem-tab small.vig-on{color:var(--ok);font-weight:700}
+@media (max-width:900px){.com-row{grid-template-columns:1fr 1fr}.com-spl{grid-template-columns:1fr 70px auto}.com-spl span{display:none}}
 .prem-bar{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin:4px 0 12px}.prem-bar p{margin:0;flex:1}
 .prem-form{margin-bottom:12px;background:var(--panel-2);border:1px solid var(--accent-lo);border-radius:10px;padding:12px}
 .prem-tab table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
@@ -474,6 +495,7 @@ footer{color:var(--dim);font-size:12px;display:flex;justify-content:space-betwee
         <details class="slicer" data-key="regiao"><summary><span class="sn">Região</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="regiao">Limpar seleção</button></details>
         <details class="slicer" data-key="situacao"><summary><span class="sn">Situação da cobrança</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="situacao">Limpar seleção</button></details>
         <details class="slicer" data-key="tipo"><summary><span class="sn">Tipo de cobrança</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="tipo">Limpar seleção</button></details>
+        <details class="slicer" data-key="emp"><summary><span class="sn">Empresa (split)</span><span class="cnt"></span></summary><div class="opts"></div><button type="button" class="clr" data-clear="emp">Limpar seleção</button></details>
       </div>
     </aside>
     <div class="content">
@@ -612,7 +634,7 @@ function buildRows(objs){
     if(valor==null||!venc){skipped++;continue;}
     const uf=String(o[map.uf]??'').trim().toUpperCase();
     rows.push({
-      src:o, cpf:String(o[map.cpf]??'').replace(/\D/g,''), pym:(pg=>pg?pg.y*12+pg.m:null)(map.pag?parseDate(o[map.pag]):null), valor, y:venc.y, m:venc.m, vd:venc.d, ym:venc.y*12+venc.m, uf, regiao:UF2REG[uf]||'Outros',
+      src:o, cpf:String(o[map.cpf]??'').replace(/\D/g,''), ...(pg=>({pym:pg?pg.y*12+pg.m:null,pd:pg?pg.y*10000+(pg.m+1)*100+(pg.d||1):null}))(map.pag?parseDate(o[map.pag]):null), valor, y:venc.y, m:venc.m, vd:venc.d, ym:venc.y*12+venc.m, uf, regiao:UF2REG[uf]||'Outros',
       cliente:String(o[map.cliente]??'').trim()||'—',
       tipo:String(o[map.tipo]??'').trim()||'Não informado',
       situacao:String(o[map.situacao]??'').trim()||'Não informada',
@@ -663,6 +685,7 @@ async function loadFile(file){
 }
 async function loadDefault(){
   if(SB&&ME){
+    try{ await loadComissao(); }catch(e){}
     try{ await fatHistLoad(); if(FATC.length){ await fatOpen(FATC[0].id); return; } }
     catch(e){ fatProg(null); showMsg('Não consegui abrir a última carga do histórico: '+errMsg(e)); }
     fatEmpty(); return; // logado: o painel mostra só o que está no histórico
@@ -763,16 +786,42 @@ document.getElementById('fatCargas').addEventListener('click',async e=>{
 
 /* ---------- Estado ---------- */
 let DATA=null, SRC='', CH={};
-const F={ano:new Set(),regiao:new Set(),situacao:new Set(),cliente:new Set(),uf:new Set(),tipo:new Set(),meio:new Set(),anoGer:new Set(),acesso:new Set(),faixa:new Set(),mes:new Set(),mesPag:new Set(),agm:new Set()};
-const FIELD={ano:'y',regiao:'regiao',situacao:'situacao',cliente:'cliente',uf:'uf',tipo:'tipo',meio:'meio',anoGer:'anoGer',acesso:'acesso',faixa:'faixa',mes:'ym',mesPag:'pym',agm:null};
-const FLABEL={ano:'Ano',regiao:'Região',situacao:'Situação',cliente:'Cliente',uf:'UF',tipo:'Tipo',meio:'Pagamento',anoGer:'Ano gerador',acesso:'Acesso',faixa:'Prazo',mes:'Vencimento',mesPag:'Pago em',agm:'Parcela em'};
+const F={ano:new Set(),regiao:new Set(),situacao:new Set(),cliente:new Set(),uf:new Set(),tipo:new Set(),meio:new Set(),anoGer:new Set(),acesso:new Set(),faixa:new Set(),mes:new Set(),mesPag:new Set(),agm:new Set(),emp:new Set()};
+const FIELD={ano:'y',regiao:'regiao',situacao:'situacao',cliente:'cliente',uf:'uf',tipo:'tipo',meio:'meio',anoGer:'anoGer',acesso:'acesso',faixa:'faixa',mes:'ym',mesPag:'pym',agm:null,emp:null};
+const FLABEL={ano:'Ano',regiao:'Região',situacao:'Situação',cliente:'Cliente',uf:'UF',tipo:'Tipo',meio:'Pagamento',anoGer:'Ano gerador',acesso:'Acesso',faixa:'Prazo',mes:'Vencimento',mesPag:'Pago em',agm:'Parcela em',emp:'Empresa (split)'};
 
 let LAST=null;
+/* ---------- Comissão sobre recebimento (regras em Premissas) ---------- */
+let COM={regras:[],empresas:[],ok:false};
+async function loadComissao(){
+  if(!SB||!ME) return;
+  const [r,e]=await Promise.all([SB.from('comissao_regras').select('*').order('vigencia_inicio'),SB.from('comissao_empresas').select('*').order('nome')]);
+  if(r.error||e.error){ COM={regras:[],empresas:[],ok:false}; return; }
+  COM={regras:r.data||[],empresas:e.data||[],ok:true};
+}
+const dInt=d=>d?+String(d).slice(0,10).replace(/-/g,''):null;
+function aplicarComissao(){
+  if(!DATA) return;
+  const idx=new Map();
+  COM.regras.forEach(g=>{ const k=norm(g.tipo_cobranca); if(!idx.has(k)) idx.set(k,[]); idx.get(k).push({g,ini:dInt(g.vigencia_inicio),fim:dInt(g.vigencia_fim)||99999999,cli:new Set((g.clientes||[]).map(c=>String(c).toUpperCase()))}); });
+  for(const r of DATA.rows){
+    r.com=0; r.emp=null; r.regra=null;
+    if(r.situacao!=='Paga'||!r.pd) continue;
+    const lst=idx.get(norm(r.tipo)); if(!lst) continue;
+    const cli=String(r.cliente).toUpperCase();
+    const h=lst.find(x=>x.cli.has(cli)&&r.pd>=x.ini&&r.pd<=x.fim); if(!h) continue;
+    r.regra=h.g.id; r.com=r.valor*(+h.g.pct_comissao)/100; r.emp={};
+    (h.g.split||[]).forEach(sp=>{ r.emp[sp.empresa]=(r.emp[sp.empresa]||0)+r.com*(+sp.pct)/100; });
+  }
+}
+// comissão da linha considerando o filtro de empresa (só a parte das empresas escolhidas)
+const comDe=r=>!r.emp?0:F.emp.size?Object.entries(r.emp).reduce((a,[e,v])=>a+(F.emp.has(e)?v:0),0):r.com;
+async function comissaoMudou(){ await loadComissao(); if(DATA){ aplicarComissao(); const ok=[...F.emp].filter(e=>DATA.rows.some(r=>r.emp&&r.emp[e])); F.emp.clear(); ok.forEach(e=>F.emp.add(e)); render(); } }
 function ingest(objs,name){
   LAST={objs,name};
   const res=buildRows(objs);
   if(!res.rows.length) throw new Error('Nenhuma linha válida (verifique as colunas Valor e Data Vencimento).');
-  DATA=res; SRC=name; Object.values(F).forEach(s=>s.clear());
+  DATA=res; SRC=name; Object.values(F).forEach(s=>s.clear()); aplicarComissao();
   setMeta(metaTxt()); bindDateMode();
   if(res.skipped) showMsg(res.skipped.toLocaleString('pt-BR')+' linha(s) ignorada(s) por não terem valor ou data de vencimento válidos.', true);
   mount(); render();
@@ -788,6 +837,7 @@ function metaTxt(){
 }
 const pass=(r,skip)=>{ for(const k in F){ if(k===skip||!F[k].size) continue;
   if(k==='agm'){ if(!r.parc||!r.parc.some(p=>F.agm.has(p.ym))) return false; continue; }
+  if(k==='emp'){ if(!r.emp||!Object.keys(r.emp).some(e=>F.emp.has(e))) return false; continue; }
   if(!F[k].has(r[FIELD[k]])) return false; } return true; };
 
 /* ---------- Formatação ---------- */
@@ -888,14 +938,18 @@ function buildCharts(){
   document.querySelectorAll('.a-perf .seg button').forEach(b=>b.onclick=()=>{PM=b.dataset.pm; document.querySelectorAll('.a-perf .seg button').forEach(x=>x.classList.toggle('on',x===b)); render();});
   const flxFmt=v=>{const a=Math.abs(v); if(FM2==='n') return int.format(v); if(a>=1e9) return (v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' B'; if(a>=1e6) return (v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' MM'; if(a>=1e3) return Math.round(v/1e3)+' MIL'; return int.format(v);};
   CH.flx=new Chart(document.getElementById('cFlx'),{type:'bar',data:{labels:[],datasets:[
-      {label:'Pago',data:[],backgroundColor:A,borderRadius:3,barPercentage:.78,categoryPercentage:.85}]},
+      {label:'Pago',data:[],backgroundColor:A,borderRadius:3,barPercentage:.78,categoryPercentage:.85,yAxisID:'y',order:2},
+      {type:'line',label:'Comissão',data:[],yAxisID:'y2',borderColor:css('--warn'),backgroundColor:css('--warn'),borderWidth:2.5,pointRadius:3,pointHoverRadius:5,tension:.25,order:1}]},
     options:{layout:{padding:{top:4,right:6}},interaction:{mode:'index',intersect:false},
       onClick:(e,els)=>{ if(els.length) toggle('mesPag',FLX[els[0].index].k); },
       scales:{x:{grid:{display:false},border:{color:L},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxRotation:0,autoSkip:true,autoSkipPadding:8}},
-        y:{beginAtZero:true,grid:{color:css('--grid')},border:{display:false},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxTicksLimit:5,callback:flxFmt}}},
-      plugins:{legend:{display:true,position:'top',align:'end',onClick:()=>{},labels:{color:T,boxWidth:10,boxHeight:10,padding:12,font:{size:11.5},generateLabels:()=>[{text:FM2==='v'?'Valor pago':'Qtde paga',fillStyle:A,strokeStyle:A,fontColor:T,lineWidth:0,datasetIndex:0}]}},
-        tooltip:{callbacks:{title:c=>'Pago em '+ymLbl(FLX[c[0].dataIndex].k),
-          label:c=>{const d=FLX[c.dataIndex]; return [' Valor pago: '+brl.format(d.v)+' ('+pct(d.v/(FLXT.v||1))+' do total pago)',' Qtde paga: '+int.format(d.n)+' cobranças'];}}},
+        y:{beginAtZero:true,grid:{color:css('--grid')},border:{display:false},ticks:{color:M,font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxTicksLimit:5,callback:flxFmt}},
+        y2:{position:'right',beginAtZero:true,display:'auto',grid:{display:false},border:{display:false},ticks:{color:css('--warn'),font:{family:'ui-monospace,Menlo,Consolas,monospace',size:11},maxTicksLimit:5,callback:v=>{const a=Math.abs(v); return a>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' MM':a>=1e3?Math.round(v/1e3)+' MIL':int.format(v);}}}},
+      plugins:{legend:{display:true,position:'top',align:'end',onClick:()=>{},labels:{color:T,boxWidth:10,boxHeight:10,padding:12,font:{size:11.5},generateLabels:()=>[{text:FM2==='v'?'Valor pago':'Qtde paga',fillStyle:A,strokeStyle:A,fontColor:T,lineWidth:0,datasetIndex:0}].concat(FM2==='v'&&FLXT.c?[{text:'Comissão'+(F.emp.size?' ('+[...F.emp].join(', ')+')':'')+' · eixo da direita',fillStyle:css('--warn'),strokeStyle:css('--warn'),fontColor:T,lineWidth:0,datasetIndex:1}]:[])}},
+        tooltip:{filter:c=>c.datasetIndex===0,callbacks:{title:c=>'Pago em '+ymLbl(FLX[c[0].dataIndex].k),
+          label:c=>{const d=FLX[c.dataIndex]; const out=[' Valor pago: '+brl.format(d.v)+' ('+pct(d.v/(FLXT.v||1))+' do total pago)',' Qtde paga: '+int.format(d.n)+' cobranças'];
+            if(d.c){ out.push(' Comissão gerada: '+brl.format(d.c)+' ('+pct(d.c/(d.vc||1))+' de '+brl.format(d.vc)+' com regra)'); Object.entries(d.e).sort((a,b)=>b[1]-a[1]).forEach(([e,v])=>out.push('   · '+e+': '+brl.format(v))); }
+            return out;}}},
         datalabels:{display:false}}}});
   document.querySelectorAll('.a-flx .seg button').forEach(b=>b.onclick=()=>{FM2=b.dataset.fm; document.querySelectorAll('.a-flx .seg button').forEach(x=>x.classList.toggle('on',x===b)); render();});
 
@@ -933,6 +987,8 @@ function render(){
   const vp=sum(paga), vv=sum(venc), desc=sum(rs,r=>r.desconto);
   const prz=rs.filter(r=>r.prazo!=null); const pm=prz.length?sum(prz,r=>r.prazo)/prz.length:null;
   const cpfs=new Set(); rs.forEach(r=>{ if(r.cpf) cpfs.add(r.cpf); });
+  const comT=rs.reduce((a,r)=>a+comDe(r),0), comN=rs.filter(r=>comDe(r)>0).length, comBase=rs.filter(r=>comDe(r)>0).reduce((a,r)=>a+r.valor,0);
+  const comEmp={}; rs.forEach(r=>{ if(r.emp) for(const [e,v] of Object.entries(r.emp)) if(!F.emp.size||F.emp.has(e)) comEmp[e]=(comEmp[e]||0)+v; });
   const K=[
     ['CPFs únicos', DATA.cols.cpf?int.format(cpfs.size):'—', DATA.cols.cpf?(cpfs.size?(n/cpfs.size).toLocaleString('pt-BR',{maximumFractionDigits:1})+' cobranças por CPF':''):'coluna CPF não encontrada'],
     ['Ticket médio por cobrança', n?brl.format(tot/n):'—', int.format(n)+' cobranças'],
@@ -940,7 +996,9 @@ function render(){
     ['Valor recebido (pagas)', vp>=1e7?cmp(vp):brl.format(vp), (vp+vv)?'<span class="ok">'+pct(vp/(vp+vv))+'</span> de recebido + vencido':''],
     ['Valor vencido em aberto', vv>=1e7?cmp(vv):brl.format(vv), (vp+vv)?'<span class="bad">'+pct(vv/(vp+vv))+'</span> de recebido + vencido':''],
     ['Desconto concedido', desc>=1e4?brl.format(desc):brl2.format(desc), rs.length?int.format(rs.filter(r=>r.desconto>0).length)+' cobranças com desconto':''],
-    ['Prazo médio de recebimento', pm==null?'—':pm.toLocaleString('pt-BR',{maximumFractionDigits:1})+' dias', prz.length?'entre notificação e pagamento':'']
+    ['Prazo médio de recebimento', pm==null?'—':pm.toLocaleString('pt-BR',{maximumFractionDigits:1})+' dias', prz.length?'entre notificação e pagamento':''],
+    ['Comissão gerada'+(F.emp.size?' · '+esc([...F.emp].join(', ')):''), !COM.regras.length?'—':comT>=1e6?cmp(comT):brl.format(comT),
+      !COM.regras.length?'cadastre as regras em Premissas':comN?pct(comT/(comBase||1))+' de '+cmp(comBase)+' recebidos · '+Object.keys(comEmp).length+' empresa(s)':'nenhum recebimento com regra']
   ];
   document.getElementById('kpis').innerHTML=K.map(k=>'<div class="kpi"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div><div class="s">'+k[2]+'</div></div>').join('');
 
@@ -997,14 +1055,17 @@ function render(){
 
   // Fluxo de Pagamentos: valor pago por mês da data de pagamento
   const fmap=new Map(); let semData=0;
-  all.filter(r=>pass(r,'mesPag')&&r.situacao==='Paga').forEach(r=>{ if(r.pym==null){semData++; return;} let d=fmap.get(r.pym); if(!d) fmap.set(r.pym,d={k:r.pym,n:0,v:0}); d.n++; d.v+=r.valor; });
-  FLX=[...fmap.values()].sort((a,b)=>a.k-b.k); FLXT={v:sum(FLX,d=>d.v),n:sum(FLX,d=>d.n)};
+  all.filter(r=>pass(r,'mesPag')&&r.situacao==='Paga').forEach(r=>{ if(r.pym==null){semData++; return;} let d=fmap.get(r.pym); if(!d) fmap.set(r.pym,d={k:r.pym,n:0,v:0,c:0,vc:0,e:{}}); d.n++; d.v+=r.valor;
+    const cv=comDe(r); if(cv){ d.c+=cv; d.vc+=r.valor; for(const [e,v] of Object.entries(r.emp)) if(!F.emp.size||F.emp.has(e)) d.e[e]=(d.e[e]||0)+v; } });
+  FLX=[...fmap.values()].sort((a,b)=>a.k-b.k); FLXT={v:sum(FLX,d=>d.v),n:sum(FLX,d=>d.n),c:sum(FLX,d=>d.c)};
   const selP=d=>!F.mesPag.size||F.mesPag.has(d.k);
   CH.flx.data.labels=FLX.map(d=>ymLbl(d.k));
   CH.flx.data.datasets[0].data=FLX.map(d=>FM2==='v'?d.v:d.n);
   CH.flx.data.datasets[0].backgroundColor=FLX.map(d=>selP(d)?css('--accent'):css('--dimbar'));
+  const comOn=FM2==='v'&&FLXT.c>0;
+  CH.flx.data.datasets[1].data=comOn?FLX.map(d=>d.c||null):[]; CH.flx.data.datasets[1].hidden=!comOn; CH.flx.options.scales.y2.display=comOn;
   CH.flx.update();
-  document.getElementById('flxNote').textContent=DATA.cols.pag?('Cobranças pagas por mês da data de pagamento. Clique numa barra para filtrar o mês.'+(semData?' '+int.format(semData)+' paga(s) sem data de pagamento ficaram de fora.':'')):'Coluna "Data de Pagamento" não encontrada na planilha.';
+  document.getElementById('flxNote').textContent=DATA.cols.pag?('Cobranças pagas por mês da data de pagamento. Clique numa barra para filtrar o mês.'+(FLXT.c?' Linha laranja: comissão gerada'+(F.emp.size?' para '+[...F.emp].join(', '):'')+', '+brl.format(FLXT.c)+' no período.':COM.regras.length?' Nenhum recebimento com regra de comissão.':'')+(semData?' '+int.format(semData)+' paga(s) sem data de pagamento ficaram de fora.':'')):'Coluna "Data de Pagamento" não encontrada na planilha.';
 
   // Prazo de recebimento por faixa (analítico do prazo médio)
   PRZ=FAIXAS.map(()=>({n:0,v:0,s:0}));
@@ -1092,13 +1153,15 @@ function renderSlicers(all){
     regiao:Object.keys(REGIOES).filter(r=>all.some(x=>x.regiao===r)).concat(all.some(x=>x.regiao==='Outros')?['Outros']:[]),
     situacao:[...new Set(all.map(r=>r.situacao))].sort((a,b)=>{const ia=SIT_ORDER.indexOf(a),ib=SIT_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);}),
     cliente:[...new Set(all.map(r=>r.cliente))].sort(),
-    tipo:[...new Set(all.map(r=>r.tipo))].sort()
+    tipo:[...new Set(all.map(r=>r.tipo))].sort(),
+    emp:[...new Set(all.flatMap(r=>r.emp?Object.keys(r.emp):[]))].sort()
   };
   document.querySelectorAll('#app .slicer').forEach(el=>{
     const k=el.dataset.key, f=FIELD[k];
-    const avail=new Set(all.filter(r=>pass(r,k)).map(r=>r[f]));
+    const avail=k==='emp'?new Set(all.filter(r=>pass(r,k)).flatMap(r=>r.emp?Object.keys(r.emp):[])):new Set(all.filter(r=>pass(r,k)).map(r=>r[f]));
     const cnt=el.querySelector('.cnt'); cnt.textContent=F[k].size?F[k].size+' sel.':'Todos'; cnt.classList.toggle('on',F[k].size>0);
     el.querySelector('.clr').hidden=!F[k].size;
+    if(k==='emp'&&!opts.emp.length){ el.querySelector('.opts').innerHTML='<span class="mb-hint" style="padding:4px 2px">Nenhuma comissão apurada. Cadastre as regras em Premissas › Comissão.</span>'; return; }
     el.querySelector('.opts').innerHTML=opts[k].map(v=>'<button type="button" class="'+(F[k].has(v)?'on ':'')+(avail.has(v)?'':'na')+'" data-v="'+esc(v)+'">'+esc(v)+'</button>').join('');
     el.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>toggle(k,k==='ano'?+b.dataset.v:b.dataset.v));
   });
@@ -1515,7 +1578,14 @@ function premInit(){
     '<form class="inc-mf prem-form" id="premForm" hidden><label>Nome do motivo<input id="pmNome" required maxlength="40" placeholder="ex.: PROCESSO JUDICIAL" autocomplete="off"></label>'+
     '<label>Vale para<select id="pmAbr"><option value="cpf">CPF em todas as cargas e clientes</option><option value="cliente">CPF só no cliente indicado</option></select></label>'+
     '<div class="acts"><button type="submit" class="btn sm">Criar</button><button type="button" class="btn ghost sm" id="pmNo">Cancelar</button></div></form>'+
-    '<div class="prem-tab" id="premTab"><p class="mb-hint">Carregando…</p></div></section></div>';
+    '<div class="prem-tab" id="premTab"><p class="mb-hint">Carregando…</p></div></section>'+
+    '<section class="panel"><div class="ttl">Comissão sobre recebimento</div>'+
+    '<div class="prem-bar"><p class="mb-hint">Vale para as cobranças <b>pagas</b> da tela Faturamento. A regra é escolhida pelo tipo de cobrança, pelo cliente marcado e pela <b>data de pagamento</b> dentro da vigência. Comissão = valor pago × % da regra; o split divide essa comissão entre as empresas (soma 100%).</p>'+
+    '<button type="button" class="btn sm" id="comNova">+ Nova regra</button></div>'+
+    '<div class="com-emp"><span class="com-l">Empresas do split</span><div class="com-chips" id="comEmps"></div>'+
+    '<form class="com-ef" id="comEmpForm"><input id="ceNome" maxlength="60" placeholder="Nova empresa" autocomplete="off" required><button type="submit" class="btn ghost sm">+ Empresa</button></form></div>'+
+    '<form class="com-form" id="comForm" hidden></form>'+
+    '<div class="prem-tab" id="comTab"><p class="mb-hint">Carregando…</p></div></section></div>';
   const f=document.getElementById('premForm');
   document.getElementById('premNovo').onclick=()=>{ f.hidden=!f.hidden; if(!f.hidden) document.getElementById('pmNome').focus(); };
   document.getElementById('pmNo').onclick=()=>{ f.reset(); f.hidden=true; };
@@ -1529,7 +1599,7 @@ function premInit(){
     b.disabled=true; const {error}=await SB.rpc('remover_tipo_restricao',{p_nome:b.dataset.rmt});
     if(error){ toast(errMsg(error)); b.disabled=false; b.dataset.armed=''; b.textContent='Apagar'; return; }
     toast('Motivo '+b.dataset.rmt+' apagado.'); if(INC.tipo===b.dataset.rmt) INC.tipo=''; await premTiposMudaram(); });
-  premLoad();
+  premLoad(); comPremInit();
 }
 async function premLoad(){
   if(!SB||!ME||!document.getElementById('premTab')) return;
@@ -1547,6 +1617,106 @@ function premRender(){
         :'<button type="button" class="lnk danger" data-rmt="'+esc(t.nome)+'">Apagar</button>';
       return '<tr><td>'+incTag(t.nome)+'</td><td>'+abrTxt(t.abrangencia)+'</td><td class="n">'+t.prioridade+'</td><td class="n">'+int.format(+x.qtd||0)+'</td><td class="n">'+int.format(+x.linhas||0)+'</td>'+
         '<td>'+(t.criado_em?fmtDT(t.criado_em).split(' ')[0]:'—')+'<small>'+esc(t.criado_por_nome||'')+'</small></td><td class="n">'+acao+'</td></tr>'; }).join('')+'</tbody></table>';
+}
+/* ---- Premissas · Comissão ---- */
+const COMF={edit:null,nova:null};
+const pctBR=v=>(+v).toLocaleString('pt-BR',{maximumFractionDigits:4})+'%';
+const numBR=t=>{ t=String(t??'').trim().replace('%','').replace(/\s/g,''); if(!t) return NaN; if(t.includes(',')) t=t.replace(/\./g,'').replace(',','.'); return Number(t); };
+const dBR=d=>d?String(d).slice(8,10)+'/'+String(d).slice(5,7)+'/'+String(d).slice(0,4):'';
+const dMenos1=d=>{ const x=new Date(d+'T12:00:00'); x.setDate(x.getDate()-1); return x.toISOString().slice(0,10); };
+function comClientes(){ const set=new Set(); if(DATA) DATA.rows.forEach(r=>set.add(String(r.cliente).toUpperCase())); COM.regras.forEach(g=>(g.clientes||[]).forEach(c=>set.add(c))); set.delete('—'); return [...set].sort(); }
+function comTipos(){ const set=new Set(); if(DATA) DATA.rows.forEach(r=>set.add(r.tipo)); COM.regras.forEach(g=>set.add(g.tipo_cobranca)); return [...set].filter(Boolean).sort(); }
+function comPremInit(){
+  document.getElementById('comNova').onclick=()=>comAbrir(null,false);
+  document.getElementById('comEmpForm').addEventListener('submit',async e=>{ e.preventDefault(); const b=e.submitter, nome=document.getElementById('ceNome').value.trim().toUpperCase().replace(/\s+/g,' ');
+    if(nome.length<2){ toast('Nome da empresa muito curto.'); return; }
+    busy(b,true,'…'); const {error}=await SB.from('comissao_empresas').insert({nome}); busy(b,false);
+    if(error){ toast(/duplicate|unique/i.test(error.message)?'Essa empresa já está cadastrada.':errMsg(error)); return; }
+    e.target.reset(); toast('Empresa '+nome+' cadastrada.'); await comissaoMudou(); comPremRender(); });
+  document.getElementById('comEmps').addEventListener('click',async e=>{ const b=e.target.closest('[data-rme]'); if(!b) return;
+    if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='confirmar?'; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=''; b.textContent='✕'; } },4000); return; }
+    const {error}=await SB.from('comissao_empresas').delete().eq('id',+b.dataset.rme);
+    if(error){ toast(errMsg(error)); return; } toast('Empresa apagada.'); await comissaoMudou(); comPremRender(); });
+  document.getElementById('comTab').addEventListener('click',async e=>{
+    const ed=e.target.closest('[data-ced]'); if(ed){ comAbrir(COM.regras.find(g=>g.id===+ed.dataset.ced),false); return; }
+    const nv=e.target.closest('[data-cnv]'); if(nv){ comAbrir(COM.regras.find(g=>g.id===+nv.dataset.cnv),true); return; }
+    const rm=e.target.closest('[data-crm]'); if(!rm) return;
+    if(rm.dataset.armed!=='1'){ rm.dataset.armed='1'; rm.textContent='Confirmar'; setTimeout(()=>{ if(rm.isConnected){ rm.dataset.armed=''; rm.textContent='Apagar'; } },4000); return; }
+    const {error}=await SB.from('comissao_regras').delete().eq('id',+rm.dataset.crm);
+    if(error){ toast(errMsg(error)); return; } toast('Regra apagada.'); await comissaoMudou(); comPremRender(); });
+  comissaoMudou().then(comPremRender);
+}
+function comPremRender(){
+  const ce=document.getElementById('comEmps'); if(!ce) return;
+  ce.innerHTML=COM.empresas.length?COM.empresas.map(e=>'<span class="com-chip">'+esc(e.nome)+'<button type="button" data-rme="'+e.id+'" title="Apagar empresa" aria-label="Apagar '+esc(e.nome)+'">✕</button></span>').join(''):'<span class="mb-hint">Nenhuma empresa ainda: cadastre as empresas que recebem o split.</span>';
+  const ap={}; if(DATA) DATA.rows.forEach(r=>{ if(r.regra){ const a=ap[r.regra]||(ap[r.regra]={c:0,v:0,n:0}); a.c+=r.com; a.v+=r.valor; a.n++; } });
+  const hoje=new Date().toISOString().slice(0,10);
+  const tab=document.getElementById('comTab');
+  if(!COM.regras.length){ tab.innerHTML='<p class="mb-hint" style="padding:10px">Nenhuma regra cadastrada. Cadastre as empresas e use <b>+ Nova regra</b>.</p>'; return; }
+  const lista=COM.regras.slice().sort((a,b)=>a.tipo_cobranca.localeCompare(b.tipo_cobranca)||String(b.vigencia_inicio).localeCompare(String(a.vigencia_inicio)));
+  tab.innerHTML='<table><colgroup><col style="width:15%"><col style="width:8%"><col style="width:20%"><col style="width:17%"><col style="width:13%"><col style="width:13%"><col style="width:14%"></colgroup>'+
+    '<thead><tr><th>Tipo de cobrança</th><th class="n">Comissão</th><th>Split da comissão</th><th>Clientes</th><th>Vigência (data de pagamento)</th><th class="n">Apurado na carga aberta</th><th></th></tr></thead><tbody>'+
+    lista.map(g=>{ const at=g.vigencia_inicio<=hoje&&(!g.vigencia_fim||g.vigencia_fim>=hoje), a=ap[g.id];
+      return '<tr><td><b>'+esc(g.tipo_cobranca)+'</b>'+(g.obs?'<small>'+esc(g.obs)+'</small>':'')+'</td><td class="n"><b>'+pctBR(g.pct_comissao)+'</b></td>'+
+        '<td>'+(g.split||[]).map(x=>esc(x.empresa)+' <b>'+pctBR(x.pct)+'</b>').join('<br>')+'</td>'+
+        '<td class="w">'+(g.clientes||[]).map(esc).join(', ')+'</td>'+
+        '<td>'+dBR(g.vigencia_inicio)+' a '+(g.vigencia_fim?dBR(g.vigencia_fim):'<i>sem fim</i>')+'<small class="'+(at?'vig-on':'')+'">'+(at?'vigente hoje':g.vigencia_inicio>hoje?'futura':'encerrada')+'</small></td>'+
+        '<td class="n">'+(a?brl.format(a.c)+'<small>sobre '+cmp(a.v)+' · '+int.format(a.n)+' pgto(s)</small>':'<span class="mb-hint">—</span>')+'</td>'+
+        '<td class="n act"><button type="button" class="lnk" data-cnv="'+g.id+'" title="Fecha esta regra e abre outra a partir de uma data">Nova vigência</button><button type="button" class="lnk" data-ced="'+g.id+'">Editar</button><button type="button" class="lnk danger" data-crm="'+g.id+'">Apagar</button></td></tr>'; }).join('')+'</tbody></table>';
+}
+function comAbrir(g,novaVig){
+  const f=document.getElementById('comForm');
+  if(!COM.empresas.length){ toast('Cadastre antes as empresas do split.'); document.getElementById('ceNome').focus(); return; }
+  COMF.edit=g&&!novaVig?g:null; COMF.nova=g&&novaVig?g:null;
+  const base=g||{tipo_cobranca:'',pct_comissao:'',split:[{empresa:COM.empresas[0].nome,pct:100}],clientes:[],vigencia_inicio:'',vigencia_fim:null,obs:''};
+  const clis=comClientes(), tipos=comTipos();
+  const tit=COMF.edit?'Editar regra':COMF.nova?'Nova vigência para '+esc(g.tipo_cobranca)+' (a regra atual termina no dia anterior)':'Nova regra';
+  f.innerHTML='<div class="inc-ft">'+tit+'</div>'+
+    '<div class="com-row"><label>Tipo de cobrança<input id="cfTipo" list="cfTipos" required value="'+esc(base.tipo_cobranca)+'"'+(COMF.nova?' readonly':'')+'></label><datalist id="cfTipos">'+tipos.map(t=>'<option value="'+esc(t)+'">').join('')+'</datalist>'+
+    '<label>Comissão sobre o recebido (%)<input id="cfPct" inputmode="decimal" required value="'+(base.pct_comissao!==''?String(+base.pct_comissao).replace('.',','):'')+'" placeholder="ex.: 10"></label>'+
+    '<label>Vigência a partir de<input type="date" id="cfIni" required value="'+(COMF.nova?'':esc(base.vigencia_inicio||''))+'"></label>'+
+    '<label>até (opcional)<input type="date" id="cfFim" value="'+(COMF.nova?'':esc(base.vigencia_fim||''))+'"></label></div>'+
+    '<div class="com-sp"><span class="com-l">Split da comissão entre as empresas</span><div id="cfSplit"></div><div class="com-sp-a"><button type="button" class="btn ghost sm" id="cfAddSp">+ Empresa no split</button><span id="cfSoma"></span></div></div>'+
+    '<div class="com-cl"><span class="com-l">Aplicar nos clientes <button type="button" class="lnk" id="cfTodos">marcar todos</button> <button type="button" class="lnk" id="cfNenhum">nenhum</button></span>'+
+    '<div class="com-cli">'+(clis.length?clis.map(c=>'<label class="sw-l"><input type="checkbox" value="'+esc(c)+'"'+((base.clientes||[]).includes(c)?' checked':'')+'> '+esc(c)+'</label>').join(''):'<span class="mb-hint">Abra uma carga no Faturamento para listar os clientes.</span>')+'</div>'+
+    '<label class="com-out">Outro cliente (opcional, separe por vírgula)<input id="cfOutros" autocomplete="off" placeholder="ex.: SP, RJ"></label></div>'+
+    '<label class="com-obs">Observação<input id="cfObs" maxlength="200" value="'+esc(base.obs||'')+'" autocomplete="off"></label>'+
+    '<div class="acts"><button type="submit" class="btn sm">Salvar regra</button><button type="button" class="btn ghost sm" id="cfNo">Cancelar</button><span class="f-err" id="cfErr"></span></div>';
+  const sp=document.getElementById('cfSplit');
+  const linhaSp=x=>'<div class="com-spl"><select>'+COM.empresas.map(e=>'<option'+(e.nome===x.empresa?' selected':'')+'>'+esc(e.nome)+'</option>').join('')+'</select><input inputmode="decimal" value="'+String(+x.pct||'').replace('.',',')+'" placeholder="%" aria-label="% da comissão"><span>% da comissão</span><button type="button" class="lnk danger" aria-label="Tirar do split">✕</button></div>';
+  sp.innerHTML=(base.split||[]).map(linhaSp).join('');
+  const soma=()=>{ const t=[...sp.querySelectorAll('input')].reduce((a,i)=>a+(numBR(i.value)||0),0); const el=document.getElementById('cfSoma'); el.textContent='Soma: '+t.toLocaleString('pt-BR',{maximumFractionDigits:4})+'%'+(Math.abs(t-100)<1e-6?' ✓':' (precisa ser 100%)'); el.className=Math.abs(t-100)<1e-6?'ok':'bad'; };
+  sp.addEventListener('input',soma); sp.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b){ b.closest('.com-spl').remove(); soma(); } });
+  document.getElementById('cfAddSp').onclick=()=>{ const usadas=new Set([...sp.querySelectorAll('select')].map(s=>s.value)); const prox=COM.empresas.find(e=>!usadas.has(e.nome))||COM.empresas[0]; sp.insertAdjacentHTML('beforeend',linhaSp({empresa:prox.nome,pct:''})); soma(); };
+  document.getElementById('cfTodos').onclick=()=>f.querySelectorAll('.com-cli input').forEach(i=>i.checked=true);
+  document.getElementById('cfNenhum').onclick=()=>f.querySelectorAll('.com-cli input').forEach(i=>i.checked=false);
+  document.getElementById('cfNo').onclick=()=>{ f.hidden=true; f.innerHTML=''; };
+  soma(); f.hidden=false; f.scrollIntoView({block:'nearest'}); document.getElementById(COMF.nova?'cfIni':'cfTipo').focus();
+  f.onsubmit=async e=>{ e.preventDefault(); const b=e.submitter, er=document.getElementById('cfErr'); er.textContent='';
+    const pctC=numBR(document.getElementById('cfPct').value);
+    const split=[...sp.querySelectorAll('.com-spl')].map(l=>({empresa:l.querySelector('select').value,pct:numBR(l.querySelector('input').value)}));
+    const clientes=[...f.querySelectorAll('.com-cli input:checked')].map(i=>i.value).concat(document.getElementById('cfOutros').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean));
+    const reg={tipo_cobranca:document.getElementById('cfTipo').value.trim(),pct_comissao:pctC,split,clientes:[...new Set(clientes)],vigencia_inicio:document.getElementById('cfIni').value,vigencia_fim:document.getElementById('cfFim').value||null,obs:document.getElementById('cfObs').value.trim()};
+    if(!reg.tipo_cobranca){ er.textContent='Informe o tipo de cobrança.'; return; }
+    if(!(pctC>0&&pctC<=100)){ er.textContent='A comissão precisa estar entre 0 e 100%.'; return; }
+    if(split.some(x=>!(x.pct>0))){ er.textContent='Preencha o % de cada empresa do split.'; return; }
+    if(new Set(split.map(x=>x.empresa)).size!==split.length){ er.textContent='A mesma empresa aparece duas vezes no split.'; return; }
+    if(Math.abs(split.reduce((a,x)=>a+x.pct,0)-100)>1e-6){ er.textContent='O split precisa somar 100%.'; return; }
+    if(!reg.clientes.length){ er.textContent='Marque pelo menos um cliente.'; return; }
+    if(!reg.vigencia_inicio){ er.textContent='Informe o início da vigência.'; return; }
+    busy(b,true,'Salvando…'); let error=null;
+    if(COMF.edit){ ({error}=await SB.from('comissao_regras').update(reg).eq('id',COMF.edit.id)); }
+    else if(COMF.nova){
+      const ant=COMF.nova;
+      if(reg.vigencia_inicio<=ant.vigencia_inicio){ busy(b,false); er.textContent='A nova vigência precisa começar depois de '+dBR(ant.vigencia_inicio)+'.'; return; }
+      const fimAnt=dMenos1(reg.vigencia_inicio);
+      ({error}=await SB.from('comissao_regras').update({vigencia_fim:fimAnt}).eq('id',ant.id));
+      if(!error){ ({error}=await SB.from('comissao_regras').insert(reg)); if(error) await SB.from('comissao_regras').update({vigencia_fim:ant.vigencia_fim}).eq('id',ant.id); }
+    } else { ({error}=await SB.from('comissao_regras').insert(reg)); }
+    busy(b,false);
+    if(error){ er.textContent=errMsg(error); return; }
+    f.hidden=true; f.innerHTML=''; toast(COMF.nova?'Nova vigência gravada: a regra anterior termina em '+dBR(dMenos1(reg.vigencia_inicio))+'.':'Regra de comissão salva.');
+    await comissaoMudou(); comPremRender(); };
 }
 async function premTiposMudaram(){
   await loadTipos(); await premLoad();
@@ -1893,9 +2063,8 @@ function mbRender(){
     const clis=[...new Set(RES.filter(r=>r.nivel===1).map(r=>r.cliente))].sort(), anos=[...new Set(RES.filter(r=>r.nivel===2).map(r=>r.ano))].sort(sortAno);
     const cpfTot=(RCPF.find(r=>r.nivel===3)||{cpfs:0}).cpfs;
     const vTot=tot3.reduce((s,r)=>s+Number(r.valor||0),0);
-    const K=[['Total de registros',int.format(total),clis.length+' clientes · '+anos.length+' anos',''],['Valor total',cmp(vTot),brl2.format(vTot),'']];
+    const K=[['CPFs únicos',int.format(cpfTot),OPC.bloqueados?int.format(OPC.bloqueados)+' CPF(s) incobrável(is) na base':'nenhum CPF bloqueado',''],['Total de registros',int.format(total),clis.length+' clientes · '+anos.length+' anos',''],['Valor total',cmp(vTot),brl2.format(vTot),'']];
     tot3.slice().sort((a,b)=>stSort(a.status,b.status)).forEach(r=>K.push([r.status,int.format(r.qtd),(total?pct(r.qtd/total):'0%')+' da base · '+cmp(Number(r.valor||0)),ST_CLASS[r.status]||'']));
-    K.push(['CPFs únicos',int.format(cpfTot),OPC.bloqueados?int.format(OPC.bloqueados)+' CPF(s) incobrável(is) na base':'nenhum CPF bloqueado','']);
     document.getElementById('mbKpis').innerHTML=K.map(k=>'<div class="kpi'+(k[3]?' st-'+k[3]:'')+'"><div class="k">'+esc(k[0])+'</div><div class="v">'+k[1]+'</div><div class="s">'+esc(k[2])+'</div></div>').join('');
     let html='';
     sts.forEach(s=>{ html+=pivot(s,canEdit()?'Visão quantidade · clique para ver e editar':'Visão quantidade · clique para ver o detalhe', RES.filter(r=>r.status===s).map(r=>({cliente:r.cliente,ano:r.ano,nivel:r.nivel,v:Number(r.qtd)})), clis, anos, 'q'); });
